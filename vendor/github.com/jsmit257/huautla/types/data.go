@@ -20,12 +20,12 @@ type (
 	}
 
 	Vendor struct {
-		UUID `json:"-"`
+		UUID `json:"id"`
 		Name string `json:"name"`
 	}
 
 	Substrate struct {
-		UUID        `json:"-"`
+		UUID        `json:"id"`
 		Name        string        `json:"name"`
 		Type        SubstrateType `json:"type"`
 		Vendor      `json:"vendor"`
@@ -33,12 +33,12 @@ type (
 	}
 
 	Ingredient struct {
-		UUID `json:"-"`
+		UUID `json:"id"`
 		Name string `json:"name"`
 	}
 
 	Strain struct {
-		UUID       `json:"-"`
+		UUID       `json:"id"`
 		Name       string `json:"name"`
 		Vendor     `json:"vendor"`
 		Attributes []StrainAttribute `json:"attributes,omitempty"`
@@ -51,12 +51,12 @@ type (
 	}
 
 	Stage struct {
-		UUID `json:"-"`
+		UUID `json:"id"`
 		Name string `json:"name"`
 	}
 
 	EventType struct {
-		UUID     `json:"-"`
+		UUID     `json:"id"`
 		Name     string `json:"name"`
 		Severity string `json:"severity"`
 		Stage    `json:"stage"`

@@ -11,6 +11,16 @@ More details of a lifecycle are described in the [object model](#object-model), 
 * Majority: This is when the colony is established and strong and can grow to the excess needed to fruit new generations. An example is mixing colonized adolescents from the previous stage with porous, moist, nutritive bulk substrate in a bed. They can consume much more than the colony needs, so the extra will be used for procreation.
 * Vacation: A sort of suspended animation when a fungus is ahead of schedule and needs to stop working. Fortunately, they chill well with minimal damage, and simply wake up when they get warm again. So time spent on `Vacation` within a lifecycle isn't fully counted into a normal temporal model for a particular strain, but it still needs to be predictable in terms of how long they can chill, and whether they end with fruits, or the colony dies.
 
+### Requirements
+To develop and test locally, you'll need at least:
+* Git (you'll need an account if you plan to change anything)
+* Golang environment
+* docker/docker-compose (sometimes they're packaged separately, get both)
+* postgres-client (optional) is useful if you want to poke around the db after a feiled test, otherwise it's not needed
+* postgres-server (optional) if you want to work/test on a database that won't be removed when the tests finish
+* make
+* bash-compatible shell (bourne doesn't handle arrays nicely)
+
 ### Basics
 ???
 
@@ -90,13 +100,13 @@ The root of anything interesting is the Lifecycle. It's generally a path from in
 ### Configuring
 Basically, fill out this form and submit it to `huautla.New()`, along with a logger.
 ```go
-	Config struct {
-		PGHost string
-		PGUser string
-		PGPass string
-		PGPort uint
-		PGSSL  string
-	}
+Config struct {
+  PGHost string
+  PGUser string
+  PGPass string
+  PGPort uint
+  PGSSL  string
+}
 ```
 There's a workable reference implementation in the system test [init()](./tests/system/main_test.go) function.
 

@@ -10,7 +10,7 @@ import (
 
 	"github.com/jsmit257/huautla/types"
 
-	"github.com/jsmit257/tbd/internal/data/huautla"
+	"github.com/jsmit257/centerforfunguscontrol/internal/data/huautla"
 )
 
 // var mtrcs = metrics.ServiceMetrics.MustCurryWith(prometheus.Labels{})

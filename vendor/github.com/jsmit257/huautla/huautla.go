@@ -9,10 +9,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// var _ = db.(interface {
-// 	GetLifecycleEvents(context.Context, *types.Lifecycle, types.CID) error
-// })
-
 func New(cfg *types.Config, log *log.Entry) (types.DB, error) {
 	var cnxFmt = "host=%s port=%d user=%s password=%s dbname=huautla sslmode=%s"
 	var cnxInfo string

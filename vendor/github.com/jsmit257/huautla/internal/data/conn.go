@@ -6,12 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jsmit257/huautla/internal/metrics"
 	"github.com/jsmit257/huautla/types"
 
 	"github.com/google/uuid"
-
-	"github.com/prometheus/client_golang/prometheus"
 
 	log "github.com/sirupsen/logrus"
 
@@ -39,9 +36,7 @@ type (
 	deferred func(start time.Time, err error, l *log.Entry)
 )
 
-const connformat = ""
-
-var mtrcs = metrics.DataMetrics.MustCurryWith(prometheus.Labels{"pkg": "data"})
+// var mtrcs = metrics.DataMetrics.MustCurryWith(prometheus.Labels{"pkg": "data"})
 
 func New(cnxInfo string, log *log.Entry) (types.DB, error) {
 	var err error
