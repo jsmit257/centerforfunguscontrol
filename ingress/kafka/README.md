@@ -1,0 +1,1 @@
+kafka is just a proxy for http; there's no difference to the input - more or less - but the signaling after execution doesn't even suggest a callback function

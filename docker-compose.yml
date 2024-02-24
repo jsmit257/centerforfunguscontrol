@@ -1,0 +1,64 @@
+---
+version: "3.1"
+
+x-pg-host: &pghost huautla
+x-pg-port: &pgport 5432
+x-pg-user: &pguser postgres
+x-pg-pass: &pgpass root
+x-pg-ssl: &pgssl disable
+
+services:
+
+  postgres:
+    image: postgres:bookworm
+    restart: always
+    hostname: huautla
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_PASSWORD: *pgpass
+
+  install:
+    depends_on: [ postgres ]
+    image: install
+    build:
+      context: .
+      dockerfile: dockerfile.Install
+    volumes: [ .:/huautla ]
+    environment:
+      POSTGRES_HOST: *pghost
+      POSTGRES_PORT: *pgport
+      POSTGRES_USER: *pguser
+      POSTGRES_PASSWORD: *pgpass
+      POSTGRES_SSLMODE: *pgssl
+    working_dir: /huautla
+    command: ./bin/install-prod.sh
+
+  install-system-test:
+    depends_on: [ postgres ]
+    image: install
+    build:
+      context: .
+      dockerfile: dockerfile.Install
+    volumes: [ .:/huautla ]
+    environment:
+      POSTGRES_HOST: *pghost
+      POSTGRES_PORT: *pgport
+      POSTGRES_USER: *pguser
+      POSTGRES_PASSWORD: *pgpass
+      POSTGRES_SSLMODE: *pgssl
+    working_dir: /huautla
+    command: ./bin/install-system-test.sh
+
+  system-test:
+    depends_on: [ install-system-test ]
+    image: golang:bookworm
+    volumes: [ .:/huautla ]
+    environment:
+      POSTGRES_HOST: *pghost
+      POSTGRES_PORT: *pgport
+      POSTGRES_USER: *pguser
+      POSTGRES_PASSWORD: *pgpass
+      POSTGRES_SSLMODE: *pgssl
+    working_dir: /huautla
+    command: ./bin/system-test.sh
