@@ -15,14 +15,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type stagerMock struct {
-	selectAllResult []types.Stage
+type strainerMock struct {
+	selectAllResult []types.Strain
 	selectAllErr    error
 
-	selectResult types.Stage
+	selectResult types.Strain
 	selectErr    error
 
-	insertResult types.Stage
+	insertResult types.Strain
 	insertErr    error
 
 	updateErr error
@@ -30,15 +30,15 @@ type stagerMock struct {
 	deleteErr error
 }
 
-func Test_GetAllStages(t *testing.T) {
+func Test_GetAllStrains(t *testing.T) {
 	t.Parallel()
 	set := map[string]struct {
-		result []types.Stage
+		result []types.Strain
 		err    error
 		sc     int
 	}{
 		"happy_path": {
-			result: []types.Stage{},
+			result: []types.Strain{},
 			sc:     http.StatusOK,
 		},
 		"db_error": {
@@ -51,12 +51,12 @@ func Test_GetAllStages(t *testing.T) {
 		k, v := k, v
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
-				Stager: &stagerMock{
+				Strainer: &strainerMock{
 					selectAllResult: v.result,
 					selectAllErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetAllStages", "case": k}),
+			log:   log.WithFields(log.Fields{"test": "Test_GetAllStrains", "case": k}),
 			mtrcs: nil,
 		}
 
@@ -72,27 +72,27 @@ func Test_GetAllStages(t *testing.T) {
 				http.MethodGet,
 				"url",
 				bytes.NewReader([]byte("")))
-			ha.GetAllStages(w, r)
+			ha.GetAllStrains(w, r)
 			require.Equal(t, v.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &[]types.Stage{}, &v.result)
+				checkResult(t, w.Body, &[]types.Strain{}, &v.result)
 			}
 		})
 	}
 }
 
-func Test_GetStage(t *testing.T) {
+func Test_GetStrain(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
 		id     string
-		result types.Stage
+		result types.Strain
 		err    error
 		sc     int
 	}{
 		"happy_path": {
 			id:     "1",
-			result: types.Stage{},
+			result: types.Strain{},
 			sc:     http.StatusOK,
 		},
 		"missing_id": {
@@ -109,12 +109,12 @@ func Test_GetStage(t *testing.T) {
 		k, v := k, v
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
-				Stager: &stagerMock{
+				Strainer: &strainerMock{
 					selectResult: v.result,
 					selectErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetStage", "case": k}),
+			log:   log.WithFields(log.Fields{"test": "Test_GetStrain", "case": k}),
 			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
@@ -133,35 +133,35 @@ func Test_GetStage(t *testing.T) {
 				"url",
 				bytes.NewReader([]byte("")))
 
-			ha.GetStage(w, r)
+			ha.GetStrain(w, r)
 
 			require.Equal(t, v.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Stage{}, &v.result)
+				checkResult(t, w.Body, &types.Strain{}, &v.result)
 			}
 		})
 	}
 }
 
-func Test_PostStage(t *testing.T) {
+func Test_PostStrain(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
-		stage  *types.Stage
-		result types.Stage
+		stage  *types.Strain
+		result types.Strain
 		err    error
 		sc     int
 	}{
 		"happy_path": {
-			stage:  &types.Stage{},
-			result: types.Stage{},
+			stage:  &types.Strain{},
+			result: types.Strain{},
 			sc:     http.StatusOK,
 		},
 		"missing_stage": {
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
-			stage: &types.Stage{},
+			stage: &types.Strain{},
 			err:   fmt.Errorf("db error"),
 			sc:    http.StatusInternalServerError,
 		},
@@ -171,12 +171,12 @@ func Test_PostStage(t *testing.T) {
 		k, v := k, v
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
-				Stager: &stagerMock{
+				Strainer: &strainerMock{
 					insertResult: v.result,
 					insertErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PostStage", "case": k}),
+			log:   log.WithFields(log.Fields{"test": "Test_PostStrain", "case": k}),
 			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
@@ -191,30 +191,30 @@ func Test_PostStage(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader(serializeStage(v.stage)))
+				bytes.NewReader(serializeStrain(v.stage)))
 
-			ha.PostStage(w, r)
+			ha.PostStrain(w, r)
 
 			require.Equal(t, v.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Stage{}, &v.result)
+				checkResult(t, w.Body, &types.Strain{}, &v.result)
 			}
 		})
 	}
 }
 
-func Test_PatchStage(t *testing.T) {
+func Test_PatchStrain(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
 		id    types.UUID
-		stage *types.Stage
+		stage *types.Strain
 		err   error
 		sc    int
 	}{
 		"happy_path": {
 			id:    "1",
-			stage: &types.Stage{},
+			stage: &types.Strain{},
 			sc:    http.StatusNoContent,
 		},
 		"missing_id": {
@@ -226,7 +226,7 @@ func Test_PatchStage(t *testing.T) {
 		},
 		"db_error": {
 			id:    "1",
-			stage: &types.Stage{},
+			stage: &types.Strain{},
 			err:   fmt.Errorf("db error"),
 			sc:    http.StatusInternalServerError,
 		},
@@ -236,11 +236,11 @@ func Test_PatchStage(t *testing.T) {
 		k, v := k, v
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
-				Stager: &stagerMock{
+				Strainer: &strainerMock{
 					updateErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PatchStage", "case": k}),
+			log:   log.WithFields(log.Fields{"test": "Test_PatchStrain", "case": k}),
 			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
@@ -257,16 +257,16 @@ func Test_PatchStage(t *testing.T) {
 					rctx),
 				http.MethodDelete,
 				"url",
-				bytes.NewReader(serializeStage(v.stage)))
+				bytes.NewReader(serializeStrain(v.stage)))
 
-			ha.PatchStage(w, r)
+			ha.PatchStrain(w, r)
 
 			require.Equal(t, v.sc, w.Code)
 		})
 	}
 }
 
-func Test_DeleteStage(t *testing.T) {
+func Test_DeleteStrain(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
@@ -292,11 +292,11 @@ func Test_DeleteStage(t *testing.T) {
 		k, v := k, v
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
-				Stager: &stagerMock{
+				Strainer: &strainerMock{
 					deleteErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_DeleteStage", "case": k}),
+			log:   log.WithFields(log.Fields{"test": "Test_DeleteStrain", "case": k}),
 			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
@@ -315,14 +315,14 @@ func Test_DeleteStage(t *testing.T) {
 				"url",
 				bytes.NewReader([]byte("")))
 
-			ha.DeleteStage(w, r)
+			ha.DeleteStrain(w, r)
 
 			require.Equal(t, v.sc, w.Code)
 		})
 	}
 }
 
-func serializeStage(s *types.Stage) []byte {
+func serializeStrain(s *types.Strain) []byte {
 	if s == nil {
 		return []byte{}
 	}
@@ -330,22 +330,22 @@ func serializeStage(s *types.Stage) []byte {
 	return result
 }
 
-func (vm *stagerMock) SelectAllStages(context.Context, types.CID) ([]types.Stage, error) {
+func (vm *strainerMock) SelectAllStrains(context.Context, types.CID) ([]types.Strain, error) {
 	return vm.selectAllResult, vm.selectAllErr
 }
 
-func (vm *stagerMock) SelectStage(context.Context, types.UUID, types.CID) (types.Stage, error) {
+func (vm *strainerMock) SelectStrain(context.Context, types.UUID, types.CID) (types.Strain, error) {
 	return vm.selectResult, vm.selectErr
 }
 
-func (vm *stagerMock) InsertStage(context.Context, types.Stage, types.CID) (types.Stage, error) {
+func (vm *strainerMock) InsertStrain(context.Context, types.Strain, types.CID) (types.Strain, error) {
 	return vm.insertResult, vm.insertErr
 }
 
-func (vm *stagerMock) UpdateStage(context.Context, types.UUID, types.Stage, types.CID) error {
+func (vm *strainerMock) UpdateStrain(context.Context, types.UUID, types.Strain, types.CID) error {
 	return vm.updateErr
 }
 
-func (vm *stagerMock) DeleteStage(context.Context, types.UUID, types.CID) error {
+func (vm *strainerMock) DeleteStrain(context.Context, types.UUID, types.CID) error {
 	return vm.deleteErr
 }

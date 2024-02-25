@@ -1,9 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/go-chi/chi/v5"
 
 	log "github.com/sirupsen/logrus"
@@ -12,31 +9,6 @@ import (
 
 	"github.com/jsmit257/centerforfunguscontrol/internal/data/huautla"
 )
-
-// var mtrcs = metrics.ServiceMetrics.MustCurryWith(prometheus.Labels{})
-
-func authnz(handler http.Handler) http.Handler {
-	// check auth tokens and whatever other sanity
-	return nil
-}
-
-func NewInstance(hostAddr string, hostPort uint16, mtrcs http.HandlerFunc, log *log.Entry) *http.Server {
-	r := chi.NewRouter()
-	// r.Use(authnz) // someday, maybe more too
-
-	log = log.WithField("ingress", "http")
-
-	newHuautla(r, log)
-
-	r.Get("/hc", hc)
-
-	r.Get("/metrics", mtrcs)
-
-	return &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", hostAddr, hostPort),
-		Handler: r,
-	}
-}
 
 func newHuautla(r *chi.Mux, l *log.Entry) {
 	ha, _ := huautla.New(
@@ -68,30 +40,39 @@ func newHuautla(r *chi.Mux, l *log.Entry) {
 	r.Patch("/eventtype/{id}", ha.PatchEventType)
 	r.Delete("/eventtype/{id}", ha.DeleteEventType)
 
+	r.Get("/substrates", ha.GetAllSubstrates)
+	r.Get("/substrate/{id}", ha.GetSubstrate)
+	r.Post("/substrate", ha.PostSubstrate)
+	r.Patch("/substrate/{id}", ha.PatchSubstrate)
+	r.Delete("/substrate/{id}", ha.DeleteSubstrate)
+
 	r.Get("/ingredients", ha.GetAllIngredients)
 	r.Get("/ingredient/{id}", ha.GetIngredient)
 	r.Post("/ingredient", ha.PostIngredient)
 	r.Patch("/ingredient/{id}", ha.PatchIngredient)
 	r.Delete("/ingredient/{id}", ha.DeleteIngredient)
 
-	r.Get("/strains", nil)
-	r.Get("/strain/{id}", nil)
-	r.Post("/strain", nil)
-	r.Patch("/strain/{id}", nil)
-	r.Delete("/strain/{id}", nil)
+	r.Post("/substrate/{id}/ingredients", ha.PostSubstrateIngredient)
+	r.Patch("/substrate/{su_id}/ingredients/{ig_id}", ha.PatchSubstrateIngredient)
+	r.Delete("/substrate/{su_id}/ingredients/{ig_id}", ha.DeleteSubstrateIngredient)
 
-	r.Get("/lifecycle/{id}", nil)
-	r.Post("/lifecycle", nil)
-	r.Patch("/lifecycle/{id}", nil)
-	r.Delete("/lifecycle/{id}", nil)
+	r.Get("/strains", ha.GetAllStrains)
+	r.Get("/strain/{id}", ha.GetStrain)
+	r.Post("/strain", ha.PostStrain)
+	r.Patch("/strain/{id}", ha.PatchStrain)
+	r.Delete("/strain/{id}", ha.DeleteStrain)
 
-	r.Post("/lifecycle/{id}/events", nil)
-	r.Patch("/lifecycle/{id}/events", nil)
-	r.Delete("/lifecycle/{id}/events/{id}", nil)
-}
+	r.Get("/strainattributenames", ha.GetStrainAttributeNames)
+	r.Post("/strain/{id}/attribute/{at_name}/{at_value}", ha.PostStrainAttribute)
+	r.Patch("/strain/{st_id}/attribute/{at_name}/{at_value}", ha.PatchStrainAttribute)
+	r.Delete("/strain/{st_id}/attribute/{at_id}", ha.DeleteStrainAttribute)
 
-// not much of a healthcheck, for now
-func hc(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("OK"))
+	r.Get("/lifecycle/{id}", ha.GetLifecycle)
+	r.Post("/lifecycle", ha.PostLifecycle)
+	r.Patch("/lifecycle/{id}", ha.PatchLifecycle)
+	r.Delete("/lifecycle/{id}", ha.DeleteLifecycle)
+
+	r.Post("/lifecycle/{id}/events", ha.PostEvent)
+	r.Patch("/lifecycle/{lc_id}/events/{ev_id}", ha.PatchEvent)
+	r.Delete("/lifecycle/{lc_id}/events/{ev_id}", ha.DeleteEvent)
 }

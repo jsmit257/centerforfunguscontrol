@@ -15,14 +15,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type stagerMock struct {
-	selectAllResult []types.Stage
+type lifecyclerMock struct {
+	selectAllResult []types.Lifecycle
 	selectAllErr    error
 
-	selectResult types.Stage
+	selectResult types.Lifecycle
 	selectErr    error
 
-	insertResult types.Stage
+	insertResult types.Lifecycle
 	insertErr    error
 
 	updateErr error
@@ -30,69 +30,69 @@ type stagerMock struct {
 	deleteErr error
 }
 
-func Test_GetAllStages(t *testing.T) {
-	t.Parallel()
-	set := map[string]struct {
-		result []types.Stage
-		err    error
-		sc     int
-	}{
-		"happy_path": {
-			result: []types.Stage{},
-			sc:     http.StatusOK,
-		},
-		"db_error": {
-			err: fmt.Errorf("db error"),
-			sc:  http.StatusInternalServerError,
-		},
-	}
+// func Test_GetAllLifecycles(t *testing.T) {
+// 	t.Parallel()
+// 	set := map[string]struct {
+// 		result []types.Lifecycle
+// 		err    error
+// 		sc     int
+// 	}{
+// 		"happy_path": {
+// 			result: []types.Lifecycle{},
+// 			sc:     http.StatusOK,
+// 		},
+// 		"db_error": {
+// 			err: fmt.Errorf("db error"),
+// 			sc:  http.StatusInternalServerError,
+// 		},
+// 	}
 
-	for k, v := range set {
-		k, v := k, v
-		ha := &HuautlaAdaptor{
-			db: &huautlaMock{
-				Stager: &stagerMock{
-					selectAllResult: v.result,
-					selectAllErr:    v.err,
-				},
-			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetAllStages", "case": k}),
-			mtrcs: nil,
-		}
+// 	for k, v := range set {
+// 		k, v := k, v
+// 		ha := &HuautlaAdaptor{
+// 			db: &huautlaMock{
+// 				Lifecycler: &lifecyclerMock{
+// 					selectAllResult: v.result,
+// 					selectAllErr:    v.err,
+// 				},
+// 			},
+// 			log:   log.WithFields(log.Fields{"test": "Test_GetAllLifecycles", "case": k}),
+// 			mtrcs: nil,
+// 		}
 
-		t.Run(k, func(t *testing.T) {
-			t.Parallel()
-			w := httptest.NewRecorder()
-			defer w.Result().Body.Close()
-			r, _ := http.NewRequestWithContext(
-				context.WithValue(
-					context.Background(),
-					chi.RouteCtxKey,
-					chi.NewRouteContext()),
-				http.MethodGet,
-				"url",
-				bytes.NewReader([]byte("")))
-			ha.GetAllStages(w, r)
-			require.Equal(t, v.sc, w.Code)
-			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &[]types.Stage{}, &v.result)
-			}
-		})
-	}
-}
+// 		t.Run(k, func(t *testing.T) {
+// 			t.Parallel()
+// 			w := httptest.NewRecorder()
+// 			defer w.Result().Body.Close()
+// 			r, _ := http.NewRequestWithContext(
+// 				context.WithValue(
+// 					context.Background(),
+// 					chi.RouteCtxKey,
+// 					chi.NewRouteContext()),
+// 				http.MethodGet,
+// 				"url",
+// 				bytes.NewReader([]byte("")))
+// 			ha.GetAllLifecycles(w, r)
+// 			require.Equal(t, v.sc, w.Code)
+// 			if w.Code == http.StatusOK {
+// 				checkResult(t, w.Body, &[]types.Lifecycle{}, &v.result)
+// 			}
+// 		})
+// 	}
+// }
 
-func Test_GetStage(t *testing.T) {
+func Test_GetLifecycle(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
 		id     string
-		result types.Stage
+		result types.Lifecycle
 		err    error
 		sc     int
 	}{
 		"happy_path": {
 			id:     "1",
-			result: types.Stage{},
+			result: types.Lifecycle{},
 			sc:     http.StatusOK,
 		},
 		"missing_id": {
@@ -109,12 +109,12 @@ func Test_GetStage(t *testing.T) {
 		k, v := k, v
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
-				Stager: &stagerMock{
+				Lifecycler: &lifecyclerMock{
 					selectResult: v.result,
 					selectErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetStage", "case": k}),
+			log:   log.WithFields(log.Fields{"test": "Test_GetLifecycle", "case": k}),
 			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
@@ -133,35 +133,35 @@ func Test_GetStage(t *testing.T) {
 				"url",
 				bytes.NewReader([]byte("")))
 
-			ha.GetStage(w, r)
+			ha.GetLifecycle(w, r)
 
 			require.Equal(t, v.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Stage{}, &v.result)
+				checkResult(t, w.Body, &types.Lifecycle{}, &v.result)
 			}
 		})
 	}
 }
 
-func Test_PostStage(t *testing.T) {
+func Test_PostLifecycle(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
-		stage  *types.Stage
-		result types.Stage
+		stage  *types.Lifecycle
+		result types.Lifecycle
 		err    error
 		sc     int
 	}{
 		"happy_path": {
-			stage:  &types.Stage{},
-			result: types.Stage{},
+			stage:  &types.Lifecycle{},
+			result: types.Lifecycle{},
 			sc:     http.StatusOK,
 		},
 		"missing_stage": {
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
-			stage: &types.Stage{},
+			stage: &types.Lifecycle{},
 			err:   fmt.Errorf("db error"),
 			sc:    http.StatusInternalServerError,
 		},
@@ -171,12 +171,12 @@ func Test_PostStage(t *testing.T) {
 		k, v := k, v
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
-				Stager: &stagerMock{
+				Lifecycler: &lifecyclerMock{
 					insertResult: v.result,
 					insertErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PostStage", "case": k}),
+			log:   log.WithFields(log.Fields{"test": "Test_PostLifecycle", "case": k}),
 			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
@@ -191,30 +191,30 @@ func Test_PostStage(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader(serializeStage(v.stage)))
+				bytes.NewReader(serializeLifecycle(v.stage)))
 
-			ha.PostStage(w, r)
+			ha.PostLifecycle(w, r)
 
 			require.Equal(t, v.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Stage{}, &v.result)
+				checkResult(t, w.Body, &types.Lifecycle{}, &v.result)
 			}
 		})
 	}
 }
 
-func Test_PatchStage(t *testing.T) {
+func Test_PatchLifecycle(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
 		id    types.UUID
-		stage *types.Stage
+		stage *types.Lifecycle
 		err   error
 		sc    int
 	}{
 		"happy_path": {
 			id:    "1",
-			stage: &types.Stage{},
+			stage: &types.Lifecycle{},
 			sc:    http.StatusNoContent,
 		},
 		"missing_id": {
@@ -226,7 +226,7 @@ func Test_PatchStage(t *testing.T) {
 		},
 		"db_error": {
 			id:    "1",
-			stage: &types.Stage{},
+			stage: &types.Lifecycle{},
 			err:   fmt.Errorf("db error"),
 			sc:    http.StatusInternalServerError,
 		},
@@ -236,11 +236,11 @@ func Test_PatchStage(t *testing.T) {
 		k, v := k, v
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
-				Stager: &stagerMock{
+				Lifecycler: &lifecyclerMock{
 					updateErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PatchStage", "case": k}),
+			log:   log.WithFields(log.Fields{"test": "Test_PatchLifecycle", "case": k}),
 			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
@@ -257,16 +257,16 @@ func Test_PatchStage(t *testing.T) {
 					rctx),
 				http.MethodDelete,
 				"url",
-				bytes.NewReader(serializeStage(v.stage)))
+				bytes.NewReader(serializeLifecycle(v.stage)))
 
-			ha.PatchStage(w, r)
+			ha.PatchLifecycle(w, r)
 
 			require.Equal(t, v.sc, w.Code)
 		})
 	}
 }
 
-func Test_DeleteStage(t *testing.T) {
+func Test_DeleteLifecycle(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
@@ -292,11 +292,11 @@ func Test_DeleteStage(t *testing.T) {
 		k, v := k, v
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
-				Stager: &stagerMock{
+				Lifecycler: &lifecyclerMock{
 					deleteErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_DeleteStage", "case": k}),
+			log:   log.WithFields(log.Fields{"test": "Test_DeleteLifecycle", "case": k}),
 			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
@@ -315,37 +315,37 @@ func Test_DeleteStage(t *testing.T) {
 				"url",
 				bytes.NewReader([]byte("")))
 
-			ha.DeleteStage(w, r)
+			ha.DeleteLifecycle(w, r)
 
 			require.Equal(t, v.sc, w.Code)
 		})
 	}
 }
 
-func serializeStage(s *types.Stage) []byte {
-	if s == nil {
+func serializeLifecycle(l *types.Lifecycle) []byte {
+	if l == nil {
 		return []byte{}
 	}
-	result, _ := json.Marshal(s)
+	result, _ := json.Marshal(l)
 	return result
 }
 
-func (vm *stagerMock) SelectAllStages(context.Context, types.CID) ([]types.Stage, error) {
-	return vm.selectAllResult, vm.selectAllErr
-}
+// func (vm *lifecyclerMock) SelectAllLifecycles(context.Context, types.CID) ([]types.Lifecycle, error) {
+// 	return vm.selectAllResult, vm.selectAllErr
+// }
 
-func (vm *stagerMock) SelectStage(context.Context, types.UUID, types.CID) (types.Stage, error) {
+func (vm *lifecyclerMock) SelectLifecycle(context.Context, types.UUID, types.CID) (types.Lifecycle, error) {
 	return vm.selectResult, vm.selectErr
 }
 
-func (vm *stagerMock) InsertStage(context.Context, types.Stage, types.CID) (types.Stage, error) {
+func (vm *lifecyclerMock) InsertLifecycle(context.Context, types.Lifecycle, types.CID) (types.Lifecycle, error) {
 	return vm.insertResult, vm.insertErr
 }
 
-func (vm *stagerMock) UpdateStage(context.Context, types.UUID, types.Stage, types.CID) error {
+func (vm *lifecyclerMock) UpdateLifecycle(context.Context /*types.UUID,*/, types.Lifecycle, types.CID) error {
 	return vm.updateErr
 }
 
-func (vm *stagerMock) DeleteStage(context.Context, types.UUID, types.CID) error {
+func (vm *lifecyclerMock) DeleteLifecycle(context.Context, types.UUID, types.CID) error {
 	return vm.deleteErr
 }

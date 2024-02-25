@@ -30,7 +30,7 @@ type eventtyperMock struct {
 	deleteErr error
 }
 
-func Test_SelectAllEventTypes(t *testing.T) {
+func Test_GetAllEventTypes(t *testing.T) {
 	t.Parallel()
 	set := map[string]struct {
 		result []types.EventType

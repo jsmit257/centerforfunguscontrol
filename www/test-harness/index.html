@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -7,22 +8,45 @@
   <script>
   </script>
 
-  <link href="jquery-ui.min.css" rel="stylesheet">
+  <!-- <link href="jquery-ui.min.css" rel="stylesheet"> -->
   <link href="index.css" rel="stylesheet">
 </head>
 
 <body>
+  <div class="background-image"></div>
   <div class="main">
     <div class="header">
-      <div class="menuitem" name="lifecycle" />
-      <div class="menuitem" name="eventtype" />
-      <div class="menuitem" name="stage" />
-      <div class="menuitem" name="strain" />
-      <div class="menuitem" name="substrate" />
-      <div class="menuitem" name="vendor" />
-      <div class="menuitem" name="ingredients" />
+      <div class="menuitem" name="lifecycle">lifecycles</div>
+      <div class="menuitem" name="vendor">vendors</div>
+      <div class="menuitem" name="ingredients">ingredients</div>
+      <div class="menuitem" name="strain">strains</div>
+      <div class="menuitem" name="substrate">substrates</div>
+      <div class="menuitem" name="stage">stages</div>
+      <div class="menuitem" name="eventtype">eventtypes</div>
     </div>
-    <div class="body"></div>
+    <div class="workspace">
+      <div class="lifecycle">
+        <div class="form"></div>
+        <div class="ndx">
+          <div class="columns">
+            <div class="ctime header">Created At</div>
+            <div class="location header">Location</div>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <div class="id">1</div>
+              <div class="ctime">2024-01-01T00:10:12Z</div>
+              <div class="location">drivers seat</div>
+            </div>
+            <div class="row">
+              <div class="id">2</div>
+              <div class="ctime">2024-03-01T00:11:55Z</div>
+              <div class="location">roof rack</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="footer"></div>
   </div>
 </body>
