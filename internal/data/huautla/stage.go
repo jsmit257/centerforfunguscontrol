@@ -27,10 +27,10 @@ func (ha *HuautlaAdaptor) GetStage(w http.ResponseWriter, r *http.Request) {
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
-	} else if vendor, err := ha.db.SelectStage(r.Context(), types.UUID(id), ms.cid); err != nil {
+	} else if s, err := ha.db.SelectStage(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch stage")
 	} else {
-		ms.send(w, vendor, http.StatusOK)
+		ms.send(w, s, http.StatusOK)
 	}
 }
 
