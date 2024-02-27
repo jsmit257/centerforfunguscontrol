@@ -22,6 +22,7 @@ func (ha *HuautlaAdaptor) GetStrainAttributeNames(w http.ResponseWriter, r *http
 func (ha *HuautlaAdaptor) PostStrainAttribute(w http.ResponseWriter, r *http.Request) {
 	ms := ha.start("PostStrainAttribute")
 	defer ms.end()
+	defer r.Body.Close()
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required strain id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -41,6 +42,7 @@ func (ha *HuautlaAdaptor) PostStrainAttribute(w http.ResponseWriter, r *http.Req
 func (ha *HuautlaAdaptor) PatchStrainAttribute(w http.ResponseWriter, r *http.Request) {
 	ms := ha.start("PatchStrainAttribute")
 	defer ms.end()
+	defer r.Body.Close()
 
 	if stID := chi.URLParam(r, "st_id"); stID == "" {
 		ms.error(w, fmt.Errorf("missing required strain id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -64,7 +66,7 @@ func (ha *HuautlaAdaptor) DeleteStrainAttribute(w http.ResponseWriter, r *http.R
 	if stID := chi.URLParam(r, "st_id"); stID == "" {
 		ms.error(w, fmt.Errorf("missing required strain id parameter"), http.StatusBadRequest, "missing required id parameter")
 	} else if atID := chi.URLParam(r, "at_id"); atID == "" {
-		ms.error(w, fmt.Errorf("missing required strainattribute id parameter"), http.StatusBadRequest, "missing required id parameter")
+		ms.error(w, fmt.Errorf("missing required attribute id parameter"), http.StatusBadRequest, "missing required id parameter")
 	} else if s, err := ha.db.SelectStrain(r.Context(), types.UUID(stID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch strain")
 	} else if err := ha.db.RemoveAttribute(r.Context(), &s, types.UUID(atID), ms.cid); err != nil {

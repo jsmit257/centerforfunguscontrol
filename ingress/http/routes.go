@@ -7,17 +7,18 @@ import (
 
 	"github.com/jsmit257/huautla/types"
 
+	"github.com/jsmit257/centerforfunguscontrol/internal/config"
 	"github.com/jsmit257/centerforfunguscontrol/internal/data/huautla"
 )
 
-func newHuautla(r *chi.Mux, l *log.Entry) {
+func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
 	ha, _ := huautla.New(
 		&types.Config{
-			PGHost: "localhost",
-			PGPort: 5432,
-			PGUser: "postgres",
-			PGPass: "root",
-			PGSSL:  "disable",
+			PGHost: cfg.HuautlaHost,
+			PGPort: uint(cfg.HuautlaPort),
+			PGUser: cfg.HuautlaUser,
+			PGPass: cfg.HuautlaPass,
+			PGSSL:  cfg.HuautlaSSL,
 		},
 		l.WithField("database", "huautla"),
 		nil)
@@ -67,6 +68,7 @@ func newHuautla(r *chi.Mux, l *log.Entry) {
 	r.Patch("/strain/{st_id}/attribute/{at_name}/{at_value}", ha.PatchStrainAttribute)
 	r.Delete("/strain/{st_id}/attribute/{at_id}", ha.DeleteStrainAttribute)
 
+	r.Get("/lifecycles", nil) // TODO: needs to be implemented in huautla
 	r.Get("/lifecycle/{id}", ha.GetLifecycle)
 	r.Post("/lifecycle", ha.PostLifecycle)
 	r.Patch("/lifecycle/{id}", ha.PatchLifecycle)

@@ -12,6 +12,9 @@ github.com/google/uuid
 github.com/jsmit257/huautla
 github.com/jsmit257/huautla/internal/data
 github.com/jsmit257/huautla/types
+# github.com/kelseyhightower/envconfig v1.4.0
+## explicit
+github.com/kelseyhightower/envconfig
 # github.com/lib/pq v1.10.9
 ## explicit; go 1.13
 github.com/lib/pq

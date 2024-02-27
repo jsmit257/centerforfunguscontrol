@@ -15,7 +15,7 @@ func (ha *HuautlaAdaptor) GetAllIngredients(w http.ResponseWriter, r *http.Reque
 	defer ms.end()
 
 	if Ingredients, err := ha.db.SelectAllIngredients(r.Context(), ms.cid); err != nil {
-		ms.error(w, err, http.StatusInternalServerError, "failed to fetch Ingredients")
+		ms.error(w, err, http.StatusInternalServerError, "failed to fetch ingredients")
 	} else {
 		ms.send(w, Ingredients, http.StatusOK)
 	}
@@ -28,7 +28,7 @@ func (ha *HuautlaAdaptor) GetIngredient(w http.ResponseWriter, r *http.Request) 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
 	} else if s, err := ha.db.SelectIngredient(r.Context(), types.UUID(id), ms.cid); err != nil {
-		ms.error(w, err, http.StatusInternalServerError, "failed to fetch Ingredient")
+		ms.error(w, err, http.StatusInternalServerError, "failed to fetch ingredient")
 	} else {
 		ms.send(w, s, http.StatusOK)
 	}
@@ -46,7 +46,7 @@ func (ha *HuautlaAdaptor) PostIngredient(w http.ResponseWriter, r *http.Request)
 	} else if err := json.Unmarshal(body, &i); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body") // XXX: better status code??
 	} else if i, err = ha.db.InsertIngredient(r.Context(), i, ms.cid); err != nil {
-		ms.error(w, err, http.StatusInternalServerError, "failed to insert Ingredient")
+		ms.error(w, err, http.StatusInternalServerError, "failed to insert ingredient")
 	}
 
 	ms.send(w, i, http.StatusOK)
@@ -66,7 +66,7 @@ func (ha *HuautlaAdaptor) PatchIngredient(w http.ResponseWriter, r *http.Request
 	} else if err := json.Unmarshal(body, &i); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body") // XXX: better status code??
 	} else if err = ha.db.UpdateIngredient(r.Context(), types.UUID(id), i, ms.cid); err != nil {
-		ms.error(w, err, http.StatusInternalServerError, "failed to update Ingredient")
+		ms.error(w, err, http.StatusInternalServerError, "failed to update ingredient")
 	}
 
 	ms.send(w, nil, http.StatusNoContent)
@@ -79,7 +79,7 @@ func (ha *HuautlaAdaptor) DeleteIngredient(w http.ResponseWriter, r *http.Reques
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
 	} else if err := ha.db.DeleteIngredient(r.Context(), types.UUID(id), ms.cid); err != nil {
-		ms.error(w, err, http.StatusInternalServerError, "failed to delete Ingredient")
+		ms.error(w, err, http.StatusInternalServerError, "failed to delete ingredient")
 	} else {
 		ms.send(w, nil, http.StatusNoContent)
 	}

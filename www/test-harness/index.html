@@ -4,47 +4,162 @@
 <head>
   <title>test harness</title>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
-  <script src="index.js"></script>
-  <script>
-  </script>
+  <script src="./js/index.js" defer></script>
 
   <!-- <link href="jquery-ui.min.css" rel="stylesheet"> -->
-  <link href="index.css" rel="stylesheet">
+  <link href="./css/index.css" rel="stylesheet">
 </head>
 
 <body>
   <div class="background-image"></div>
   <div class="main">
     <div class="header">
-      <div class="menuitem" name="lifecycle">lifecycles</div>
-      <div class="menuitem" name="vendor">vendors</div>
-      <div class="menuitem" name="ingredients">ingredients</div>
-      <div class="menuitem" name="strain">strains</div>
-      <div class="menuitem" name="substrate">substrates</div>
-      <div class="menuitem" name="stage">stages</div>
-      <div class="menuitem" name="eventtype">eventtypes</div>
+      <div class="menuitem hover selected" name="lifecycle">lifecycles</div>
+      <div class="menuitem hover" name="vendor">vendors</div>
+      <div class="menuitem hover" name="ingredient">ingredients</div>
+      <div class="menuitem hover" name="strain">strains</div>
+      <div class="menuitem hover" name="substrate">substrates</div>
+      <div class="menuitem hover" name="stage">stages</div>
+      <div class="menuitem hover" name="eventtype">eventtypes</div>
     </div>
     <div class="workspace">
-      <div class="lifecycle">
-        <div class="form"></div>
+      <div class="lifecycle active">
+        <form>
+          <ul class="lifecycle">
+
+            <li class="attr">
+              <div class="label">Location</div>
+              <div class="input">
+                <div class="static">erehwon</div>
+                <input class="live" name="location" />
+              </div>
+            </li>
+
+            <li class="attr">
+              <div class="label">Strain Cost</div>
+              <div class="input">
+                <div class="static">0.00</div>
+                <input class="live" name="strain_cost" />
+              </div>
+            </li>
+
+            <li class="attr">
+              <div class="label">Grain Cost</div>
+              <div class="input">
+                <div class="static">0.00</div>
+                <input class="live" name="grain_cost" />
+              </div>
+            </li>
+
+            <li class="attr">
+              <div class="label">Bulk Cost</div>
+              <div class="input">
+                <div class="static">0.00</div>
+                <input class="live" name="bulk_cost" />
+              </div>
+            </li>
+
+            <li class="attr">
+              <div class="label">Yield(g)</div>
+              <div class="input">
+                <div class="static">0.00</div>
+                <input class="live" name="yield" />
+              </div>
+            </li>
+
+            <li class="attr">
+              <div class="label">Count</div>
+              <div class="input">
+                <div class="static">0</div>
+                <input class="live" name="count" />
+              </div>
+            </li>
+
+            <li class="attr">
+              <div class="label">Gross(g)</div>
+              <div class="input">
+                <div class="static">0.00</div>
+                <input class="live" name="gross" />
+              </div>
+            </li>
+
+            <li class="attr">
+              <div class="label">Modified At</div>
+              <div class="input">
+                <div class="static">yesterday</div>
+                <input class="live" name="modified_date" />
+              </div>
+            </li>
+
+            <li class="attr">
+              <div class="label">Created At</div>
+              <div class="input">
+                <div class="static">yesterday</div>
+                <input class="live" name="create_date" />
+              </div>
+            </li>
+
+            <li class="attr expandable expanded">
+              <div class="label">Strain</div>
+              <div class="input">
+                <ul name="strain">
+                  <li class="attr">
+                    <div class="label">Name</div>
+                    <div class="input">
+                      <div class="static">Morel</div>
+                      <input class="live" name="create_date" />
+                    </div>
+                  </li>
+                  <li class="attr expandable">
+                    <div class="label">Vendor</div>
+                    <div class="input">
+                      <ul name="vendor">
+                        <li class="attr">
+                          <div class="label">Name</div>
+                          <div class="input">
+                            <div class="static">127.0.0.1</div>
+                            <input class="live" name="create_date" />
+                          </div>
+                        </li>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+          <!-- grain
+          bulk
+          events -->
+        </form>
         <div class="ndx">
           <div class="columns">
             <div class="ctime header">Created At</div>
             <div class="location header">Location</div>
           </div>
           <div class="rows">
-            <div class="row">
-              <div class="id">1</div>
-              <div class="ctime">2024-01-01T00:10:12Z</div>
-              <div class="location">drivers seat</div>
-            </div>
-            <div class="row">
-              <div class="id">2</div>
-              <div class="ctime">2024-03-01T00:11:55Z</div>
-              <div class="location">roof rack</div>
-            </div>
+            <div class="row hover">placeholder</div>
           </div>
+          <div class="new-lifecycle">new</div>
+
         </div>
+      </div>
+      <div class="vendor" style="background-color: red;">
+        placeholder
+      </div>
+      <div class="ingredient" style="background-color: purple;">
+        placeholder
+      </div>
+      <div class="strain" style="background-color: cyan;">
+        placeholder
+      </div>
+      <div class="substrate" style="background-color: white;">
+        placeholder
+      </div>
+      <div class="stage" style="background-color: rgb(0, 255, 17);">
+        placeholder
+      </div>
+      <div class="eventtype" style="background-color: rgb(255, 255, 0);">
+        placeholder
       </div>
     </div>
     <div class="footer"></div>

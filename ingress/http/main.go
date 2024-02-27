@@ -1,12 +1,23 @@
 package main
 
 import (
-	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+
+	"github.com/jsmit257/centerforfunguscontrol/internal/config"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/go-chi/chi/v5"
 )
+
+var traps = []os.Signal{
+	os.Interrupt,
+	syscall.SIGTERM,
+	syscall.SIGHUP,
+	syscall.SIGQUIT}
 
 // var mtrcs = metrics.ServiceMetrics.MustCurryWith(prometheus.Labels{})
 
@@ -16,9 +27,9 @@ import (
 // }
 
 func main() {
-	r := chi.NewRouter()
-	// r.Use(authnz) // someday, maybe more too
+	cfg := config.NewConfig()
 
+	log.SetLevel(log.InfoLevel) // TODO: grab this from the config
 	log.SetFormatter(&log.JSONFormatter{})
 
 	log := log.WithFields(log.Fields{
@@ -26,21 +37,30 @@ func main() {
 		"ingress": "http",
 	})
 
-	newHuautla(r, log)
+	wg := &sync.WaitGroup{}
 
-	r.Get("/hc", hc)
+	r := chi.NewRouter()
+	// r.Use(authnz) // someday, maybe more too
 
-	// r.Get("/metrics", mtrcs)
+	r.Get("/", staticContent)
+	r.Get("/css/{f}", staticContent)
+	r.Get("/css/images/{f}", staticContent)
+	r.Get("/js/{f}", staticContent)
+	r.Get("/images/{f}", staticContent)
 
-	_ = &http.Server{
-		// Addr:    fmt.Sprintf("%s:%d", hostAddr, hostPort),
-		Handler: r,
-	}
+	newHuautla(cfg, r, log)
+	newHC(r)
+	newServer(cfg, r, wg, log)
 
+	wg.Wait()
+
+	log.Info("done")
 }
 
-// not much of a healthcheck, for now
-func hc(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("OK"))
+func trap(log *log.Entry) {
+	trapped := make(chan os.Signal, len(traps))
+
+	signal.Notify(trapped, traps...)
+
+	log.WithField("sig", <-trapped).Info("stopping app with signal")
 }

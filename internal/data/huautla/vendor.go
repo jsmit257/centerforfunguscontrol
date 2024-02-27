@@ -59,10 +59,10 @@ func (ha *HuautlaAdaptor) PatchVendor(w http.ResponseWriter, r *http.Request) {
 
 	var v types.Vendor
 
-	if body, err := io.ReadAll(r.Body); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "couldn't read request body") // XXX: better status code??
-	} else if id := chi.URLParam(r, "id"); id == "" {
+	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if body, err := io.ReadAll(r.Body); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "couldn't read request body") // XXX: better status code??
 	} else if err := json.Unmarshal(body, &v); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body") // XXX: better status code??
 	} else if err = ha.db.UpdateVendor(r.Context(), types.UUID(id), v, ms.cid); err != nil {

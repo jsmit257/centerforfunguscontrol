@@ -14,7 +14,7 @@ import (
 // 	ms := ha.start("GetAllLifecycles")
 // 	defer ms.end()
 
-// 	if lifecycles, err := ha.db.SelectAllLifecycles(r.Context(), ms.cid); err != nil {
+// 	if lifecycles, err := ha.db.SelectLifecyclesNdx(r.Context(), ms.cid); err != nil {
 // 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycles")
 // 	} else {
 // 		ms.send(w, lifecycles, http.StatusOK)

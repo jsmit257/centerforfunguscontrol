@@ -13,6 +13,7 @@ import (
 func (ha *HuautlaAdaptor) PostSubstrateIngredient(w http.ResponseWriter, r *http.Request) {
 	ms := ha.start("PostSubstrateIngredient")
 	defer ms.end()
+	defer r.Body.Close()
 
 	var i types.Ingredient
 
@@ -35,6 +36,7 @@ func (ha *HuautlaAdaptor) PostSubstrateIngredient(w http.ResponseWriter, r *http
 func (ha *HuautlaAdaptor) PatchSubstrateIngredient(w http.ResponseWriter, r *http.Request) {
 	ms := ha.start("PostSubstrateIngredient")
 	defer ms.end()
+	defer r.Body.Close()
 
 	var newI types.Ingredient
 
