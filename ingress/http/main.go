@@ -15,8 +15,8 @@ import (
 
 var traps = []os.Signal{
 	os.Interrupt,
-	syscall.SIGTERM,
 	syscall.SIGHUP,
+	syscall.SIGTERM,
 	syscall.SIGQUIT}
 
 // var mtrcs = metrics.ServiceMetrics.MustCurryWith(prometheus.Labels{})
@@ -26,10 +26,14 @@ var traps = []os.Signal{
 // 	return nil
 // }
 
+type global struct {
+	l *log.Entry
+}
+
 func main() {
 	cfg := config.NewConfig()
 
-	log.SetLevel(log.InfoLevel) // TODO: grab this from the config
+	log.SetLevel(log.DebugLevel) // TODO: grab this from the config
 	log.SetFormatter(&log.JSONFormatter{})
 
 	log := log.WithFields(log.Fields{
@@ -37,16 +41,18 @@ func main() {
 		"ingress": "http",
 	})
 
+	g := &global{log}
+
 	wg := &sync.WaitGroup{}
 
 	r := chi.NewRouter()
 	// r.Use(authnz) // someday, maybe more too
 
-	r.Get("/", staticContent)
-	r.Get("/css/{f}", staticContent)
-	r.Get("/css/images/{f}", staticContent)
-	r.Get("/js/{f}", staticContent)
-	r.Get("/images/{f}", staticContent)
+	r.Get("/", g.staticContent)
+	r.Get("/css/{f}", g.staticContent)
+	r.Get("/css/images/{f}", g.staticContent)
+	r.Get("/js/{f}", g.staticContent)
+	r.Get("/images/{f}", g.staticContent)
 
 	newHuautla(cfg, r, log)
 	newHC(r)

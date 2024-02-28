@@ -1,3 +1,8 @@
+.uuid {
+  display: none;
+
+}
+
 .selected {
   background-color: #204050 !important;
   border-radius: 15px;
@@ -60,97 +65,13 @@ body>.main>.workspace {
 body>.main>.workspace>div {
   display: none;
   float: left;
+  height: 100%;
+  width: 100%;
 }
 
 body>.main>.workspace>.active {
   display: block;
 }
-
-body>.main>.workspace>.lifecycle {
-  width: 100%;
-}
-
-body>.main>.workspace>.lifecycle>div {
-  display: block;
-  height: 100%;
-  position: relative;
-}
-
-body>.main>.workspace>.lifecycle>form {
-  float: left;
-  width: 67%;
-}
-
-body>.main>.workspace>.lifecycle>.ndx {
-  border-style: groove;
-  border-width: 2px;
-  float: right;
-  margin-top: 20%;
-  width: 32%;
-}
-
-body>.main>.workspace>.lifecycle>.ndx>div {
-  float: left;
-  width: 100%;
-}
-
-body>.main>.workspace>.lifecycle>.ndx>.columns {
-  border-bottom: ridge;
-  border-width: 2px;
-  font-size: larger;
-  height: max-content;
-  margin-bottom: .25em;
-  margin-top: .25em;
-  position: relative;
-}
-
-body>.main>.workspace>.lifecycle>.ndx>.columns>.header {
-  font-weight: bolder;
-  text-align: center;
-}
-
-body>.main>.workspace>.lifecycle>.ndx>.rows>.row {
-  float: left;
-  font-size: larger;
-  padding-bottom: .3em;
-  padding-top: .3em;
-  width: 100%;
-}
-
-body>.main>.workspace>.lifecycle>.ndx>.rows>.row>div,
-body>.main>.workspace>.lifecycle>.ndx>.columns>.header {
-  float: left;
-  padding-left: 1em;
-  width: 44%;
-}
-
-body>.main>.workspace>.lifecycle>.ndx>.rows>.row>.id {
-  display: none;
-}
-
-body>.main>.workspace>.lifecycle>.ndx>.rows>.row>.ctime {}
-
-body>.main>.workspace>.lifecycle>.ndx>.rows>.row>.location {}
-
-body>.main>.workspace>.lifecycle>.ndx>.new-lifecycle {
-  color: cyan;
-  cursor: pointer;
-  font-size: larger;
-  font-weight: bolder;
-  margin-bottom: .25em;
-  margin-top: .25em;
-  text-align: center;
-}
-
-body>.main>.workspace>.lifecycle>.ndx>.new-lifecycle:hover {
-  background-color: aquamarine;
-  color: black;
-  text-decoration: underline;
-}
-
-/**
- * BEGIN: stuff for the lifecycle tree
- */
 
 body>.main>.workspace {
   font-size: larger;
@@ -169,36 +90,35 @@ body>.main>.workspace>.active>form>ul li.attr>div.label {
   width: 8em;
 }
 
-body>.main>.workspace>.active>form>ul li.expandable {
+body>.main>.workspace>.active>form>ul li.attr.expandable {
   list-style-type: georgian;
   display: none;
 }
 
-body>.main>.workspace>.active>form>ul li.expandable>div.input {
+body>.main>.workspace>.active>form>ul:hover {
+  cursor: pointer;
+}
+
+body>.main>.workspace>.active>form>ul li.attr.expandable>div.input {
   display: block;
-  /* padding-left: -8em; */
 }
 
-body>.main>.workspace>.active>form>ul li.expandable>div.input>ul {
+body>.main>.workspace>.active>form>ul li.attr.expandable>div.input>ul {
   float: none;
-  padding-left: -8em;
 }
 
-body>.main>.workspace>.active>form>ul li.expanded {
-  list-style-type: circle !important;
+body>.main>.workspace>.active>form>ul li.attr.expanded {
+  cursor: auto !important;
   display: revert;
+  list-style-type: circle !important;
+}
+
+body>.main>.workspace>.active>form>ul li.attr>.input>.live {
+  display: none;
 }
 
 body>.main>.workspace>.active>form>ul li.attr.expanded>.input {
   clear: left;
-}
-
-body>.main>.workspace>.active>form>ul li.attr>.input>.live {
-  display: none;
-}
-
-body>.main>.workspace>.active>form>ul li.attr>.input>.live {
-  display: none;
 }
 
 body>.main>.workspace>.active>form>ul li.attr.editing>.input>.live {
@@ -210,5 +130,35 @@ body>.main>.workspace>.active>form>ul li.attr.editing>.input>.static {
 }
 
 /**
- * END: stuff for the lifecycle tree
- */
+  * BEGIN: stuff for vendors table
+  */
+body>.main>.workspace>.vendor.active>.table {
+  float: left;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 5%;
+  width: 50%;
+}
+
+body>.main>.workspace>.vendor.active>.table>div {
+  clear: left;
+  float: left;
+}
+
+body>.main>.workspace>.vendor.active>.table>.columns>div {
+  float: left;
+  line-height: 150%;
+  font-weight: bolder;
+  text-align: center;
+  width: 50%;
+}
+
+body>.main>.workspace>.vendor.active>.table>.rows>.row>div {
+  float: left;
+  line-height: 150%;
+  width: 50%;
+}
+
+/**
+    * BEGIN: stuff for vendors table
+    */

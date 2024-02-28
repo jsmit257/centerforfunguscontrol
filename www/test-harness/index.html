@@ -5,9 +5,11 @@
   <title>test harness</title>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
   <script src="./js/index.js" defer></script>
+  <script src="./js/lifecycle.js" defer></script>
 
   <!-- <link href="jquery-ui.min.css" rel="stylesheet"> -->
   <link href="./css/index.css" rel="stylesheet">
+  <link href="./css/lifecycle.css" rel="stylesheet">
 </head>
 
 <body>
@@ -24,10 +26,18 @@
     </div>
     <div class="workspace">
       <div class="lifecycle active">
-        <form>
+        <form name="lifecycle">
           <ul class="lifecycle">
 
-            <li class="attr">
+            <li class="attr uuid" name="id">
+              <div class="label">ID</div>
+              <div class="input">
+                <div class="static"></div>
+                <input class="live" name="id" />
+              </div>
+            </li>
+
+            <li class="attr" name="location">
               <div class="label">Location</div>
               <div class="input">
                 <div class="static">erehwon</div>
@@ -35,7 +45,7 @@
               </div>
             </li>
 
-            <li class="attr">
+            <li class="attr" name="strain_cost">
               <div class="label">Strain Cost</div>
               <div class="input">
                 <div class="static">0.00</div>
@@ -43,7 +53,7 @@
               </div>
             </li>
 
-            <li class="attr">
+            <li class="attr" name="grain_cost">
               <div class="label">Grain Cost</div>
               <div class="input">
                 <div class="static">0.00</div>
@@ -51,7 +61,7 @@
               </div>
             </li>
 
-            <li class="attr">
+            <li class="attr" name="bulk_cost">
               <div class="label">Bulk Cost</div>
               <div class="input">
                 <div class="static">0.00</div>
@@ -59,7 +69,7 @@
               </div>
             </li>
 
-            <li class="attr">
+            <li class="attr" name="yield">
               <div class="label">Yield(g)</div>
               <div class="input">
                 <div class="static">0.00</div>
@@ -67,7 +77,7 @@
               </div>
             </li>
 
-            <li class="attr">
+            <li class="attr" name="count">
               <div class="label">Count</div>
               <div class="input">
                 <div class="static">0</div>
@@ -75,7 +85,7 @@
               </div>
             </li>
 
-            <li class="attr">
+            <li class="attr" name="gross">
               <div class="label">Gross(g)</div>
               <div class="input">
                 <div class="static">0.00</div>
@@ -83,7 +93,7 @@
               </div>
             </li>
 
-            <li class="attr">
+            <li class="attr" name="modified_date">
               <div class="label">Modified At</div>
               <div class="input">
                 <div class="static">yesterday</div>
@@ -91,7 +101,7 @@
               </div>
             </li>
 
-            <li class="attr">
+            <li class="attr" name="create_date">
               <div class="label">Created At</div>
               <div class="input">
                 <div class="static">yesterday</div>
@@ -137,14 +147,46 @@
             <div class="location header">Location</div>
           </div>
           <div class="rows">
-            <div class="row hover">placeholder</div>
+            <div class="row hover">
+              <div class="id">0</div>
+              <div class="created_at">0</div>
+              <div class="location">???</div>
+            </div>
+            <div class="row hover">
+              <div class="id">1</div>
+              <div class="created_at">1</div>
+              <div class="location">???</div>
+            </div>
           </div>
           <div class="new-lifecycle">new</div>
 
         </div>
       </div>
-      <div class="vendor" style="background-color: red;">
-        placeholder
+      <div class="vendor">
+        <div class="table">
+          <div class="columns">
+            <div class="column vendorname">Name</div>
+            <div class="column vendorsite">Website</div>
+          </div>
+          <div class="rows">
+            <!-- <div class="row">
+              <div class="column vendorname">Name</div>
+              <div class="column vendorsite">Website</div>
+            </div>
+            <div class="row">
+              <div class="column vendorname">Name</div>
+              <div class="column vendorsite">Website</div>
+            </div>
+            <div class="row">
+              <div class="column vendorname">Name</div>
+              <div class="column vendorsite">Website</div>
+            </div> -->
+          </div>
+          <div class="columns buttonbar">
+            <div class="add">new</div>
+            <div class="add">remove</div>
+          </div>
+        </div>
       </div>
       <div class="ingredient" style="background-color: purple;">
         placeholder

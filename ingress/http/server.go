@@ -49,7 +49,10 @@ func newServer(cfg *config.Config, r *chi.Mux, wg *sync.WaitGroup, log *log.Entr
 	}
 }
 
-func staticContent(w http.ResponseWriter, r *http.Request) {
+func (g *global) staticContent(w http.ResponseWriter, r *http.Request) {
+	l := g.l.WithField("method", "staticContent")
+	l.Debug("starting work")
+
 	mt := "text/html"
 	f := chi.URLParam(r, "f")
 	if f == "" {
@@ -57,6 +60,9 @@ func staticContent(w http.ResponseWriter, r *http.Request) {
 	} else {
 		f = "./www/test-harness" + r.RequestURI
 	}
+
+	l = l.WithField("resource", f)
+	l.Info("fetching resource")
 
 	// XXX: poor-man's mime typing; could at least use the parent directory
 	if strings.HasSuffix(f, ".js") {
@@ -67,12 +73,17 @@ func staticContent(w http.ResponseWriter, r *http.Request) {
 		mt = "image/png"
 	}
 
+	l = l.WithField("content-type", mt)
+	l.Info("fetching resource")
+
 	if result, err := os.ReadFile(f); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(f))
+		l.WithError(err).Error("fetching resource")
 	} else {
 		w.Header().Add("Content-type", mt)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(result)
 	}
+	l.Info("done work")
 }

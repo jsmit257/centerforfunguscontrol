@@ -77,6 +77,7 @@ func (ms *methodStats) send(w http.ResponseWriter, i interface{}, sc int) {
 	if err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to marshal result")
 	} else {
+		w.Header().Add("Content-type", "application/json")
 		w.WriteHeader(sc)
 		if _, err = w.Write([]byte(result)); err != nil {
 			ms.error(w, err, http.StatusInternalServerError, "failed to send result")
