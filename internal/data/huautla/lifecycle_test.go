@@ -16,8 +16,8 @@ import (
 )
 
 type lifecyclerMock struct {
-	selectAllResult []types.Lifecycle
-	selectAllErr    error
+	selectIndexResult []types.Lifecycle
+	selectIndexErr    error
 
 	selectResult types.Lifecycle
 	selectErr    error
@@ -30,56 +30,56 @@ type lifecyclerMock struct {
 	deleteErr error
 }
 
-// func Test_GetAllLifecycles(t *testing.T) {
-// 	t.Parallel()
-// 	set := map[string]struct {
-// 		result []types.Lifecycle
-// 		err    error
-// 		sc     int
-// 	}{
-// 		"happy_path": {
-// 			result: []types.Lifecycle{},
-// 			sc:     http.StatusOK,
-// 		},
-// 		"db_error": {
-// 			err: fmt.Errorf("db error"),
-// 			sc:  http.StatusInternalServerError,
-// 		},
-// 	}
+func Test_GetLifecycleIndex(t *testing.T) {
+	t.Parallel()
+	set := map[string]struct {
+		result []types.Lifecycle
+		err    error
+		sc     int
+	}{
+		"happy_path": {
+			result: []types.Lifecycle{},
+			sc:     http.StatusOK,
+		},
+		"db_error": {
+			err: fmt.Errorf("db error"),
+			sc:  http.StatusInternalServerError,
+		},
+	}
 
-// 	for k, v := range set {
-// 		k, v := k, v
-// 		ha := &HuautlaAdaptor{
-// 			db: &huautlaMock{
-// 				Lifecycler: &lifecyclerMock{
-// 					selectAllResult: v.result,
-// 					selectAllErr:    v.err,
-// 				},
-// 			},
-// 			log:   log.WithFields(log.Fields{"test": "Test_GetAllLifecycles", "case": k}),
-// 			mtrcs: nil,
-// 		}
+	for k, v := range set {
+		k, v := k, v
+		ha := &HuautlaAdaptor{
+			db: &huautlaMock{
+				Lifecycler: &lifecyclerMock{
+					selectIndexResult: v.result,
+					selectIndexErr:    v.err,
+				},
+			},
+			log:   log.WithFields(log.Fields{"test": "Test_GetLifecycleIndex", "case": k}),
+			mtrcs: nil,
+		}
 
-// 		t.Run(k, func(t *testing.T) {
-// 			t.Parallel()
-// 			w := httptest.NewRecorder()
-// 			defer w.Result().Body.Close()
-// 			r, _ := http.NewRequestWithContext(
-// 				context.WithValue(
-// 					context.Background(),
-// 					chi.RouteCtxKey,
-// 					chi.NewRouteContext()),
-// 				http.MethodGet,
-// 				"url",
-// 				bytes.NewReader([]byte("")))
-// 			ha.GetAllLifecycles(w, r)
-// 			require.Equal(t, v.sc, w.Code)
-// 			if w.Code == http.StatusOK {
-// 				checkResult(t, w.Body, &[]types.Lifecycle{}, &v.result)
-// 			}
-// 		})
-// 	}
-// }
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					context.Background(),
+					chi.RouteCtxKey,
+					chi.NewRouteContext()),
+				http.MethodGet,
+				"url",
+				bytes.NewReader([]byte("")))
+			ha.GetLifecycleIndex(w, r)
+			require.Equal(t, v.sc, w.Code)
+			if w.Code == http.StatusOK {
+				checkResult(t, w.Body, &[]types.Lifecycle{}, &v.result)
+			}
+		})
+	}
+}
 
 func Test_GetLifecycle(t *testing.T) {
 	t.Parallel()
@@ -96,6 +96,10 @@ func Test_GetLifecycle(t *testing.T) {
 			sc:     http.StatusOK,
 		},
 		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"url_decode_error": {
+			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
@@ -281,6 +285,10 @@ func Test_DeleteLifecycle(t *testing.T) {
 		"missing_id": {
 			sc: http.StatusBadRequest,
 		},
+		"url_decode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
 		"db_error": {
 			id:  "1",
 			err: fmt.Errorf("db error"),
@@ -330,9 +338,9 @@ func serializeLifecycle(l *types.Lifecycle) []byte {
 	return result
 }
 
-// func (vm *lifecyclerMock) SelectAllLifecycles(context.Context, types.CID) ([]types.Lifecycle, error) {
-// 	return vm.selectAllResult, vm.selectAllErr
-// }
+func (vm *lifecyclerMock) SelectLifecycleIndex(context.Context, types.CID) ([]types.Lifecycle, error) {
+	return vm.selectIndexResult, vm.selectIndexErr
+}
 
 func (vm *lifecyclerMock) SelectLifecycle(context.Context, types.UUID, types.CID) (types.Lifecycle, error) {
 	return vm.selectResult, vm.selectErr

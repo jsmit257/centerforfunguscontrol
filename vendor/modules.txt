@@ -7,7 +7,7 @@ github.com/go-chi/chi/v5
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
-# github.com/jsmit257/huautla v0.0.0-20240224211729-884e1996327b
+# github.com/jsmit257/huautla v0.0.0-20240304144629-744ff35c0fce
 ## explicit; go 1.20
 github.com/jsmit257/huautla
 github.com/jsmit257/huautla/internal/data

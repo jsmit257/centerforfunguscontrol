@@ -5,21 +5,22 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jsmit257/huautla/types"
 )
 
-// func (ha *HuautlaAdaptor) GetAllLifecycles(w http.ResponseWriter, r *http.Request) {
-// 	ms := ha.start("GetAllLifecycles")
-// 	defer ms.end()
+func (ha *HuautlaAdaptor) GetLifecycleIndex(w http.ResponseWriter, r *http.Request) {
+	ms := ha.start("GetAllLifecycles")
+	defer ms.end()
 
-// 	if lifecycles, err := ha.db.SelectLifecyclesNdx(r.Context(), ms.cid); err != nil {
-// 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycles")
-// 	} else {
-// 		ms.send(w, lifecycles, http.StatusOK)
-// 	}
-// }
+	if lifecycles, err := ha.db.SelectLifecycleIndex(r.Context(), ms.cid); err != nil {
+		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycles")
+	} else {
+		ms.send(w, lifecycles, http.StatusOK)
+	}
+}
 
 func (ha *HuautlaAdaptor) GetLifecycle(w http.ResponseWriter, r *http.Request) {
 	ms := ha.start("GetLifecycle")
@@ -27,6 +28,8 @@ func (ha *HuautlaAdaptor) GetLifecycle(w http.ResponseWriter, r *http.Request) {
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if s, err := ha.db.SelectLifecycle(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycle")
 	} else {
@@ -78,6 +81,8 @@ func (ha *HuautlaAdaptor) DeleteLifecycle(w http.ResponseWriter, r *http.Request
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if err := ha.db.DeleteLifecycle(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete lifecycle")
 	} else {

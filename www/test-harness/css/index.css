@@ -1,18 +1,17 @@
 .uuid {
   display: none;
-
 }
 
 .selected {
   background-color: #204050 !important;
-  border-radius: 15px;
+  border-radius: 25px;
   cursor: default !important;
   text-decoration: none !important;
 }
 
 .hover:hover {
   background-color: #004050;
-  border-radius: 15px;
+  border-radius: 25px;
   cursor: pointer;
   text-decoration: underline;
 }
@@ -27,8 +26,8 @@ body {
 
 body>.background-image {
   background-image: url(./images/background.png);
-  background-repeat: no-repeat;
   background-position: center;
+  background-repeat: no-repeat;
   background-size: contain;
   height: 100%;
   left: 0;
@@ -37,18 +36,23 @@ body>.background-image {
   width: 100%;
 }
 
-body>.main>.header {
+body>.main>div {
   float: left;
+  width: 100%;
+}
+
+body>.main>.header {
   height: max-content;
   border-bottom-color: cornflowerblue;
   border-bottom-style: ridge;
   border-bottom-width: 2px;
-  width: 100%;
 }
 
 body>.main>.header>.menuitem {
+  border-radius: 15px;
   float: left;
-  font-size: 150%;
+  font-size: larger;
+  font-weight: bolder;
   padding-bottom: 1em;
   padding-top: 1em;
   position: relative;
@@ -57,15 +61,14 @@ body>.main>.header>.menuitem {
 }
 
 body>.main>.workspace {
-  float: left;
-  height: 80%;
-  width: 100%;
+  font-size: larger;
+  line-height: 140%;
 }
 
 body>.main>.workspace>div {
   display: none;
   float: left;
-  height: 100%;
+  margin-top: 3em;
   width: 100%;
 }
 
@@ -73,34 +76,32 @@ body>.main>.workspace>.active {
   display: block;
 }
 
-body>.main>.workspace {
-  font-size: larger;
-  line-height: 140%;
+body>.main>.workspace>.active>form {
+  position: relative;
 }
 
-body>.main>.workspace>.active>form>ul li.attr {
+body>.main>.workspace>.active>form ul>li.attr {
   list-style-type: disc;
 }
 
-body>.main>.workspace>.active>form>ul li.attr>div {
+body>.main>.workspace>.active>form ul>li.attr>div {
   float: left;
 }
 
-body>.main>.workspace>.active>form>ul li.attr>div.label {
+body>.main>.workspace>.active>form ul>li.attr>div.label {
   width: 8em;
 }
 
-body>.main>.workspace>.active>form>ul li.attr.expandable {
-  list-style-type: georgian;
-  display: none;
+body>.main>.workspace>.active>form ul>li.attr.expandable {
+  list-style-type: disc;
 }
 
-body>.main>.workspace>.active>form>ul:hover {
+body>.main>.workspace>.active>form ul>li.attr.expandable>.label:hover {
   cursor: pointer;
 }
 
 body>.main>.workspace>.active>form>ul li.attr.expandable>div.input {
-  display: block;
+  display: none;
 }
 
 body>.main>.workspace>.active>form>ul li.attr.expandable>div.input>ul {
@@ -109,16 +110,16 @@ body>.main>.workspace>.active>form>ul li.attr.expandable>div.input>ul {
 
 body>.main>.workspace>.active>form>ul li.attr.expanded {
   cursor: auto !important;
-  display: revert;
   list-style-type: circle !important;
+}
+
+body>.main>.workspace>.active>form>ul li.attr.expanded>div.input {
+  clear: left;
+  display: revert;
 }
 
 body>.main>.workspace>.active>form>ul li.attr>.input>.live {
   display: none;
-}
-
-body>.main>.workspace>.active>form>ul li.attr.expanded>.input {
-  clear: left;
 }
 
 body>.main>.workspace>.active>form>ul li.attr.editing>.input>.live {
@@ -129,36 +130,33 @@ body>.main>.workspace>.active>form>ul li.attr.editing>.input>.static {
   display: none;
 }
 
-/**
-  * BEGIN: stuff for vendors table
-  */
-body>.main>.workspace>.vendor.active>.table {
+body>.main>.workspace .buttonbar {
+  background-color: #f0f8ff33;
+  border-radius: 25px;
   float: left;
-  margin-left: auto;
-  margin-right: auto;
-  margin-top: 5%;
-  width: 50%;
+  margin-left: -1em;
+  margin-top: 1em;
+  padding-bottom: .5em;
+  padding-left: 1em;
+  padding-right: 1em;
+  padding-top: .5em;
+  position: relative;
+  width: 100%;
 }
 
-body>.main>.workspace>.vendor.active>.table>div {
-  clear: left;
-  float: left;
+body>.main>.workspace .buttonbar>img {
+  border-style: none;
+  float: right;
+  height: 25px;
+  opacity: .5;
+  width: 25px;
 }
 
-body>.main>.workspace>.vendor.active>.table>.columns>div {
-  float: left;
-  line-height: 150%;
-  font-weight: bolder;
-  text-align: center;
-  width: 50%;
+body>.main>.workspace .buttonbar>img.active {
+  cursor: pointer;
+  opacity: 1;
 }
 
-body>.main>.workspace>.vendor.active>.table>.rows>.row>div {
+body>.main>.workspace .buttonbar>.remove {
   float: left;
-  line-height: 150%;
-  width: 50%;
 }
-
-/**
-    * BEGIN: stuff for vendors table
-    */

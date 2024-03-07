@@ -6,17 +6,23 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
   <script src="./js/index.js" defer></script>
   <script src="./js/lifecycle.js" defer></script>
+  <script src="./js/vendor.js" defer></script>
+  <script src="./js/ingredient.js" defer></script>
+  <script src="./js/stage.js" defer></script>
 
   <!-- <link href="jquery-ui.min.css" rel="stylesheet"> -->
   <link href="./css/index.css" rel="stylesheet">
   <link href="./css/lifecycle.css" rel="stylesheet">
+  <link href="./css/vendor.css" rel="stylesheet">
+  <link href="./css/ingredient.css" rel="stylesheet">
+  <link href="./css/stage.css" rel="stylesheet">
 </head>
 
 <body>
   <div class="background-image"></div>
   <div class="main">
     <div class="header">
-      <div class="menuitem hover selected" name="lifecycle">lifecycles</div>
+      <div class="menuitem hover" name="lifecycle">lifecycles</div>
       <div class="menuitem hover" name="vendor">vendors</div>
       <div class="menuitem hover" name="ingredient">ingredients</div>
       <div class="menuitem hover" name="strain">strains</div>
@@ -25,12 +31,11 @@
       <div class="menuitem hover" name="eventtype">eventtypes</div>
     </div>
     <div class="workspace">
-      <div class="lifecycle active">
+      <div class="lifecycle">
         <form name="lifecycle">
           <ul class="lifecycle">
 
             <li class="attr uuid" name="id">
-              <div class="label">ID</div>
               <div class="input">
                 <div class="static"></div>
                 <input class="live" name="id" />
@@ -40,7 +45,7 @@
             <li class="attr" name="location">
               <div class="label">Location</div>
               <div class="input">
-                <div class="static">erehwon</div>
+                <div class="static hover"></div>
                 <input class="live" name="location" />
               </div>
             </li>
@@ -48,7 +53,7 @@
             <li class="attr" name="strain_cost">
               <div class="label">Strain Cost</div>
               <div class="input">
-                <div class="static">0.00</div>
+                <div class="static hover"></div>
                 <input class="live" name="strain_cost" />
               </div>
             </li>
@@ -56,7 +61,7 @@
             <li class="attr" name="grain_cost">
               <div class="label">Grain Cost</div>
               <div class="input">
-                <div class="static">0.00</div>
+                <div class="static hover"></div>
                 <input class="live" name="grain_cost" />
               </div>
             </li>
@@ -64,7 +69,7 @@
             <li class="attr" name="bulk_cost">
               <div class="label">Bulk Cost</div>
               <div class="input">
-                <div class="static">0.00</div>
+                <div class="static hover"></div>
                 <input class="live" name="bulk_cost" />
               </div>
             </li>
@@ -72,7 +77,7 @@
             <li class="attr" name="yield">
               <div class="label">Yield(g)</div>
               <div class="input">
-                <div class="static">0.00</div>
+                <div class="static hover"></div>
                 <input class="live" name="yield" />
               </div>
             </li>
@@ -80,15 +85,15 @@
             <li class="attr" name="count">
               <div class="label">Count</div>
               <div class="input">
-                <div class="static">0</div>
+                <div class="static hover"></div>
                 <input class="live" name="count" />
               </div>
             </li>
 
             <li class="attr" name="gross">
               <div class="label">Gross(g)</div>
-              <div class="input">
-                <div class="static">0.00</div>
+              <div class="input hover">
+                <div class="static"></div>
                 <input class="live" name="gross" />
               </div>
             </li>
@@ -96,7 +101,7 @@
             <li class="attr" name="modified_date">
               <div class="label">Modified At</div>
               <div class="input">
-                <div class="static">yesterday</div>
+                <div class="static"></div>
                 <input class="live" name="modified_date" />
               </div>
             </li>
@@ -104,7 +109,7 @@
             <li class="attr" name="create_date">
               <div class="label">Created At</div>
               <div class="input">
-                <div class="static">yesterday</div>
+                <div class="static"></div>
                 <input class="live" name="create_date" />
               </div>
             </li>
@@ -113,53 +118,61 @@
               <div class="label">Strain</div>
               <div class="input">
                 <ul name="strain">
-                  <li class="attr">
+                  <li class="attr uuid" name="id">
+                    <div class="input">
+                      <div class="static"></div>
+                      <input class="live" name="id" />
+                    </div>
+                  </li>
+                  <li class="attr" name="species">
+                    <div class="label">Species</div>
+                    <div class="input">
+                      <div class="static" name="species"></div>
+                    </div>
+                  </li>
+                  <li class="attr" name="name">
                     <div class="label">Name</div>
                     <div class="input">
-                      <div class="static">Morel</div>
-                      <input class="live" name="create_date" />
+                      <div class="static" name="name"></div>
+                    </div>
+                  </li>
+                  <li class="attr" name="ctime">
+                    <div class="label">Lot</div>
+                    <div class="input">
+                      <div class="static" name="ctime"></div>
                     </div>
                   </li>
                   <li class="attr expandable">
                     <div class="label">Vendor</div>
                     <div class="input">
                       <ul name="vendor">
-                        <li class="attr">
+                        <li class="attr" name="name">
                           <div class="label">Name</div>
                           <div class="input">
-                            <div class="static">127.0.0.1</div>
-                            <input class="live" name="create_date" />
+                            <div class="static" name="name"></div>
                           </div>
                         </li>
+                      </ul>
                     </div>
                   </li>
                 </ul>
               </div>
             </li>
           </ul>
-          <!-- grain
-          bulk
-          events -->
         </form>
         <div class="ndx">
           <div class="columns">
             <div class="ctime header">Created At</div>
             <div class="location header">Location</div>
           </div>
-          <div class="rows">
-            <div class="row hover">
-              <div class="id">0</div>
-              <div class="created_at">0</div>
-              <div class="location">???</div>
-            </div>
-            <div class="row hover">
-              <div class="id">1</div>
-              <div class="created_at">1</div>
-              <div class="location">???</div>
-            </div>
-          </div>
-          <div class="new-lifecycle">new</div>
-
+          <div class="rows"></div>
+        </div>
+        <div class="buttonbar">
+          <img class="remove" />
+          <img class="refresh active" />
+          <img class="cancel" />
+          <img class="add active" />
+          <img class="ok" />
         </div>
       </div>
       <div class="vendor">
@@ -168,28 +181,30 @@
             <div class="column vendorname">Name</div>
             <div class="column vendorsite">Website</div>
           </div>
-          <div class="rows">
-            <!-- <div class="row">
-              <div class="column vendorname">Name</div>
-              <div class="column vendorsite">Website</div>
-            </div>
-            <div class="row">
-              <div class="column vendorname">Name</div>
-              <div class="column vendorsite">Website</div>
-            </div>
-            <div class="row">
-              <div class="column vendorname">Name</div>
-              <div class="column vendorsite">Website</div>
-            </div> -->
-          </div>
-          <div class="columns buttonbar">
-            <div class="add">new</div>
-            <div class="add">remove</div>
+          <div class="rows"></div>
+          <div class="buttonbar">
+            <img class="remove" />
+            <img class="refresh active" />
+            <img class="cancel" />
+            <img class="add active" />
+            <img class="ok" />
           </div>
         </div>
       </div>
-      <div class="ingredient" style="background-color: purple;">
-        placeholder
+      <div class="ingredient">
+        <div class="table">
+          <div class="columns">
+            <div class="column name">Name</div>
+          </div>
+          <div class="rows"></div>
+          <div class="buttonbar">
+            <img class="remove" />
+            <img class="refresh active" />
+            <img class="cancel" />
+            <img class="add active" />
+            <img class="ok" />
+          </div>
+        </div>
       </div>
       <div class="strain" style="background-color: cyan;">
         placeholder
@@ -197,8 +212,20 @@
       <div class="substrate" style="background-color: white;">
         placeholder
       </div>
-      <div class="stage" style="background-color: rgb(0, 255, 17);">
-        placeholder
+      <div class="stage">
+        <div class="table">
+          <div class="columns">
+            <div class="column name">Name</div>
+          </div>
+          <div class="rows"></div>
+          <div class="buttonbar">
+            <img class="remove" />
+            <img class="refresh active" />
+            <img class="cancel" />
+            <img class="add active" />
+            <img class="ok" />
+          </div>
+        </div>
       </div>
       <div class="eventtype" style="background-color: rgb(255, 255, 0);">
         placeholder
@@ -206,6 +233,9 @@
     </div>
     <div class="footer"></div>
   </div>
+  <script defer>
+    console.log('click', $('body>.main>.header>.menuitem[name=vendor]').trigger('click'))
+  </script>
 </body>
 
 </html>

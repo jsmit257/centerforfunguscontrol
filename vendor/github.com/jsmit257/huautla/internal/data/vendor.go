@@ -25,7 +25,9 @@ func (db *Conn) SelectAllVendors(ctx context.Context, cid types.CID) ([]types.Ve
 
 	for rows.Next() {
 		row := types.Vendor{}
-		rows.Scan(&row.UUID, &row.Name)
+		if err = rows.Scan(&row.UUID, &row.Name, &row.Website); err != nil {
+			break
+		}
 		result = append(result, row)
 	}
 
@@ -41,7 +43,7 @@ func (db *Conn) SelectVendor(ctx context.Context, id types.UUID, cid types.CID) 
 	result := types.Vendor{UUID: id}
 	err = db.
 		QueryRowContext(ctx, psqls["vendor"]["select"], id).
-		Scan(&result.Name)
+		Scan(&result.Name, &result.Website)
 
 	return result, err
 }
@@ -56,7 +58,7 @@ func (db *Conn) InsertVendor(ctx context.Context, v types.Vendor, cid types.CID)
 	deferred, start, l := initAccessFuncs("InsertVendor", db.logger, v.UUID, cid)
 	defer deferred(start, err, l)
 
-	result, err = db.ExecContext(ctx, psqls["vendor"]["insert"], v.UUID, v.Name)
+	result, err = db.ExecContext(ctx, psqls["vendor"]["insert"], v.UUID, v.Name, v.Website)
 	if err != nil {
 		if isPrimaryKeyViolation(err) {
 			return db.InsertVendor(ctx, v, cid) // FIXME: infinite loop?
@@ -77,7 +79,7 @@ func (db *Conn) UpdateVendor(ctx context.Context, id types.UUID, v types.Vendor,
 	deferred, start, l := initAccessFuncs("UpdateVendor", db.logger, id, cid)
 	defer deferred(start, err, l)
 
-	result, err := db.ExecContext(ctx, psqls["vendor"]["update"], v.Name, id)
+	result, err := db.ExecContext(ctx, psqls["vendor"]["update"], v.Name, v.Website, id)
 	if err != nil {
 		return err
 	} else if rows, err := result.RowsAffected(); err != nil {

@@ -54,8 +54,8 @@ func main() {
 	r.Get("/js/{f}", g.staticContent)
 	r.Get("/images/{f}", g.staticContent)
 
-	newHuautla(cfg, r, log)
 	newHC(r)
+	newHuautla(cfg, r, log)
 	newServer(cfg, r, wg, log)
 
 	wg.Wait()

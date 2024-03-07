@@ -9,6 +9,33 @@ import (
 	"github.com/jsmit257/huautla/types"
 )
 
+func (db *Conn) SelectLifecycleIndex(ctx context.Context, cid types.CID) ([]types.Lifecycle, error) {
+	var err error
+
+	deferred, start, l := initAccessFuncs("SelectLifecycleIndex", db.logger, "nil", cid)
+	defer deferred(start, err, l)
+
+	var rows *sql.Rows
+
+	result := make([]types.Lifecycle, 0, 1000)
+
+	rows, err = db.query.QueryContext(ctx, psqls["lifecycle"]["index"])
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		row := types.Lifecycle{}
+		if err = rows.Scan(&row.UUID, &row.Location, &row.CTime); err != nil {
+			break
+		}
+		result = append(result, row)
+	}
+
+	return result, err
+
+}
+
 func (db *Conn) SelectLifecycle(ctx context.Context, id types.UUID, cid types.CID) (types.Lifecycle, error) {
 	var err error
 
@@ -20,8 +47,8 @@ func (db *Conn) SelectLifecycle(ctx context.Context, id types.UUID, cid types.CI
 	if err = db.
 		QueryRowContext(ctx, psqls["lifecycle"]["select"], id).
 		Scan(
-			&result.Name,
 			&result.Location,
+			&result.StrainCost,
 			&result.GrainCost,
 			&result.BulkCost,
 			&result.Yield,
@@ -30,19 +57,24 @@ func (db *Conn) SelectLifecycle(ctx context.Context, id types.UUID, cid types.CI
 			&result.MTime,
 			&result.CTime,
 			&result.Strain.UUID,
+			&result.Strain.Species,
 			&result.Strain.Name,
+			&result.Strain.CTime,
 			&result.Strain.Vendor.UUID,
 			&result.Strain.Vendor.Name,
+			&result.Strain.Vendor.Website,
 			&result.GrainSubstrate.UUID,
 			&result.GrainSubstrate.Name,
 			&result.GrainSubstrate.Type,
 			&result.GrainSubstrate.Vendor.UUID,
 			&result.GrainSubstrate.Vendor.Name,
+			&result.GrainSubstrate.Vendor.Website,
 			&result.BulkSubstrate.UUID,
 			&result.BulkSubstrate.Name,
 			&result.BulkSubstrate.Type,
 			&result.BulkSubstrate.Vendor.UUID,
-			&result.BulkSubstrate.Vendor.Name); err != nil {
+			&result.BulkSubstrate.Vendor.Name,
+			&result.BulkSubstrate.Vendor.Website); err != nil {
 
 		return result, err
 	}
@@ -74,8 +106,8 @@ func (db *Conn) InsertLifecycle(ctx context.Context, lc types.Lifecycle, cid typ
 
 	result, err = db.ExecContext(ctx, psqls["lifecycle"]["insert"],
 		lc.UUID,
-		lc.Name,
 		lc.Location,
+		lc.StrainCost,
 		lc.GrainCost,
 		lc.BulkCost,
 		lc.Yield,
@@ -112,8 +144,8 @@ func (db *Conn) UpdateLifecycle(ctx context.Context, lc types.Lifecycle, cid typ
 	defer deferred(start, err, l)
 
 	if result, err = db.ExecContext(ctx, psqls["lifecycle"]["update"],
-		lc.Name,
 		lc.Location,
+		lc.StrainCost,
 		lc.GrainCost,
 		lc.BulkCost,
 		lc.Yield,

@@ -32,7 +32,8 @@ func (db *Conn) SelectAllSubstrates(ctx context.Context, cid types.CID) ([]types
 			&row.Name,
 			&row.Type,
 			&row.Vendor.UUID,
-			&row.Vendor.Name); err != nil {
+			&row.Vendor.Name,
+			&row.Vendor.Website); err != nil {
 
 			return nil, err
 		} else if err = db.GetAllIngredients(ctx, &row, cid); err != nil {
@@ -58,7 +59,8 @@ func (db *Conn) SelectSubstrate(ctx context.Context, id types.UUID, cid types.CI
 			&result.Name,
 			&result.Type,
 			&result.Vendor.UUID,
-			&result.Vendor.Name); err == nil {
+			&result.Vendor.Name,
+			&result.Vendor.Website); err == nil {
 
 		err = db.GetAllIngredients(ctx, &result, "SelectSubstrate")
 	}

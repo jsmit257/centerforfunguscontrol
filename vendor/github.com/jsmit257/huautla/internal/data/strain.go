@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/jsmit257/huautla/types"
 )
@@ -29,9 +30,12 @@ func (db *Conn) SelectAllStrains(ctx context.Context, cid types.CID) ([]types.St
 		row := types.Strain{}
 		err = rows.Scan(
 			&row.UUID,
+			&row.Species,
 			&row.Name,
+			&row.CTime,
 			&row.Vendor.UUID,
-			&row.Vendor.Name)
+			&row.Vendor.Name,
+			&row.Vendor.Website)
 
 		if err != nil {
 			break
@@ -54,9 +58,12 @@ func (db *Conn) SelectStrain(ctx context.Context, id types.UUID, cid types.CID) 
 	if err = db.
 		QueryRowContext(ctx, psqls["strain"]["select"], id).
 		Scan(
+			&result.Species,
 			&result.Name,
+			&result.CTime,
 			&result.Vendor.UUID,
-			&result.Vendor.Name); err == nil {
+			&result.Vendor.Name,
+			&result.Vendor.Website); err == nil {
 
 		err = db.GetAllAttributes(ctx, &result, cid)
 	}
@@ -68,11 +75,12 @@ func (db *Conn) InsertStrain(ctx context.Context, s types.Strain, cid types.CID)
 	var err error
 
 	s.UUID = types.UUID(db.generateUUID().String())
+	s.CTime = time.Now().UTC()
 
 	deferred, start, l := initAccessFuncs("InsertStrain", db.logger, s.UUID, cid)
 	defer deferred(start, err, l)
 
-	result, err := db.ExecContext(ctx, psqls["strain"]["insert"], s.UUID, s.Name, s.Vendor.UUID)
+	result, err := db.ExecContext(ctx, psqls["strain"]["insert"], s.UUID, s.Species, s.Name, s.CTime, s.Vendor.UUID)
 	if err != nil {
 		if isPrimaryKeyViolation(err) {
 			return db.InsertStrain(ctx, s, cid) // FIXME: infinite loop?
@@ -93,7 +101,7 @@ func (db *Conn) UpdateStrain(ctx context.Context, id types.UUID, s types.Strain,
 	deferred, start, l := initAccessFuncs("UpdateStrain", db.logger, id, cid)
 	defer deferred(start, err, l)
 
-	result, err := db.ExecContext(ctx, psqls["strain"]["update"], s.Name, id)
+	result, err := db.ExecContext(ctx, psqls["strain"]["update"], s.Species, s.Name, id)
 	if err != nil {
 		return err
 	} else if rows, err := result.RowsAffected(); err != nil {

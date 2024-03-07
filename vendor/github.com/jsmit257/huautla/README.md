@@ -25,7 +25,7 @@ To develop and test locally, you'll need at least:
 ???
 
 ### Object Model
-These are the database tables described as a golang object tree; the sql perspective is [here](./sql/init.pgsql); no, this isn't really yaml
+These are the database tables described as a golang object tree; the sql perspective is [here](./sql/init.pgsql), and there are [cliff-notes](./sql/cliff-notes); no, this isn't really yaml
 
 ```yaml
 vendor: &vendor

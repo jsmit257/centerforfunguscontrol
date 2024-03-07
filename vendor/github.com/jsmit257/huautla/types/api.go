@@ -17,9 +17,9 @@ type (
 	}
 
 	Eventer interface {
-		GetLifecycleEvents(ctx context.Context, lc *Lifecycle, cid CID) error
 		SelectByEventType(ctx context.Context, et EventType, cid CID) ([]Event, error)
 		SelectEvent(ctx context.Context, id UUID, cid CID) (Event, error)
+		GetLifecycleEvents(ctx context.Context, lc *Lifecycle, cid CID) error
 		AddEvent(ctx context.Context, lc *Lifecycle, e Event, cid CID) error
 		ChangeEvent(ctx context.Context, lc *Lifecycle, e Event, cid CID) error
 		RemoveEvent(ctx context.Context, lc *Lifecycle, id UUID, cid CID) error
@@ -42,6 +42,7 @@ type (
 	}
 
 	Lifecycler interface {
+		SelectLifecycleIndex(ctx context.Context, cid CID) ([]Lifecycle, error)
 		SelectLifecycle(ctx context.Context, id UUID, cid CID) (Lifecycle, error)
 		InsertLifecycle(ctx context.Context, lc Lifecycle, cid CID) (Lifecycle, error)
 		UpdateLifecycle(ctx context.Context, lc Lifecycle, cid CID) error

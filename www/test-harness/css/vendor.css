@@ -1,0 +1,32 @@
+body>.main>.workspace>.vendor.active>.table {
+  float: left;
+  margin-left: 10%;
+  width: 50%;
+}
+
+body>.main>.workspace>.vendor.active>.table>div {
+  float: left;
+  width: 100%;
+}
+
+body>.main>.workspace>.vendor.active>.table>.columns>div {
+  float: left;
+  line-height: 150%;
+  font-weight: bolder;
+  text-align: center;
+  width: 50%;
+}
+
+
+body>.main>.workspace>.vendor.active>.table>.rows>.row {
+  float: left;
+  padding-left: 1em;
+  position: relative;
+  width: 100%;
+}
+
+body>.main>.workspace>.vendor.active>.table>.rows>.row>div {
+  float: left;
+  line-height: 150%;
+  width: 50%;
+}
