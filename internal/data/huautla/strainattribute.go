@@ -35,7 +35,7 @@ func (ha *HuautlaAdaptor) PostStrainAttribute(w http.ResponseWriter, r *http.Req
 	} else if err := ha.db.AddAttribute(r.Context(), &s, name, value, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add strainattribute")
 	} else {
-		ms.send(w, s, http.StatusOK)
+		ms.send(w, s, http.StatusCreated)
 	}
 }
 

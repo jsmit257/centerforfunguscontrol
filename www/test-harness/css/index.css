@@ -1,16 +1,16 @@
 .uuid {
-  display: none;
+  display: none !important;
 }
 
 .selected {
-  background-color: #204050 !important;
+  background-color: #bbbbbb33 !important;
   border-radius: 25px;
   cursor: default !important;
   text-decoration: none !important;
 }
 
 .hover:hover {
-  background-color: #004050;
+  background-color: #aaaaaa22;
   border-radius: 25px;
   cursor: pointer;
   text-decoration: underline;
@@ -128,35 +128,4 @@ body>.main>.workspace>.active>form>ul li.attr.editing>.input>.live {
 
 body>.main>.workspace>.active>form>ul li.attr.editing>.input>.static {
   display: none;
-}
-
-body>.main>.workspace .buttonbar {
-  background-color: #f0f8ff33;
-  border-radius: 25px;
-  float: left;
-  margin-left: -1em;
-  margin-top: 1em;
-  padding-bottom: .5em;
-  padding-left: 1em;
-  padding-right: 1em;
-  padding-top: .5em;
-  position: relative;
-  width: 100%;
-}
-
-body>.main>.workspace .buttonbar>img {
-  border-style: none;
-  float: right;
-  height: 25px;
-  opacity: .5;
-  width: 25px;
-}
-
-body>.main>.workspace .buttonbar>img.active {
-  cursor: pointer;
-  opacity: 1;
-}
-
-body>.main>.workspace .buttonbar>.remove {
-  float: left;
 }

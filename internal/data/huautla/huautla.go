@@ -65,9 +65,10 @@ func (ms *methodStats) elapsed() *log.Entry {
 
 // simple way to log, emit metrics and respond to the client in a regular way
 func (ms *methodStats) error(w http.ResponseWriter, err error, sc int, msg string) {
-	ms.elapsed().WithError(err).Error(msg)
 	// ms.m.??? // fit metrics in here eventually
+	w.Header().Add("cid", string(ms.cid))
 	w.WriteHeader(sc)
+	ms.elapsed().WithError(err).Error(msg)
 }
 
 // assuming noone has called error() on this object, send() is the next likely step,

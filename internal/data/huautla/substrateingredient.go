@@ -28,7 +28,7 @@ func (ha *HuautlaAdaptor) PostSubstrateIngredient(w http.ResponseWriter, r *http
 	} else if err = ha.db.AddIngredient(r.Context(), &s, i, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add substrateingredient")
 	} else {
-		ms.send(w, s, http.StatusOK)
+		ms.send(w, s, http.StatusCreated)
 	}
 
 }

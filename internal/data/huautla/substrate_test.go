@@ -155,7 +155,7 @@ func Test_PostSubstrate(t *testing.T) {
 		"happy_path": {
 			stage:  &types.Substrate{},
 			result: types.Substrate{},
-			sc:     http.StatusOK,
+			sc:     http.StatusCreated,
 		},
 		"missing_stage": {
 			sc: http.StatusBadRequest,

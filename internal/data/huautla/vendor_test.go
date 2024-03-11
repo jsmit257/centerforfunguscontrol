@@ -104,6 +104,10 @@ func Test_GetVendor(t *testing.T) {
 		"missing_id": {
 			sc: http.StatusBadRequest,
 		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
 		"db_error": {
 			id:  "1",
 			err: fmt.Errorf("db error"),
@@ -161,7 +165,7 @@ func Test_PostVendor(t *testing.T) {
 		"happy_path": {
 			vendor: &types.Vendor{},
 			result: types.Vendor{},
-			sc:     http.StatusOK,
+			sc:     http.StatusCreated,
 		},
 		"missing_vendor": {
 			sc: http.StatusBadRequest,
@@ -226,6 +230,10 @@ func Test_PatchVendor(t *testing.T) {
 		"missing_id": {
 			sc: http.StatusBadRequest,
 		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
 		"missing_vendor": {
 			id: "1",
 			sc: http.StatusBadRequest,
@@ -285,6 +293,10 @@ func Test_DeleteVendor(t *testing.T) {
 			sc: http.StatusNoContent,
 		},
 		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {

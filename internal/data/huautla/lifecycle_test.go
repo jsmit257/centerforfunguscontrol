@@ -159,7 +159,7 @@ func Test_PostLifecycle(t *testing.T) {
 		"happy_path": {
 			stage:  &types.Lifecycle{},
 			result: types.Lifecycle{},
-			sc:     http.StatusOK,
+			sc:     http.StatusCreated,
 		},
 		"missing_stage": {
 			sc: http.StatusBadRequest,

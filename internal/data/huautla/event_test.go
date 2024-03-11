@@ -40,7 +40,7 @@ func Test_PostEvent(t *testing.T) {
 		"happy_path": {
 			l:  types.Lifecycle{UUID: "happy_path"},
 			e:  &types.Event{UUID: "happy_path"},
-			sc: http.StatusOK,
+			sc: http.StatusCreated,
 		},
 		"event_error": {
 			l:     types.Lifecycle{UUID: "event_error"},

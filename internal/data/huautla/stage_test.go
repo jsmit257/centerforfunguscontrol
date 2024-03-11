@@ -98,6 +98,10 @@ func Test_GetStage(t *testing.T) {
 		"missing_id": {
 			sc: http.StatusBadRequest,
 		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
 		"db_error": {
 			id:  "1",
 			err: fmt.Errorf("db error"),
@@ -155,7 +159,7 @@ func Test_PostStage(t *testing.T) {
 		"happy_path": {
 			stage:  &types.Stage{},
 			result: types.Stage{},
-			sc:     http.StatusOK,
+			sc:     http.StatusCreated,
 		},
 		"missing_stage": {
 			sc: http.StatusBadRequest,
@@ -220,6 +224,10 @@ func Test_PatchStage(t *testing.T) {
 		"missing_id": {
 			sc: http.StatusBadRequest,
 		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
 		"missing_stage": {
 			id: "1",
 			sc: http.StatusBadRequest,
@@ -279,6 +287,10 @@ func Test_DeleteStage(t *testing.T) {
 			sc: http.StatusNoContent,
 		},
 		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {

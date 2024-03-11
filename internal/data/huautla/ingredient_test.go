@@ -98,6 +98,10 @@ func Test_GetIngredient(t *testing.T) {
 		"missing_id": {
 			sc: http.StatusBadRequest,
 		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
 		"db_error": {
 			id:  "1",
 			err: fmt.Errorf("db error"),
@@ -155,7 +159,7 @@ func Test_PostIngredient(t *testing.T) {
 		"happy_path": {
 			Ingredient: &types.Ingredient{},
 			result:     types.Ingredient{},
-			sc:         http.StatusOK,
+			sc:         http.StatusCreated,
 		},
 		"missing_Ingredient": {
 			sc: http.StatusBadRequest,
@@ -220,6 +224,10 @@ func Test_PatchIngredient(t *testing.T) {
 		"missing_id": {
 			sc: http.StatusBadRequest,
 		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
 		"missing_Ingredient": {
 			id: "1",
 			sc: http.StatusBadRequest,
@@ -279,6 +287,10 @@ func Test_DeleteIngredient(t *testing.T) {
 			sc: http.StatusNoContent,
 		},
 		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {

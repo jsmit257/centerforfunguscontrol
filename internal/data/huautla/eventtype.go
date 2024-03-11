@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jsmit257/huautla/types"
@@ -27,6 +28,8 @@ func (ha *HuautlaAdaptor) GetEventType(w http.ResponseWriter, r *http.Request) {
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if eventtype, err := ha.db.SelectEventType(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch eventtype")
 	} else {
@@ -42,14 +45,14 @@ func (ha *HuautlaAdaptor) PostEventType(w http.ResponseWriter, r *http.Request) 
 	var et types.EventType
 
 	if body, err := io.ReadAll(r.Body); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "couldn't read request body") // XXX: better status code??
+		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
 	} else if err := json.Unmarshal(body, &et); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body") // XXX: better status code??
+		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
 	} else if et, err = ha.db.InsertEventType(r.Context(), et, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to insert eventtype")
+	} else {
+		ms.send(w, et, http.StatusCreated)
 	}
-
-	ms.send(w, et, http.StatusOK)
 }
 
 func (ha *HuautlaAdaptor) PatchEventType(w http.ResponseWriter, r *http.Request) {
@@ -61,15 +64,17 @@ func (ha *HuautlaAdaptor) PatchEventType(w http.ResponseWriter, r *http.Request)
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if body, err := io.ReadAll(r.Body); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "couldn't read request body") // XXX: better status code??
-	} else if err := json.Unmarshal(body, &et); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body") // XXX: better status code??
+		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
+	} else if err := json.Unmarshal([]byte(body), &et); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
 	} else if err = ha.db.UpdateEventType(r.Context(), types.UUID(id), et, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to update eventtype")
+	} else {
+		ms.send(w, nil, http.StatusNoContent)
 	}
-
-	ms.send(w, nil, http.StatusNoContent)
 }
 
 func (ha *HuautlaAdaptor) DeleteEventType(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +83,8 @@ func (ha *HuautlaAdaptor) DeleteEventType(w http.ResponseWriter, r *http.Request
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if err := ha.db.DeleteEventType(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete eventtype")
 	} else {

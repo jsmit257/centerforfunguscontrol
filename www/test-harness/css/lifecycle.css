@@ -1,44 +1,22 @@
-body>.main>.workspace>.lifecycle {
-  width: 100%;
-}
-
-body>.main>.workspace>.lifecycle>div {
-  display: block;
-  height: 100%;
-  position: relative;
-}
-
 body>.main>.workspace>.lifecycle>form {
   float: left;
   width: 67%;
 }
 
 body>.main>.workspace>.lifecycle>.ndx {
-  border-style: groove;
-  border-width: 2px;
   float: right;
-  /* margin-top: 20%; */
+  height: 50%;
+  position: relative;
   width: 32%;
-}
-
-body>.main>.workspace>.lifecycle>.ndx>div {
-  float: left;
-  width: 100%;
 }
 
 body>.main>.workspace>.lifecycle>.ndx>.columns {
   border-bottom: ridge;
   border-width: 2px;
-  /* font-size: larger; */
   height: max-content;
   margin-bottom: .25em;
   margin-top: .25em;
   position: relative;
-}
-
-body>.main>.workspace>.lifecycle>.ndx>.columns>.header {
-  font-weight: bolder;
-  text-align: center;
 }
 
 body>.main>.workspace>.lifecycle>.ndx>.rows>.row {
@@ -52,6 +30,6 @@ body>.main>.workspace>.lifecycle>.ndx>.rows>.row {
 body>.main>.workspace>.lifecycle>.ndx>.rows>.row>div,
 body>.main>.workspace>.lifecycle>.ndx>.columns>.header {
   float: left;
-  padding-left: .3em;
-  width: 44%;
+  padding-left: 3%;
+  width: 47%;
 }

@@ -28,7 +28,7 @@ func (ha *HuautlaAdaptor) PostEvent(w http.ResponseWriter, r *http.Request) {
 	} else if err := ha.db.AddEvent(r.Context(), &l, e, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add event")
 	} else {
-		ms.send(w, l, http.StatusOK)
+		ms.send(w, l, http.StatusCreated)
 	}
 }
 

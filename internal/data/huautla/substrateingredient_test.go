@@ -34,7 +34,7 @@ func Test_PostSubstrateIngredient(t *testing.T) {
 		"happy_path": {
 			s:  types.Substrate{UUID: "happy"},
 			i:  &types.Ingredient{UUID: "rye", Name: "rye"},
-			sc: http.StatusOK,
+			sc: http.StatusCreated,
 		},
 		"missing_id": {
 			sc: http.StatusBadRequest,

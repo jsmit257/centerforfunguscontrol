@@ -155,7 +155,7 @@ func Test_PostStrain(t *testing.T) {
 		"happy_path": {
 			stage:  &types.Strain{},
 			result: types.Strain{},
-			sc:     http.StatusOK,
+			sc:     http.StatusCreated,
 		},
 		"missing_stage": {
 			sc: http.StatusBadRequest,

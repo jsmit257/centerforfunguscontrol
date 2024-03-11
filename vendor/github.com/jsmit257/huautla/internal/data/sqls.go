@@ -105,7 +105,12 @@ var psqls = sqlMap{
            s.uuid
       from stages s
      where s.uuid = $4`,
-		"update": `update event_types set name = $1 where uuid = $2`,
+		"update": `
+      update  event_types 
+         set  name = $1,
+              severity = $2,
+              stage_uuid = $3
+       where  uuid = $4`,
 		"delete": `delete from event_types where uuid = $1`,
 	},
 

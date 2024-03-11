@@ -1,0 +1,15 @@
+body>.main>.workspace>.eventtype>.table {
+  margin-left: 10%;
+  width: 70%;
+}
+
+body>.main>.workspace>.eventtype>.table>.columns>div {
+  width: 33%;
+}
+
+body>.main>.workspace>.eventtype>.table>.rows>.row>input,
+body>.main>.workspace>.eventtype>.table>.rows>.row>select,
+body>.main>.workspace>.eventtype>.table>.rows>.row>div {
+  margin-left: 2%;
+  width: 31%;
+}

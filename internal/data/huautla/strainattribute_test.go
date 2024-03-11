@@ -88,7 +88,7 @@ func Test_PostStrainAttribute(t *testing.T) {
 			s:  types.Strain{UUID: "happy_path"},
 			n:  "happy_path",
 			v:  "squirrel",
-			sc: http.StatusOK,
+			sc: http.StatusCreated,
 		},
 		"missing_strain_id": {
 			sc: http.StatusBadRequest,

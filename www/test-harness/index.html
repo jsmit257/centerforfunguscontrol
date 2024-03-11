@@ -5,17 +5,23 @@
   <title>test harness</title>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
   <script src="./js/index.js" defer></script>
+  <script src="./js/table.js" defer></script>
+  <script src="./js/buttonbar.js" defer></script>
   <script src="./js/lifecycle.js" defer></script>
   <script src="./js/vendor.js" defer></script>
   <script src="./js/ingredient.js" defer></script>
   <script src="./js/stage.js" defer></script>
+  <script src="./js/eventtype.js" defer></script>
 
   <!-- <link href="jquery-ui.min.css" rel="stylesheet"> -->
   <link href="./css/index.css" rel="stylesheet">
+  <link href="./css/table.css" rel="stylesheet">
+  <link href="./css/buttonbar.css" rel="stylesheet">
   <link href="./css/lifecycle.css" rel="stylesheet">
   <link href="./css/vendor.css" rel="stylesheet">
   <link href="./css/ingredient.css" rel="stylesheet">
   <link href="./css/stage.css" rel="stylesheet">
+  <link href="./css/eventtype.css" rel="stylesheet">
 </head>
 
 <body>
@@ -45,7 +51,7 @@
             <li class="attr" name="location">
               <div class="label">Location</div>
               <div class="input">
-                <div class="static hover"></div>
+                <div class="static"></div>
                 <input class="live" name="location" />
               </div>
             </li>
@@ -53,7 +59,7 @@
             <li class="attr" name="strain_cost">
               <div class="label">Strain Cost</div>
               <div class="input">
-                <div class="static hover"></div>
+                <div class="static"></div>
                 <input class="live" name="strain_cost" />
               </div>
             </li>
@@ -61,7 +67,7 @@
             <li class="attr" name="grain_cost">
               <div class="label">Grain Cost</div>
               <div class="input">
-                <div class="static hover"></div>
+                <div class="static"></div>
                 <input class="live" name="grain_cost" />
               </div>
             </li>
@@ -69,7 +75,7 @@
             <li class="attr" name="bulk_cost">
               <div class="label">Bulk Cost</div>
               <div class="input">
-                <div class="static hover"></div>
+                <div class="static"></div>
                 <input class="live" name="bulk_cost" />
               </div>
             </li>
@@ -77,7 +83,7 @@
             <li class="attr" name="yield">
               <div class="label">Yield(g)</div>
               <div class="input">
-                <div class="static hover"></div>
+                <div class="static"></div>
                 <input class="live" name="yield" />
               </div>
             </li>
@@ -85,14 +91,14 @@
             <li class="attr" name="count">
               <div class="label">Count</div>
               <div class="input">
-                <div class="static hover"></div>
+                <div class="static"></div>
                 <input class="live" name="count" />
               </div>
             </li>
 
             <li class="attr" name="gross">
               <div class="label">Gross(g)</div>
-              <div class="input hover">
+              <div class="input">
                 <div class="static"></div>
                 <input class="live" name="gross" />
               </div>
@@ -114,65 +120,50 @@
               </div>
             </li>
 
-            <li class="attr expandable expanded">
+            <li class="attr" name="strain">
               <div class="label">Strain</div>
               <div class="input">
-                <ul name="strain">
-                  <li class="attr uuid" name="id">
-                    <div class="input">
-                      <div class="static"></div>
-                      <input class="live" name="id" />
-                    </div>
-                  </li>
-                  <li class="attr" name="species">
-                    <div class="label">Species</div>
-                    <div class="input">
-                      <div class="static" name="species"></div>
-                    </div>
-                  </li>
-                  <li class="attr" name="name">
-                    <div class="label">Name</div>
-                    <div class="input">
-                      <div class="static" name="name"></div>
-                    </div>
-                  </li>
-                  <li class="attr" name="ctime">
-                    <div class="label">Lot</div>
-                    <div class="input">
-                      <div class="static" name="ctime"></div>
-                    </div>
-                  </li>
-                  <li class="attr expandable">
-                    <div class="label">Vendor</div>
-                    <div class="input">
-                      <ul name="vendor">
-                        <li class="attr" name="name">
-                          <div class="label">Name</div>
-                          <div class="input">
-                            <div class="static" name="name"></div>
-                          </div>
-                        </li>
-                      </ul>
-                    </div>
-                  </li>
-                </ul>
+                <div class="static"></div>
+                <input class="live" name="strain_uuid" />
+              </div>
+            </li>
+
+            <li class="attr" name="grain_substrate">
+              <div class="label">Grain</div>
+              <div class="input">
+                <div class="static"></div>
+                <input class="live" name="grainsubstrate_uuid" />
+              </div>
+            </li>
+
+            <li class="attr" name="bulk_substrate">
+              <div class="label">Bulk</div>
+              <div class="input">
+                <div class="static"></div>
+                <input class="live" name="bulksubstrate_uuid" />
               </div>
             </li>
           </ul>
+          <div class="buttonbar"></div>
+
+          <div class="table">
+            <div class="columns">
+              <div class="column name">Temperature</div>
+              <div class="column name">Humidity</div>
+              <div class="column name">Event Type</div>
+              <div class="column name">Modified At</div>
+              <div class="column name">Created At</div>
+            </div>
+            <div class="rows" name="event"></div>
+            <div class="buttonbar"></div>
+          </div>
         </form>
-        <div class="ndx">
+        <div class="table ndx">
           <div class="columns">
             <div class="ctime header">Created At</div>
             <div class="location header">Location</div>
           </div>
           <div class="rows"></div>
-        </div>
-        <div class="buttonbar">
-          <img class="remove" />
-          <img class="refresh active" />
-          <img class="cancel" />
-          <img class="add active" />
-          <img class="ok" />
         </div>
       </div>
       <div class="vendor">
@@ -181,14 +172,8 @@
             <div class="column vendorname">Name</div>
             <div class="column vendorsite">Website</div>
           </div>
-          <div class="rows"></div>
-          <div class="buttonbar">
-            <img class="remove" />
-            <img class="refresh active" />
-            <img class="cancel" />
-            <img class="add active" />
-            <img class="ok" />
-          </div>
+          <div class="rows" name="vendor"></div>
+          <div class="buttonbar"></div>
         </div>
       </div>
       <div class="ingredient">
@@ -196,14 +181,8 @@
           <div class="columns">
             <div class="column name">Name</div>
           </div>
-          <div class="rows"></div>
-          <div class="buttonbar">
-            <img class="remove" />
-            <img class="refresh active" />
-            <img class="cancel" />
-            <img class="add active" />
-            <img class="ok" />
-          </div>
+          <div class="rows" name="ingredient"></div>
+          <div class="buttonbar"></div>
         </div>
       </div>
       <div class="strain" style="background-color: cyan;">
@@ -217,18 +196,20 @@
           <div class="columns">
             <div class="column name">Name</div>
           </div>
-          <div class="rows"></div>
-          <div class="buttonbar">
-            <img class="remove" />
-            <img class="refresh active" />
-            <img class="cancel" />
-            <img class="add active" />
-            <img class="ok" />
-          </div>
+          <div class="rows" name="stage"></div>
+          <div class="buttonbar"></div>
         </div>
       </div>
-      <div class="eventtype" style="background-color: rgb(255, 255, 0);">
-        placeholder
+      <div class="eventtype">
+        <div class="table">
+          <div class="columns">
+            <div class="column name">Name</div>
+            <div class="column name">Severity</div>
+            <div class="column name">Stage</div>
+          </div>
+          <div class="rows" name="eventtype"></div>
+          <div class="buttonbar"></div>
+        </div>
       </div>
     </div>
     <div class="footer"></div>

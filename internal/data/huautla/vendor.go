@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jsmit257/huautla/types"
@@ -27,6 +28,8 @@ func (ha *HuautlaAdaptor) GetVendor(w http.ResponseWriter, r *http.Request) {
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if vendor, err := ha.db.SelectVendor(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch vendor")
 	} else {
@@ -49,7 +52,7 @@ func (ha *HuautlaAdaptor) PostVendor(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, err, http.StatusInternalServerError, "failed to insert vendor")
 	}
 
-	ms.send(w, v, http.StatusOK)
+	ms.send(w, v, http.StatusCreated)
 }
 
 func (ha *HuautlaAdaptor) PatchVendor(w http.ResponseWriter, r *http.Request) {
@@ -61,6 +64,8 @@ func (ha *HuautlaAdaptor) PatchVendor(w http.ResponseWriter, r *http.Request) {
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body") // XXX: better status code??
 	} else if err := json.Unmarshal(body, &v); err != nil {
@@ -78,6 +83,8 @@ func (ha *HuautlaAdaptor) DeleteVendor(w http.ResponseWriter, r *http.Request) {
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if err := ha.db.DeleteVendor(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete vendor")
 	} else {

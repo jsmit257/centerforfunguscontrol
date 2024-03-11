@@ -1,0 +1,29 @@
+body>.main>.workspace .buttonbar {
+  background-color: #aaaaaa22;
+  border-radius: 25px;
+  float: left;
+  margin-top: 1em;
+  padding-bottom: .3em;
+  padding-top: .3em;
+  position: relative;
+  width: 100%;
+}
+
+body>.main>.workspace .buttonbar>img {
+  border-style: none;
+  float: right;
+  height: 25px;
+  margin-right: 1em;
+  opacity: .5;
+  width: 25px;
+}
+
+body>.main>.workspace .buttonbar>img.active {
+  cursor: pointer;
+  opacity: 1;
+}
+
+body>.main>.workspace .buttonbar>.remove {
+  float: left;
+  margin-left: 1em;
+}

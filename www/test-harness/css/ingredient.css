@@ -20,7 +20,6 @@ body>.main>.workspace>.ingredient>.table>.columns>div {
 
 body>.main>.workspace>.ingredient>.table>.rows>.row {
   float: left;
-  padding-left: 1em;
   position: relative;
   width: 100%;
 }
@@ -28,5 +27,6 @@ body>.main>.workspace>.ingredient>.table>.rows>.row {
 body>.main>.workspace>.ingredient>.table>.rows>.row>div {
   float: left;
   line-height: 150%;
-  width: 100%;
+  margin-left: 2%;
+  width: 98%;
 }

@@ -1,0 +1,56 @@
+body>.main>.workspace>div .table {
+  border-radius: 17px;
+  background-color: #aaaaaa22;
+  float: left;
+  width: 100%;
+}
+
+body>.main>.workspace>div .table>div {
+  float: left;
+  width: 100%;
+}
+
+body>.main>.workspace>div .table>.columns>div {
+  float: left;
+  line-height: 150%;
+  font-weight: bolder;
+  text-align: center;
+}
+
+
+body>.main>.workspace>div .table>.rows>.row {
+  float: left;
+  position: relative;
+  width: 100%;
+}
+
+body>.main>.workspace>div .table>.rows>.row>input,
+body>.main>.workspace>div .table>.rows>.row>select,
+body>.main>.workspace>div .table>.rows>.row>div {
+  float: left;
+  line-height: 150%;
+}
+
+body>.main>.workspace>div .table>.rows>.row>input,
+body>.main>.workspace>div .table>.rows>.row>select {
+  background-color: inherit;
+  border-style: none;
+  color: inherit;
+  font-size: inherit;
+}
+
+body>.main>.workspace>div .table>.rows>.row>.live {
+  display: none;
+}
+
+body>.main>.workspace>div .table>.rows>.row.editing>.live {
+  display: revert;
+}
+
+body>.main>.workspace>div .table>.rows>.row.editing>.static {
+  display: none;
+}
+
+body>.main>.workspace>div .table>.rows>.row option {
+  background-color: #004050;
+}

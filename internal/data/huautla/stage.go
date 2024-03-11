@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jsmit257/huautla/types"
@@ -27,6 +28,8 @@ func (ha *HuautlaAdaptor) GetStage(w http.ResponseWriter, r *http.Request) {
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if s, err := ha.db.SelectStage(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch stage")
 	} else {
@@ -49,7 +52,7 @@ func (ha *HuautlaAdaptor) PostStage(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, err, http.StatusInternalServerError, "failed to insert stage")
 	}
 
-	ms.send(w, s, http.StatusOK)
+	ms.send(w, s, http.StatusCreated)
 }
 
 func (ha *HuautlaAdaptor) PatchStage(w http.ResponseWriter, r *http.Request) {
@@ -61,6 +64,8 @@ func (ha *HuautlaAdaptor) PatchStage(w http.ResponseWriter, r *http.Request) {
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body") // XXX: better status code??
 	} else if err := json.Unmarshal(body, &s); err != nil {
@@ -78,6 +83,8 @@ func (ha *HuautlaAdaptor) DeleteStage(w http.ResponseWriter, r *http.Request) {
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if err := ha.db.DeleteStage(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete stage")
 	} else {

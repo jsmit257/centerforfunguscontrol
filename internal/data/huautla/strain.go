@@ -49,7 +49,7 @@ func (ha *HuautlaAdaptor) PostStrain(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, err, http.StatusInternalServerError, "failed to insert strain")
 	}
 
-	ms.send(w, s, http.StatusOK)
+	ms.send(w, s, http.StatusCreated)
 }
 
 func (ha *HuautlaAdaptor) PatchStrain(w http.ResponseWriter, r *http.Request) {

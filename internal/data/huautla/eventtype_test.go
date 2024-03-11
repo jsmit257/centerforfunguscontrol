@@ -98,6 +98,10 @@ func Test_GetEventType(t *testing.T) {
 		"missing_id": {
 			sc: http.StatusBadRequest,
 		},
+		"urldecode_fails": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
 		"db_error": {
 			id:  "1",
 			err: fmt.Errorf("db error"),
@@ -155,7 +159,7 @@ func Test_PostEventType(t *testing.T) {
 		"happy_path": {
 			et:     &types.EventType{},
 			result: types.EventType{},
-			sc:     http.StatusOK,
+			sc:     http.StatusCreated,
 		},
 		"missing_evnttype": {
 			sc: http.StatusBadRequest,
@@ -224,6 +228,10 @@ func Test_PatchEventType(t *testing.T) {
 			id: "1",
 			sc: http.StatusBadRequest,
 		},
+		"urldecode_fails": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
 		"db_error": {
 			id:  "1",
 			et:  &types.EventType{},
@@ -279,6 +287,10 @@ func Test_DeleteEventType(t *testing.T) {
 			sc: http.StatusNoContent,
 		},
 		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_fails": {
+			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
