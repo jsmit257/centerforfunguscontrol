@@ -60,8 +60,8 @@ type (
 	StrainAttributer interface {
 		KnownAttributeNames(ctx context.Context, cid CID) ([]string, error)
 		GetAllAttributes(ctx context.Context, s *Strain, cid CID) error
-		AddAttribute(ctx context.Context, s *Strain, n, v string, cid CID) error
-		ChangeAttribute(ctx context.Context, s *Strain, n, v string, cid CID) error
+		AddAttribute(ctx context.Context, s *Strain, a StrainAttribute, cid CID) (StrainAttribute, error)
+		ChangeAttribute(ctx context.Context, s *Strain, a StrainAttribute, cid CID) error
 		RemoveAttribute(ctx context.Context, s *Strain, id UUID, cid CID) error
 	}
 

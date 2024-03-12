@@ -10,8 +10,10 @@
   <script src="./js/lifecycle.js" defer></script>
   <script src="./js/vendor.js" defer></script>
   <script src="./js/ingredient.js" defer></script>
+  <script src="./js/strain.js" defer></script>
   <script src="./js/stage.js" defer></script>
   <script src="./js/eventtype.js" defer></script>
+  <script src="./js/substrate.js" defer></script>
 
   <!-- <link href="jquery-ui.min.css" rel="stylesheet"> -->
   <link href="./css/index.css" rel="stylesheet">
@@ -19,9 +21,11 @@
   <link href="./css/buttonbar.css" rel="stylesheet">
   <link href="./css/lifecycle.css" rel="stylesheet">
   <link href="./css/vendor.css" rel="stylesheet">
+  <link href="./css/strain.css" rel="stylesheet">
   <link href="./css/ingredient.css" rel="stylesheet">
   <link href="./css/stage.css" rel="stylesheet">
   <link href="./css/eventtype.css" rel="stylesheet">
+  <link href="./css/substrate.css" rel="stylesheet">
 </head>
 
 <body>
@@ -29,148 +33,124 @@
   <div class="main">
     <div class="header">
       <div class="menuitem hover" name="lifecycle">lifecycles</div>
-      <div class="menuitem hover" name="vendor">vendors</div>
-      <div class="menuitem hover" name="ingredient">ingredients</div>
       <div class="menuitem hover" name="strain">strains</div>
       <div class="menuitem hover" name="substrate">substrates</div>
-      <div class="menuitem hover" name="stage">stages</div>
+      <div class="menuitem hover" name="ingredient">ingredients</div>
+      <div class="menuitem hover" name="vendor">vendors</div>
       <div class="menuitem hover" name="eventtype">eventtypes</div>
+      <div class="menuitem hover" name="stage">stages</div>
     </div>
     <div class="workspace">
       <div class="lifecycle">
-        <form name="lifecycle">
-          <ul class="lifecycle">
 
-            <li class="attr uuid" name="id">
-              <div class="input">
-                <div class="static"></div>
-                <input class="live" name="id" />
-              </div>
-            </li>
-
-            <li class="attr" name="location">
-              <div class="label">Location</div>
-              <div class="input">
-                <div class="static"></div>
-                <input class="live" name="location" />
-              </div>
-            </li>
-
-            <li class="attr" name="strain_cost">
-              <div class="label">Strain Cost</div>
-              <div class="input">
-                <div class="static"></div>
-                <input class="live" name="strain_cost" />
-              </div>
-            </li>
-
-            <li class="attr" name="grain_cost">
-              <div class="label">Grain Cost</div>
-              <div class="input">
-                <div class="static"></div>
-                <input class="live" name="grain_cost" />
-              </div>
-            </li>
-
-            <li class="attr" name="bulk_cost">
-              <div class="label">Bulk Cost</div>
-              <div class="input">
-                <div class="static"></div>
-                <input class="live" name="bulk_cost" />
-              </div>
-            </li>
-
-            <li class="attr" name="yield">
-              <div class="label">Yield(g)</div>
-              <div class="input">
-                <div class="static"></div>
-                <input class="live" name="yield" />
-              </div>
-            </li>
-
-            <li class="attr" name="count">
-              <div class="label">Count</div>
-              <div class="input">
-                <div class="static"></div>
-                <input class="live" name="count" />
-              </div>
-            </li>
-
-            <li class="attr" name="gross">
-              <div class="label">Gross(g)</div>
-              <div class="input">
-                <div class="static"></div>
-                <input class="live" name="gross" />
-              </div>
-            </li>
-
-            <li class="attr" name="modified_date">
-              <div class="label">Modified At</div>
-              <div class="input">
-                <div class="static"></div>
-                <input class="live" name="modified_date" />
-              </div>
-            </li>
-
-            <li class="attr" name="create_date">
-              <div class="label">Created At</div>
-              <div class="input">
-                <div class="static"></div>
-                <input class="live" name="create_date" />
-              </div>
-            </li>
-
-            <li class="attr" name="strain">
-              <div class="label">Strain</div>
-              <div class="input">
-                <div class="static"></div>
-                <input class="live" name="strain_uuid" />
-              </div>
-            </li>
-
-            <li class="attr" name="grain_substrate">
-              <div class="label">Grain</div>
-              <div class="input">
-                <div class="static"></div>
-                <input class="live" name="grainsubstrate_uuid" />
-              </div>
-            </li>
-
-            <li class="attr" name="bulk_substrate">
-              <div class="label">Bulk</div>
-              <div class="input">
-                <div class="static"></div>
-                <input class="live" name="bulksubstrate_uuid" />
-              </div>
-            </li>
-          </ul>
-          <div class="buttonbar"></div>
-
-          <div class="table">
-            <div class="columns">
-              <div class="column name">Temperature</div>
-              <div class="column name">Humidity</div>
-              <div class="column name">Event Type</div>
-              <div class="column name">Modified At</div>
-              <div class="column name">Created At</div>
-            </div>
-            <div class="rows" name="event"></div>
-            <div class="buttonbar"></div>
-          </div>
-        </form>
         <div class="table ndx">
           <div class="columns">
-            <div class="ctime header">Created At</div>
-            <div class="location header">Location</div>
+            <div class="column full">Choose a Lifecycle</div>
           </div>
-          <div class="rows"></div>
+          <div class="rows" name="lifecycle"></div>
         </div>
+
+        <div class="table lifecycle">
+          <div class="columns">
+            <div class="column full">Placeholder</div>
+          </div>
+          <div class="rows">
+            <div class="row id">
+              <div class="uuid static"></div>
+            </div>
+
+            <div class="row location">
+              <div class="label">Location</div>
+              <div class="static"></div>
+              <input class="live">
+            </div>
+
+            <div class="row strain_cost">
+              <div class="label">Strain Cost</div>
+              <div class="static"></div>
+              <input class="live">
+            </div>
+
+            <div class="row grain_cost">
+              <div class="label">Grain Cost</div>
+              <div class="static"></div>
+              <input class="live">
+            </div>
+
+            <div class="row bulk_cost">
+              <div class="label">Bulk Cost</div>
+              <div class="static"></div>
+              <input class="live">
+            </div>
+
+            <div class="row yield">
+              <div class="label">Yield</div>
+              <div class="static"></div>
+              <input class="live">
+            </div>
+
+            <div class="row count">
+              <div class="label">Count</div>
+              <div class="static"></div>
+              <input class="live">
+            </div>
+
+            <div class="row gross">
+              <div class="label">Gross</div>
+              <div class="static"></div>
+              <input class="live">
+            </div>
+
+            <div class="row strain">
+              <div class="label">Strain</div>
+              <div class="static"></div>
+              <select class="live"></select>
+            </div>
+
+            <div class="row grain_substrate">
+              <div class="label">Grain</div>
+              <div class="static"></div>
+              <select class="live"></select>
+            </div>
+
+            <div class="row bulk_substrate">
+              <div class="label">Bulk</div>
+              <div class="static"></div>
+              <select class="live"></select>
+            </div>
+
+            <div class="row modified_date">
+              <div class="label">Modified At</div>
+              <div class="static const"></div>
+            </div>
+
+            <div class="row create_date">
+              <div class="label">Created At</div>
+              <div class="static const"></div>
+            </div>
+
+          </div>
+          <div class="buttonbar"></div>
+        </div>
+
+        <div class="table events">
+          <div class="columns">
+            <div class="column temperature">Temperature</div>
+            <div class="column humidity">Humidity</div>
+            <div class="column eventtype">Event Type</div>
+            <div class="column modified_date">Modified At</div>
+            <div class="column create_date">Created At</div>
+          </div>
+          <div class="rows" name="event"></div>
+          <div class="buttonbar"></div>
+        </div>
+
       </div>
       <div class="vendor">
         <div class="table">
           <div class="columns">
-            <div class="column vendorname">Name</div>
-            <div class="column vendorsite">Website</div>
+            <div class="column name">Name</div>
+            <div class="column website">Website</div>
           </div>
           <div class="rows" name="vendor"></div>
           <div class="buttonbar"></div>
@@ -185,11 +165,50 @@
           <div class="buttonbar"></div>
         </div>
       </div>
-      <div class="strain" style="background-color: cyan;">
-        placeholder
+      <div class="strain">
+        <div class="table strain">
+          <div class="columns">
+            <div class="column name">Name</div>
+            <div class="column species">Species</div>
+            <div class="column create_date">Created At</div>
+            <div class="column vendor">Vendor</div>
+          </div>
+          <div class="rows" name="strain"></div>
+          <div class="buttonbar"></div>
+        </div>
+        <div class="table strainattribute">
+          <div class="columns">
+            <div class="column name">Attribute Name</div>
+            <div class="column value">Value</div>
+          </div>
+          <div class="rows" name="strainattribute"></div>
+          <div class="buttonbar"></div>
+        </div>
       </div>
-      <div class="substrate" style="background-color: white;">
-        placeholder
+      <div class="substrate">
+        <div class="table substrate">
+          <div class="columns">
+            <div class="column name">Name</div>
+            <div class="column type">
+              <span>Type</span>
+              <select class="types" value="Bulk">
+                <option value="Grain">Grain</option>
+                <option value="Bulk">Bulk</option>
+                <option value="All">All</option>
+              </select>
+            </div>
+            <div class="column vendor">Vendor</div>
+          </div>
+          <div class="rows" name="substrate"></div>
+          <div class="buttonbar"></div>
+        </div>
+        <div class="table ingredients">
+          <div class="columns">
+            <div class="column name">Ingredients</div>
+          </div>
+          <div class="rows" name="ingredients"></div>
+          <div class="buttonbar"></div>
+        </div>
       </div>
       <div class="stage">
         <div class="table">
@@ -204,8 +223,8 @@
         <div class="table">
           <div class="columns">
             <div class="column name">Name</div>
-            <div class="column name">Severity</div>
-            <div class="column name">Stage</div>
+            <div class="column severity">Severity</div>
+            <div class="column stage">Stage</div>
           </div>
           <div class="rows" name="eventtype"></div>
           <div class="buttonbar"></div>

@@ -101,7 +101,7 @@ func (db *Conn) UpdateStrain(ctx context.Context, id types.UUID, s types.Strain,
 	deferred, start, l := initAccessFuncs("UpdateStrain", db.logger, id, cid)
 	defer deferred(start, err, l)
 
-	result, err := db.ExecContext(ctx, psqls["strain"]["update"], s.Species, s.Name, id)
+	result, err := db.ExecContext(ctx, psqls["strain"]["update"], s.Species, s.Name, s.Vendor.UUID, id)
 	if err != nil {
 		return err
 	} else if rows, err := result.RowsAffected(); err != nil {

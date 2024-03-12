@@ -98,6 +98,10 @@ func Test_GetStrain(t *testing.T) {
 		"missing_id": {
 			sc: http.StatusBadRequest,
 		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
 		"db_error": {
 			id:  "1",
 			err: fmt.Errorf("db error"),
@@ -220,6 +224,10 @@ func Test_PatchStrain(t *testing.T) {
 		"missing_id": {
 			sc: http.StatusBadRequest,
 		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
 		"missing_stage": {
 			id: "1",
 			sc: http.StatusBadRequest,
@@ -279,6 +287,10 @@ func Test_DeleteStrain(t *testing.T) {
 			sc: http.StatusNoContent,
 		},
 		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {

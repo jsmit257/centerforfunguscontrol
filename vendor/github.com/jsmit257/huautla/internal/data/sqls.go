@@ -275,7 +275,12 @@ var psqls = sqlMap{
       select  $1, $2, $3, $4, v.uuid
         from  vendors v
        where  v.uuid = $5`,
-		"update": `update strains set species = $1, name = $2 where uuid = $3`,
+		"update": `
+      update  strains 
+         set  species = $1, 
+              name = $2,
+              vendor_uuid = $3
+       where  uuid = $4`,
 		"delete": `delete from strains where uuid = $1`,
 	},
 

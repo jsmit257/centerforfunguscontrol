@@ -67,41 +67,39 @@ func (db *Conn) GetAllAttributes(ctx context.Context, s *types.Strain, cid types
 	return err
 }
 
-func (db *Conn) AddAttribute(ctx context.Context, s *types.Strain, n, v string, cid types.CID) error {
+func (db *Conn) AddAttribute(ctx context.Context, s *types.Strain, a types.StrainAttribute, cid types.CID) (types.StrainAttribute, error) {
 	var err error
 
-	id := types.UUID(db.generateUUID().String())
+	a.UUID = types.UUID(db.generateUUID().String())
 
 	deferred, start, l := initAccessFuncs("AddAttribute", db.logger, s.UUID, cid)
 	defer deferred(start, err, l)
 
-	result, err := db.ExecContext(ctx, psqls["strainattribute"]["add"], id, n, v, s.UUID)
+	result, err := db.ExecContext(ctx, psqls["strainattribute"]["add"], a.UUID, a.Name, a.Value, s.UUID)
 
 	if err != nil {
 		if isPrimaryKeyViolation(err) {
-			return db.AddAttribute(ctx, s, n, v, cid) // FIXME: infinite loop?
+			return db.AddAttribute(ctx, s, a, cid) // FIXME: infinite loop?
 		}
-		return err
+		return a, err
 	} else if rows, err := result.RowsAffected(); err != nil {
-		return err
+		return a, err
 	} else if rows != 1 { // most likely cause is a bad vendor.uuid
-		return fmt.Errorf("attribute was not added")
+		return a, fmt.Errorf("attribute was not added")
 	}
 
-	s.Attributes = append(s.Attributes, types.StrainAttribute{UUID: id, Name: n, Value: v})
+	s.Attributes = append(s.Attributes, a)
 
-	return err
+	return a, err
 }
 
-func (db *Conn) ChangeAttribute(ctx context.Context, s *types.Strain, n, v string, cid types.CID) error {
+func (db *Conn) ChangeAttribute(ctx context.Context, s *types.Strain, a types.StrainAttribute, cid types.CID) error {
 	var err error
-
-	db.logger.Errorf("fuck u bitch: '%s', '%s'", n, v)
 
 	deferred, start, l := initAccessFuncs("ChangeAttribute", db.logger, s.UUID, cid)
 	defer deferred(start, err, l)
 
-	result, err := db.ExecContext(ctx, psqls["strainattribute"]["change"], v, n, s.UUID)
+	result, err := db.ExecContext(ctx, psqls["strainattribute"]["change"], a.Value, a.Name, s.UUID)
 
 	if err != nil {
 		return err
@@ -112,12 +110,10 @@ func (db *Conn) ChangeAttribute(ctx context.Context, s *types.Strain, n, v strin
 	}
 
 	i, j := 0, len(s.Attributes)
-	for i < j && s.Attributes[i].Name != n {
-		db.logger.Errorf("fuck u bitch %d: '%s', '%s'", i, s.Attributes[i].Name, n)
+	for i < j && s.Attributes[i].Name != a.Name {
 		i++
 	}
-	db.logger.Errorf("fuck u bitch %d: '%s', '%s'", i, s.Attributes[i].Name, n)
-	s.Attributes[i].Value = v
+	s.Attributes[i].Value = a.Value
 
 	return nil
 }

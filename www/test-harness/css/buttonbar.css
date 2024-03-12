@@ -2,20 +2,24 @@ body>.main>.workspace .buttonbar {
   background-color: #aaaaaa22;
   border-radius: 25px;
   float: left;
-  margin-top: 1em;
+  /* margin-top: .3em; */
   padding-bottom: .3em;
   padding-top: .3em;
   position: relative;
   width: 100%;
 }
 
+body>.main>.workspace .table>.buttonbar {
+  border-radius: 0 0 10px 10px;
+}
+
 body>.main>.workspace .buttonbar>img {
   border-style: none;
   float: right;
-  height: 25px;
+  height: 28px;
   margin-right: 1em;
   opacity: .5;
-  width: 25px;
+  width: 28px;
 }
 
 body>.main>.workspace .buttonbar>img.active {
@@ -26,4 +30,34 @@ body>.main>.workspace .buttonbar>img.active {
 body>.main>.workspace .buttonbar>.remove {
   float: left;
   margin-left: 1em;
+}
+
+body>.main>.workspace .buttonbar>img {
+  background-image: url(images/button-sprites.png);
+  background-repeat: no-repeat;
+}
+
+body>.main>.workspace .buttonbar>.remove {
+  background-position: -130px -195px;
+}
+
+body>.main>.workspace .buttonbar>.refresh {
+  background-position: -98px -131px;
+}
+
+body>.main>.workspace .buttonbar>.edit {
+  background-position: -130px -355px;
+  /* background-position: -259px -292px; */
+}
+
+body>.main>.workspace .buttonbar>.add {
+  background-position: -34px -99px;
+}
+
+body>.main>.workspace .buttonbar>.cancel {
+  background-position: -225px -258px;
+}
+
+body>.main>.workspace .buttonbar>.ok {
+  background-position: -226px -34px;
 }

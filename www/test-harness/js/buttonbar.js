@@ -1,5 +1,6 @@
 $(function () {
-  $('body>.main>.workspace .buttonbar')
+  var $buttonbars = $('body>.main>.workspace .buttonbar')
+  $buttonbars
     .on('reset', (e, h) => {
       var $buttonbar = $(e.currentTarget)
       $buttonbar
@@ -43,4 +44,6 @@ $(function () {
     .append($('<img class="add active" />'))
     .append($('<img class="edit active" />'))
     .append($('<img class="refresh active" />'))
+
+  $buttonbars.find('img').attr('src', '/images/transparent.png')
 })

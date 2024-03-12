@@ -1,29 +1,19 @@
-body>.main>.workspace>.lifecycle>form {
-  float: left;
-  width: 67%;
-}
-
 body>.main>.workspace>.lifecycle>.ndx {
-  float: right;
-  height: 50%;
-  position: relative;
   width: 32%;
 }
 
-body>.main>.workspace>.lifecycle>.ndx>.columns {
-  border-bottom: ridge;
-  border-width: 2px;
-  height: max-content;
-  margin-bottom: .25em;
-  margin-top: .25em;
-  position: relative;
+body>.main>.workspace>.lifecycle>.ndx>.rows {
+  margin-bottom: .5em;
+  /* margin-top: .5em; */
 }
 
 body>.main>.workspace>.lifecycle>.ndx>.rows>.row {
-  border-radius: 15px;
-  float: left;
   font-size: initial;
   line-height: initial;
+}
+
+/* XXX: promote this to index.css in a safe way */
+body>.main>.workspace>.lifecycle>.table>.columns>.column.full {
   width: 100%;
 }
 
@@ -32,4 +22,26 @@ body>.main>.workspace>.lifecycle>.ndx>.columns>.header {
   float: left;
   padding-left: 3%;
   width: 47%;
+}
+
+body>.main>.workspace>.lifecycle>.table.lifecycle {
+  float: right;
+  width: 67%;
+}
+
+body>.main>.workspace>.lifecycle>.table.lifecycle>.rows>div>.label {
+  padding-left: 1%;
+  width: 20%;
+}
+
+body>.main>.workspace>.lifecycle>.table.events {
+  float: right;
+  margin-top: 2em;
+  width: 67%;
+}
+
+body>.main>.workspace>.lifecycle>.table.events>.columns>div,
+body>.main>.workspace>.lifecycle>.table.events>.rows>.row>div {
+  padding-left: 1%;
+  width: 19%;
 }

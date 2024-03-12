@@ -98,6 +98,10 @@ func Test_GetSubstrate(t *testing.T) {
 		"missing_id": {
 			sc: http.StatusBadRequest,
 		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
 		"db_error": {
 			id:  "1",
 			err: fmt.Errorf("db error"),
@@ -147,23 +151,23 @@ func Test_PostSubstrate(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
-		stage  *types.Substrate
-		result types.Substrate
-		err    error
-		sc     int
+		substrate *types.Substrate
+		result    types.Substrate
+		err       error
+		sc        int
 	}{
 		"happy_path": {
-			stage:  &types.Substrate{},
-			result: types.Substrate{},
-			sc:     http.StatusCreated,
+			substrate: &types.Substrate{},
+			result:    types.Substrate{},
+			sc:        http.StatusCreated,
 		},
 		"missing_stage": {
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
-			stage: &types.Substrate{},
-			err:   fmt.Errorf("db error"),
-			sc:    http.StatusInternalServerError,
+			substrate: &types.Substrate{},
+			err:       fmt.Errorf("db error"),
+			sc:        http.StatusInternalServerError,
 		},
 	}
 
@@ -191,7 +195,7 @@ func Test_PostSubstrate(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader(serializeSubstrate(v.stage)))
+				bytes.NewReader(serializeSubstrate(v.substrate)))
 
 			ha.PostSubstrate(w, r)
 
@@ -218,6 +222,10 @@ func Test_PatchSubstrate(t *testing.T) {
 			sc:    http.StatusNoContent,
 		},
 		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
 		"missing_stage": {
@@ -279,6 +287,10 @@ func Test_DeleteSubstrate(t *testing.T) {
 			sc: http.StatusNoContent,
 		},
 		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {

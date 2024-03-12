@@ -61,6 +61,10 @@ func Test_PostEvent(t *testing.T) {
 		"missing_lifecycle": {
 			sc: http.StatusBadRequest,
 		},
+		"urldecode_error": {
+			l:  types.Lifecycle{UUID: "%zzz"},
+			sc: http.StatusBadRequest,
+		},
 	}
 
 	for k, v := range set {
@@ -142,6 +146,15 @@ func Test_PatchEvent(t *testing.T) {
 		"missing_lifecycle": {
 			sc: http.StatusBadRequest,
 		},
+		"lc_decode_error": {
+			l:  types.Lifecycle{UUID: "%zzz"},
+			sc: http.StatusBadRequest,
+		},
+		"ev_decode_error": {
+			l:  types.Lifecycle{UUID: "happy_path"},
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
 	}
 
 	for k, v := range set {
@@ -215,6 +228,15 @@ func Test_DeleteEvent(t *testing.T) {
 			sc: http.StatusBadRequest,
 		},
 		"missing_lifecycle": {
+			sc: http.StatusBadRequest,
+		},
+		"lc_decode_error": {
+			l:  types.Lifecycle{UUID: "%zzz"},
+			sc: http.StatusBadRequest,
+		},
+		"ev_decode_error": {
+			l:  types.Lifecycle{UUID: "happy_path"},
+			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
 	}

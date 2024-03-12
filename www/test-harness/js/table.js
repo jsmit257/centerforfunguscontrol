@@ -3,7 +3,8 @@ $(function () {
     .on('click', '>.row', e => {
       var $row = $(e.currentTarget)
       if ($row.hasClass('selected')) {
-        return
+        e.stopPropagation()
+        return false
       }
       $row
         .parent()
@@ -20,9 +21,10 @@ $(function () {
       $selected.remove()
     })
     .on('refresh', (e, args) => {
+      args ||= {}
       var $table = $(e.currentTarget)
       $.ajax({
-        url: `/${$(e.currentTarget).attr('name')}s`,
+        url: args.url || `/${$(e.currentTarget).attr('name')}s`,
         method: 'GET',
         async: true,
         success: (result, sc, xhr) => {
@@ -45,35 +47,38 @@ $(function () {
     .on('add', (e, args) => {
       var $table = $(e.currentTarget)
 
-      args.newRow()
-        .insertBefore($table
-          .find('.selected')
-          .removeClass('selected editing'))
+      var $row = args.newRow()
         .trigger('click')
         .addClass('editing')
         .find('input, select')
         .first()
         .focus()
-
-      var $ok = e => {
-        var $selected = $table.find('.selected')
-        $.ajax({
-          url: `/${$table.attr('name')}`,
-          contentType: 'application/json',
-          method: 'POST',
-          dataType: 'json',
-          data: args.data($selected),
-          async: true,
-          success: args.success,
-          error: args.error,
-        })
+      var $selected = $table
+        .find('.selected')
+        .removeClass('selected editing')
+      if ($selected.length === 0) {
+        $table.append($row)
+      } else {
+        $row.insertBefore($selected)
       }
 
       args.buttonbar.trigger('set', {
         "target": $table,
         "handlers": {
           "cancel": e => { $table.trigger('remove-selected') },
-          "ok": $ok
+          "ok": args.ok || (e => {
+            var $selected = $table.find('.selected')
+            $.ajax({
+              url: args.url || `/${$table.attr('name')}`,
+              contentType: 'application/json',
+              method: 'POST',
+              dataType: 'json',
+              data: args.data($selected),
+              async: true,
+              success: args.success,
+              error: args.error,
+            })
+          })
         }
       })
     })
@@ -86,34 +91,30 @@ $(function () {
         .first()
         .focus()
 
-      var $ok = e => {
-        var $selected = $table.find('.selected')
-        $.ajax({
-          url: `/${$table.attr('name')}/` + $selected.find('>.uuid').text(),
-          contentType: 'application/json',
-          method: 'PATCH',
-          dataType: 'json',
-          data: args.data($selected),
-          async: true,
-          success: args.success,
-          // error: console.log,
-          error: args.error || console.log,
-        })
-      }
-
       args.buttonbar.trigger('set', {
         "target": $table,
         "handlers": {
           "cancel": console.log,
-          "ok": $ok
+          "ok": args.ok || (e => {
+            var $selected = $table.find('.selected')
+            $.ajax({
+              url: args.url || `/${$table.attr('name')}/${$selected.find('>.uuid').text()}`,
+              contentType: 'application/json',
+              method: 'PATCH',
+              dataType: 'json',
+              data: args.data($selected),
+              async: true,
+              success: args.success,
+              error: args.error || console.log,
+            })
+          })
         }
       })
     })
-    .on('delete', e => {
+    .on('delete', (e, url) => {
       var $table = $(e.currentTarget)
-      console.log('url:', `/${$table.attr('name')}/` + $table.find('.selected>.uuid').text())
       $.ajax({
-        url: `/${$table.attr('name')}/` + $table.find('.selected>.uuid').text(),
+        url: url || `/${$table.attr('name')}/${$table.find('.selected>.uuid').text()}`,
         contentType: 'application/json',
         method: 'DELETE',
         async: true,

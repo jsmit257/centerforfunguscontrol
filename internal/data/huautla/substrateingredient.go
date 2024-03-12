@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jsmit257/huautla/types"
@@ -19,6 +20,8 @@ func (ha *HuautlaAdaptor) PostSubstrateIngredient(w http.ResponseWriter, r *http
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
 	} else if err := json.Unmarshal(body, &i); err != nil {
@@ -34,7 +37,7 @@ func (ha *HuautlaAdaptor) PostSubstrateIngredient(w http.ResponseWriter, r *http
 }
 
 func (ha *HuautlaAdaptor) PatchSubstrateIngredient(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostSubstrateIngredient")
+	ms := ha.start("PatchSubstrateIngredient")
 	defer ms.end()
 	defer r.Body.Close()
 
@@ -42,8 +45,12 @@ func (ha *HuautlaAdaptor) PatchSubstrateIngredient(w http.ResponseWriter, r *htt
 
 	if suID := chi.URLParam(r, "su_id"); suID == "" {
 		ms.error(w, fmt.Errorf("missing required substrate id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if suID, err := url.QueryUnescape(suID); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if igID := chi.URLParam(r, "ig_id"); igID == "" {
 		ms.error(w, fmt.Errorf("missing required ingredient id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if igID, err := url.QueryUnescape(igID); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
 	} else if err := json.Unmarshal(body, &newI); err != nil {
@@ -58,14 +65,18 @@ func (ha *HuautlaAdaptor) PatchSubstrateIngredient(w http.ResponseWriter, r *htt
 }
 
 func (ha *HuautlaAdaptor) DeleteSubstrateIngredient(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostSubstrateIngredient")
+	ms := ha.start("DeleteSubstrateIngredient")
 	defer ms.end()
 
 	// 	RemoveIngredient(ctx context.Context, s *Substrate, i Ingredient, cid CID) error
 	if suID := chi.URLParam(r, "su_id"); suID == "" {
 		ms.error(w, fmt.Errorf("missing required substrate id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if suID, err := url.QueryUnescape(suID); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if igID := chi.URLParam(r, "ig_id"); igID == "" {
 		ms.error(w, fmt.Errorf("missing required ingredient id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if igID, err := url.QueryUnescape(suID); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if s, err := ha.db.SelectSubstrate(r.Context(), types.UUID(suID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch substrate")
 	} else if err = ha.db.RemoveIngredient(r.Context(), &s, types.Ingredient{UUID: types.UUID(igID)}, ms.cid); err != nil {

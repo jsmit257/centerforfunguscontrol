@@ -64,8 +64,8 @@ func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
 	r.Delete("/strain/{id}", ha.DeleteStrain)
 
 	r.Get("/strainattributenames", ha.GetStrainAttributeNames)
-	r.Post("/strain/{id}/attribute/{at_name}/{at_value}", ha.PostStrainAttribute)
-	r.Patch("/strain/{st_id}/attribute/{at_name}/{at_value}", ha.PatchStrainAttribute)
+	r.Post("/strain/{id}/attribute", ha.PostStrainAttribute)
+	r.Patch("/strain/{id}/attribute", ha.PatchStrainAttribute)
 	r.Delete("/strain/{st_id}/attribute/{at_id}", ha.DeleteStrainAttribute)
 
 	r.Get("/lifecycles", ha.GetLifecycleIndex) // TODO: needs to be implemented in huautla

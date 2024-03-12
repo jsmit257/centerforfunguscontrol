@@ -19,6 +19,8 @@ type strainattributerMock struct {
 	knownNames []string
 	namesErr   error
 
+	addResult types.StrainAttribute
+
 	addErr,
 	changeErr,
 	rmErr error
@@ -79,18 +81,21 @@ func Test_PostStrainAttribute(t *testing.T) {
 
 	set := map[string]struct {
 		s         types.Strain
-		n, v      string
+		a         types.StrainAttribute
 		strainErr error
 		attrErr   error
 		sc        int
 	}{
 		"happy_path": {
 			s:  types.Strain{UUID: "happy_path"},
-			n:  "happy_path",
-			v:  "squirrel",
+			a:  types.StrainAttribute{Name: "happy_path", Value: "squirrel"},
 			sc: http.StatusCreated,
 		},
 		"missing_strain_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			s:  types.Strain{UUID: "%zzz"},
 			sc: http.StatusBadRequest,
 		},
 		"missing_attribute_name": {
@@ -99,20 +104,18 @@ func Test_PostStrainAttribute(t *testing.T) {
 		},
 		"missing_attribute_value": {
 			s:  types.Strain{UUID: "happy_path"},
-			n:  "missing_attribute_value",
+			a:  types.StrainAttribute{Name: "missing_attribute_value"},
 			sc: http.StatusBadRequest,
 		},
 		"strain_error": {
 			s:         types.Strain{UUID: "strain_error"},
-			n:         "strain_error",
-			v:         "squirrel",
+			a:         types.StrainAttribute{Name: "strain_error", Value: "squirrel"},
 			strainErr: fmt.Errorf("strain_error"),
 			sc:        http.StatusInternalServerError,
 		},
 		"attribute_error": {
 			s:       types.Strain{UUID: "attribute_error"},
-			n:       "attribute_error",
-			v:       "squirrel",
+			a:       types.StrainAttribute{Name: "attribute_error", Value: "squirrel"},
 			attrErr: fmt.Errorf("attribute_error"),
 			sc:      http.StatusInternalServerError,
 		},
@@ -137,11 +140,7 @@ func Test_PostStrainAttribute(t *testing.T) {
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id", "at_name", "at_value"}, Values: []string{
-				string(v.s.UUID),
-				v.n,
-				v.v,
-			}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.s.UUID)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					context.Background(),
@@ -149,7 +148,7 @@ func Test_PostStrainAttribute(t *testing.T) {
 					rctx),
 				http.MethodPost,
 				"url",
-				bytes.NewReader(serializeAttribute(nil)))
+				bytes.NewReader(serializeAttribute(&v.a)))
 
 			ha.PostStrainAttribute(w, r)
 
@@ -164,18 +163,21 @@ func Test_PatchStrainAttribute(t *testing.T) {
 
 	set := map[string]struct {
 		s         types.Strain
-		n, v      string
+		a         types.StrainAttribute
 		strainErr error
 		attrErr   error
 		sc        int
 	}{
 		"happy_path": {
 			s:  types.Strain{UUID: "happy_path"},
-			n:  "happy_path",
-			v:  "squirrel",
+			a:  types.StrainAttribute{Name: "happy_path", Value: "squirrel"},
 			sc: http.StatusOK,
 		},
 		"missing_strain_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			s:  types.Strain{UUID: "%zzz"},
 			sc: http.StatusBadRequest,
 		},
 		"missing_attribute_name": {
@@ -184,20 +186,18 @@ func Test_PatchStrainAttribute(t *testing.T) {
 		},
 		"missing_attribute_value": {
 			s:  types.Strain{UUID: "happy_path"},
-			n:  "missing_attribute_value",
+			a:  types.StrainAttribute{Name: "missing_attribute_value"},
 			sc: http.StatusBadRequest,
 		},
 		"strain_error": {
 			s:         types.Strain{UUID: "strain_error"},
-			n:         "strain_error",
-			v:         "squirrel",
+			a:         types.StrainAttribute{Name: "strain_error", Value: "squirrel"},
 			strainErr: fmt.Errorf("strain_error"),
 			sc:        http.StatusInternalServerError,
 		},
 		"attribute_error": {
 			s:       types.Strain{UUID: "attribute_error"},
-			n:       "attribute_error",
-			v:       "squirrel",
+			a:       types.StrainAttribute{Name: "attribute_error", Value: "squirrel"},
 			attrErr: fmt.Errorf("attribute_error"),
 			sc:      http.StatusInternalServerError,
 		},
@@ -222,11 +222,7 @@ func Test_PatchStrainAttribute(t *testing.T) {
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"st_id", "at_name", "at_value"}, Values: []string{
-				string(v.s.UUID),
-				v.n,
-				v.v,
-			}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.s.UUID)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					context.Background(),
@@ -234,7 +230,7 @@ func Test_PatchStrainAttribute(t *testing.T) {
 					rctx),
 				http.MethodPost,
 				"url",
-				bytes.NewReader(serializeAttribute(nil)))
+				bytes.NewReader(serializeAttribute(&v.a)))
 
 			ha.PatchStrainAttribute(w, r)
 
@@ -259,6 +255,15 @@ func Test_DeleteStrainAttribute(t *testing.T) {
 			sc: http.StatusOK,
 		},
 		"missing_strainid": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_strain_id": {
+			s:  types.Strain{UUID: "%zzz"},
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_attribute_id": {
+			s:  types.Strain{UUID: "happy_path"},
+			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
 		"missing_attributeid": {
@@ -332,10 +337,10 @@ func (sa *strainattributerMock) KnownAttributeNames(ctx context.Context, cid typ
 func (sa *strainattributerMock) GetAllAttributes(ctx context.Context, s *types.Strain, cid types.CID) error {
 	return nil
 }
-func (sa *strainattributerMock) AddAttribute(ctx context.Context, s *types.Strain, n, v string, cid types.CID) error {
-	return sa.addErr
+func (sa *strainattributerMock) AddAttribute(ctx context.Context, s *types.Strain, a types.StrainAttribute, cid types.CID) (types.StrainAttribute, error) {
+	return sa.addResult, sa.addErr
 }
-func (sa *strainattributerMock) ChangeAttribute(ctx context.Context, s *types.Strain, n, v string, cid types.CID) error {
+func (sa *strainattributerMock) ChangeAttribute(ctx context.Context, s *types.Strain, a types.StrainAttribute, cid types.CID) error {
 	return sa.changeErr
 }
 func (sa *strainattributerMock) RemoveAttribute(ctx context.Context, s *types.Strain, id types.UUID, cid types.CID) error {

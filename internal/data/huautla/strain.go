@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jsmit257/huautla/types"
@@ -27,6 +28,8 @@ func (ha *HuautlaAdaptor) GetStrain(w http.ResponseWriter, r *http.Request) {
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if s, err := ha.db.SelectStrain(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch strain")
 	} else {
@@ -47,9 +50,9 @@ func (ha *HuautlaAdaptor) PostStrain(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body") // XXX: better status code??
 	} else if s, err = ha.db.InsertStrain(r.Context(), s, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to insert strain")
+	} else {
+		ms.send(w, s, http.StatusCreated)
 	}
-
-	ms.send(w, s, http.StatusCreated)
 }
 
 func (ha *HuautlaAdaptor) PatchStrain(w http.ResponseWriter, r *http.Request) {
@@ -59,17 +62,19 @@ func (ha *HuautlaAdaptor) PatchStrain(w http.ResponseWriter, r *http.Request) {
 
 	var s types.Strain
 
-	if body, err := io.ReadAll(r.Body); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "couldn't read request body") // XXX: better status code??
-	} else if id := chi.URLParam(r, "id"); id == "" {
+	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
+	} else if body, err := io.ReadAll(r.Body); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "couldn't read request body") // XXX: better status code??
 	} else if err := json.Unmarshal(body, &s); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body") // XXX: better status code??
 	} else if err = ha.db.UpdateStrain(r.Context(), types.UUID(id), s, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to update strain")
+	} else {
+		ms.send(w, nil, http.StatusNoContent)
 	}
-
-	ms.send(w, nil, http.StatusNoContent)
 }
 
 func (ha *HuautlaAdaptor) DeleteStrain(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +83,8 @@ func (ha *HuautlaAdaptor) DeleteStrain(w http.ResponseWriter, r *http.Request) {
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if err := ha.db.DeleteStrain(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete strain")
 	} else {

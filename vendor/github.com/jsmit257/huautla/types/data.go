@@ -75,7 +75,7 @@ type (
 		Count          int16     `json:"count,omitempty"`
 		Gross          float32   `json:"gross,omitempty"`
 		MTime          time.Time `json:"modified_date,omitempty"`
-		CTime          time.Time `json:"create_date,omitempty"`
+		CTime          time.Time `json:"create_date"`
 		Strain         `json:"strain,omitempty"`
 		GrainSubstrate Substrate `json:"grain_substrate,omitempty"`
 		BulkSubstrate  Substrate `json:"bulk_substrate,omitempty"`

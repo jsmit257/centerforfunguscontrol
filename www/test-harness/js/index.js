@@ -19,6 +19,11 @@ $(function () {
     $t.addClass('selected')
   })
 
+  $('.static.date').on('format', (e, d) => {
+    console.log('date', d)
+    $(e.currentTarget).text(d.replace('T', ' ').replace(/(\.\d+)?Z/, ''))
+  })
+
   $('body').on('error-message', (e, ...data) => {
     console.log(data, ...data)
   })

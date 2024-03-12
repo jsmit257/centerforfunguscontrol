@@ -10,6 +10,14 @@ body>.main>.workspace>div .table>div {
   width: 100%;
 }
 
+body>.main>.workspace>div .table>.columns {
+  background-color: #ffffff33;
+  border-radius: 18px 18px 0 0;
+  /* margin-bottom: .3em; */
+  padding-bottom: .3em;
+  padding-top: .3em;
+}
+
 body>.main>.workspace>div .table>.columns>div {
   float: left;
   line-height: 150%;
@@ -19,6 +27,7 @@ body>.main>.workspace>div .table>.columns>div {
 
 
 body>.main>.workspace>div .table>.rows>.row {
+  border-radius: 0px;
   float: left;
   position: relative;
   width: 100%;

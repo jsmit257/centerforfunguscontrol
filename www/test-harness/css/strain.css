@@ -1,0 +1,46 @@
+body>.main>.workspace>.strain>.table {
+  /* margin-left: 10%; */
+  width: 65%;
+}
+
+body>.main>.workspace>.strain>.table>.columns>div {
+  width: 24%;
+}
+
+/* body>.main>.workspace>.strain>.table>.columns>.species {
+  width: 18%;
+} */
+
+body>.main>.workspace>.strain>.table>.rows>.row>input,
+body>.main>.workspace>.strain>.table>.rows>.row>select,
+body>.main>.workspace>.strain>.table>.rows>.row>div {
+  padding-left: 1%;
+  width: 23%;
+}
+
+/* body>.main>.workspace>.strain>.table>.rows>.row>.species {
+  padding-left: 0;
+  width: 18%;
+} */
+
+body>.main>.workspace>.strain>.table>.rows>.row>.create_date {
+  padding-left: 0;
+  text-align: center;
+}
+
+body>.main>.workspace>.strain>.table.strainattribute {
+  float: right;
+  width: 34%;
+}
+
+body>.main>.workspace>.strain>.table.strainattribute>.columns>div {
+  width: 50%;
+}
+
+body>.main>.workspace>.strain>.table.strainattribute>.rows>.row>input,
+body>.main>.workspace>.strain>.table.strainattribute>.rows>.row>select,
+body>.main>.workspace>.strain>.table.strainattribute>.rows>.row>div {
+  border-style: none;
+  margin-left: 1%;
+  width: 48%;
+}

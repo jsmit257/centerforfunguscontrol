@@ -39,6 +39,10 @@ func Test_PostSubstrateIngredient(t *testing.T) {
 		"missing_id": {
 			sc: http.StatusBadRequest,
 		},
+		"urldecode_error": {
+			s:  types.Substrate{UUID: "%zzz"},
+			sc: http.StatusBadRequest,
+		},
 		"missing_ingredient": {
 			s:  types.Substrate{UUID: "happy"},
 			sc: http.StatusBadRequest,
@@ -112,6 +116,10 @@ func Test_PatchSubstrateIngredient(t *testing.T) {
 		"missing_substrate": {
 			sc: http.StatusBadRequest,
 		},
+		"substrate_decode_error": {
+			s:  types.Substrate{UUID: "%zzz"},
+			sc: http.StatusBadRequest,
+		},
 		"missing_old_ingredient": {
 			s:  types.Substrate{UUID: "missing_old_ingredient"},
 			sc: http.StatusBadRequest,
@@ -119,6 +127,11 @@ func Test_PatchSubstrateIngredient(t *testing.T) {
 		"no_data": {
 			s:  types.Substrate{UUID: "no_data"},
 			id: "rye",
+			sc: http.StatusBadRequest,
+		},
+		"ingredient_decode_error": {
+			s:  types.Substrate{UUID: "ingredient_decode_error"},
+			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
 		"failed_substrate": {
@@ -194,6 +207,15 @@ func Test_DeleteSubstrateIngredient(t *testing.T) {
 			sc: http.StatusOK,
 		},
 		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"substrate_decode_error": {
+			s:  types.Substrate{UUID: "%zzz"},
+			sc: http.StatusBadRequest,
+		},
+		"ingredient_decode_error": {
+			s:  types.Substrate{UUID: "ingredient_decode_error"},
+			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
 		"substrate_error": {

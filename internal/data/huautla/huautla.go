@@ -80,6 +80,9 @@ func (ms *methodStats) send(w http.ResponseWriter, i interface{}, sc int) {
 	} else {
 		w.Header().Add("Content-type", "application/json")
 		w.WriteHeader(sc)
+		if sc == http.StatusNoContent {
+			return
+		}
 		if _, err = w.Write([]byte(result)); err != nil {
 			ms.error(w, err, http.StatusInternalServerError, "failed to send result")
 		}
