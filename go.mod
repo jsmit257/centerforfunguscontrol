@@ -2,6 +2,8 @@ module github.com/jsmit257/centerforfunguscontrol
 
 go 1.21.4
 
+replace github.com/jsmit257/huautla => /home/johnny/dev/go/src/github.com/jsmit257/huautla
+
 require (
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/google/uuid v1.6.0

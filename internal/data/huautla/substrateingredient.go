@@ -58,7 +58,7 @@ func (ha *HuautlaAdaptor) PatchSubstrateIngredient(w http.ResponseWriter, r *htt
 	} else if s, err := ha.db.SelectSubstrate(r.Context(), types.UUID(suID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch substrate")
 	} else if err = ha.db.ChangeIngredient(r.Context(), &s, types.Ingredient{UUID: types.UUID(igID)}, newI, ms.cid); err != nil {
-		ms.error(w, err, http.StatusInternalServerError, "failed to change substrateingredient")
+		ms.error(w, fmt.Errorf("igID: '%s', newI: '%#q' sub: [%#q] %w", igID, newI, s, err), http.StatusInternalServerError, "failed to change substrateingredient")
 	} else {
 		ms.send(w, s, http.StatusOK)
 	}
@@ -75,7 +75,7 @@ func (ha *HuautlaAdaptor) DeleteSubstrateIngredient(w http.ResponseWriter, r *ht
 		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if igID := chi.URLParam(r, "ig_id"); igID == "" {
 		ms.error(w, fmt.Errorf("missing required ingredient id parameter"), http.StatusBadRequest, "missing required id parameter")
-	} else if igID, err := url.QueryUnescape(suID); err != nil {
+	} else if igID, err := url.QueryUnescape(igID); err != nil {
 		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if s, err := ha.db.SelectSubstrate(r.Context(), types.UUID(suID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch substrate")

@@ -10,7 +10,7 @@ x-pg-ssl: &pgssl disable
 services:
 
   postgres:
-    image: postgres:bookworm
+    image: huautla:lkg
     restart: always
     hostname: huautla
     ports:
@@ -18,47 +18,31 @@ services:
     environment:
       POSTGRES_PASSWORD: *pgpass
 
-  install:
+  run-docker:
     depends_on: [ postgres ]
-    image: install
-    build:
-      context: .
-      dockerfile: dockerfile.Install
-    volumes: [ .:/huautla ]
+    image: cffc:test
+    hostname: cffc
+    build: .
+    ports: [ 8081:8080 ]
+    volumes: [ .:/go/src/github.com/jsmit257/huautla ]
     environment:
-      POSTGRES_HOST: *pghost
-      POSTGRES_PORT: *pgport
-      POSTGRES_USER: *pguser
-      POSTGRES_PASSWORD: *pgpass
-      POSTGRES_SSLMODE: *pgssl
-    working_dir: /huautla
-    command: ./bin/install-prod.sh
-
-  install-system-test:
-    depends_on: [ postgres ]
-    image: install
-    build:
-      context: .
-      dockerfile: dockerfile.Install
-    volumes: [ .:/huautla ]
-    environment:
-      POSTGRES_HOST: *pghost
-      POSTGRES_PORT: *pgport
-      POSTGRES_USER: *pguser
-      POSTGRES_PASSWORD: *pgpass
-      POSTGRES_SSLMODE: *pgssl
-    working_dir: /huautla
-    command: ./bin/install-system-test.sh
+      HUAUTLA_HOST: *pghost
+      HUAUTLA_PORT: *pgport
+      HUAUTLA_USER: *pguser
+      HUAUTLA_PASSWORD: *pgpass
+      HUAUTLA_SSL: disable
+      HTTP_HOST: cffc
+      HTTP_PORT: 8080
 
   system-test:
-    depends_on: [ install-system-test ]
+    depends_on: [ postgres ]
     image: golang:bookworm
-    volumes: [ .:/huautla ]
+    volumes: [ .:/cffc ]
     environment:
       POSTGRES_HOST: *pghost
       POSTGRES_PORT: *pgport
       POSTGRES_USER: *pguser
       POSTGRES_PASSWORD: *pgpass
       POSTGRES_SSLMODE: *pgssl
-    working_dir: /huautla
-    command: ./bin/system-test.sh
+    working_dir: /cffc
+    command: ./bin/install-system-test.sh

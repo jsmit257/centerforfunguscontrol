@@ -98,8 +98,7 @@ func (db *Conn) UpdateSubstrate(ctx context.Context, id types.UUID, s types.Subs
 	deferred, start, l := initAccessFuncs("UpdateSubstrate", db.logger, id, cid)
 	defer deferred(start, err, l)
 
-	// result, err := db.ExecContext(ctx, psqls["substrate"]["update"], s.Name, s.Type, s.Vendor.UUID, id)
-	result, err := db.ExecContext(ctx, psqls["substrate"]["update"], s.Name, id)
+	result, err := db.ExecContext(ctx, psqls["substrate"]["update"], s.Name, s.Type, s.Vendor.UUID, id)
 	if err != nil {
 		return err
 	} else if rows, err := result.RowsAffected(); err != nil {

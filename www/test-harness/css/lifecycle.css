@@ -7,6 +7,10 @@ body>.main>.workspace>.lifecycle>.ndx>.rows {
   /* margin-top: .5em; */
 }
 
+body>.main>.workspace>.lifecycle>.ndx>.rows>.row.new>.created_at::before {
+  content: '*'
+}
+
 body>.main>.workspace>.lifecycle>.ndx>.rows>.row {
   font-size: initial;
   line-height: initial;
@@ -41,7 +45,22 @@ body>.main>.workspace>.lifecycle>.table.events {
 }
 
 body>.main>.workspace>.lifecycle>.table.events>.columns>div,
-body>.main>.workspace>.lifecycle>.table.events>.rows>.row>div {
+body>.main>.workspace>.lifecycle>.table.events>.rows>.row>div,
+body>.main>.workspace>.lifecycle>.table.events>.rows>.row>input,
+body>.main>.workspace>.lifecycle>.table.events>.rows>.row>select {
   padding-left: 1%;
+  text-align: center;
   width: 19%;
+}
+
+body>.main>.workspace>.lifecycle>.table.events>.columns>div.temperature,
+body>.main>.workspace>.lifecycle>.table.events>.columns>div.humidity,
+body>.main>.workspace>.lifecycle>.table.events>.rows>.row>.temperature,
+body>.main>.workspace>.lifecycle>.table.events>.rows>.row>.humidity {
+  width: 14%;
+}
+
+body>.main>.workspace>.lifecycle>.table.events>.columns>div.eventtype,
+body>.main>.workspace>.lifecycle>.table.events>.rows>.row>.eventtype {
+  width: 27%;
 }

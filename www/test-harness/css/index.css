@@ -3,17 +3,23 @@
 }
 
 .selected {
-  background-color: #bbbbbb33 !important;
+  background-image: linear-gradient(0, transparent, #bbb3, #bbb3, transparent) !important;
+  /* background-color: #bbbbbb33 !important; */
   border-radius: 25px;
   cursor: default !important;
   text-decoration: none !important;
 }
 
 .hover:hover {
-  background-color: #aaaaaa22;
+  background-image: linear-gradient(0, transparent, #aaa2, transparent);
+  /* background-color: #aaaaaa22; */
   border-radius: 25px;
   cursor: pointer;
   text-decoration: underline;
+}
+
+a {
+  color: aliceblue;
 }
 
 body {
@@ -21,6 +27,7 @@ body {
   color: aliceblue;
   margin-left: auto;
   margin-right: auto;
+  /* overflow: hidden; */
   width: 80%;
 }
 
@@ -35,7 +42,7 @@ body>.background-image {
   background-size: contain;
   height: 100%;
   left: 0;
-  opacity: .2;
+  opacity: .1;
   position: absolute;
   width: 100%;
 }

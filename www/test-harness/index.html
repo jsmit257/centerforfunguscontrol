@@ -52,81 +52,83 @@
 
         <div class="table lifecycle">
           <div class="columns">
-            <div class="column full">Placeholder</div>
+            <div class="column full">
+              <span class="title">Placeholder</span> <span class="status"></span>
+            </div>
           </div>
           <div class="rows">
             <div class="row id">
               <div class="uuid static"></div>
             </div>
 
-            <div class="row location">
+            <div class="row location hover">
               <div class="label">Location</div>
               <div class="static"></div>
               <input class="live">
             </div>
 
-            <div class="row strain_cost">
-              <div class="label">Strain Cost</div>
-              <div class="static"></div>
-              <input class="live">
-            </div>
-
-            <div class="row grain_cost">
-              <div class="label">Grain Cost</div>
-              <div class="static"></div>
-              <input class="live">
-            </div>
-
-            <div class="row bulk_cost">
-              <div class="label">Bulk Cost</div>
-              <div class="static"></div>
-              <input class="live">
-            </div>
-
-            <div class="row yield">
+            <div class="row yield hover no-add">
               <div class="label">Yield</div>
               <div class="static"></div>
-              <input class="live">
+              <input class="live" type="number" min="0">
             </div>
 
-            <div class="row count">
+            <div class="row count hover no-add">
               <div class="label">Count</div>
               <div class="static"></div>
-              <input class="live">
+              <input class="live" type="number" min="0">
             </div>
 
-            <div class="row gross">
+            <div class="row gross hover no-add">
               <div class="label">Gross</div>
               <div class="static"></div>
-              <input class="live">
+              <input class="live" type="number" min="0">
             </div>
 
-            <div class="row strain">
+            <div class="row strain hover">
               <div class="label">Strain</div>
               <div class="static"></div>
               <select class="live"></select>
             </div>
 
-            <div class="row grain_substrate">
+            <div class="row strain_cost hover">
+              <div class="label">Strain Cost</div>
+              <div class="static"></div>
+              <input class="live" type="number">
+            </div>
+
+            <div class="row grain_substrate hover">
               <div class="label">Grain</div>
               <div class="static"></div>
               <select class="live"></select>
             </div>
 
-            <div class="row bulk_substrate">
+            <div class="row grain_cost hover">
+              <div class="label">Grain Cost</div>
+              <div class="static"></div>
+              <input class="live" type="number">
+            </div>
+
+            <div class="row bulk_substrate hover">
               <div class="label">Bulk</div>
               <div class="static"></div>
               <select class="live"></select>
             </div>
 
-            <div class="row modified_date">
-              <div class="label">Modified At</div>
-              <div class="static const"></div>
+            <div class="row bulk_cost hover">
+              <div class="label">Bulk Cost</div>
+              <div class="static"></div>
+              <input class="live" type="number">
             </div>
 
-            <div class="row create_date">
+            <div class="row modified_date hover">
+              <div class="label">Modified At</div>
+              <div class="static const date"></div>
+            </div>
+
+            <div class="row create_date hover">
               <div class="label">Created At</div>
-              <div class="static const"></div>
+              <div class="static const date"></div>
             </div>
 
           </div>
@@ -135,9 +137,10 @@
 
         <div class="table events">
           <div class="columns">
+            <div class="column full">Events</div>
             <div class="column temperature">Temperature</div>
             <div class="column humidity">Humidity</div>
-            <div class="column eventtype">Event Type</div>
+            <div class="column eventtype">Type/Stage</div>
             <div class="column modified_date">Modified At</div>
             <div class="column create_date">Created At</div>
           </div>
@@ -170,12 +173,13 @@
           <div class="columns">
             <div class="column name">Name</div>
             <div class="column species">Species</div>
-            <div class="column create_date">Created At</div>
             <div class="column vendor">Vendor</div>
+            <div class="column create_date">Created At</div>
           </div>
           <div class="rows" name="strain"></div>
           <div class="buttonbar"></div>
         </div>
+        <datalist id="known-strain-names"></datalist>
         <div class="table strainattribute">
           <div class="columns">
             <div class="column name">Attribute Name</div>
@@ -191,10 +195,10 @@
             <div class="column name">Name</div>
             <div class="column type">
               <span>Type</span>
-              <select class="types" value="Bulk">
+              <select class="types">
                 <option value="Grain">Grain</option>
                 <option value="Bulk">Bulk</option>
-                <option value="All">All</option>
+                <option value="All" selected="selected">All</option>
               </select>
             </div>
             <div class="column vendor">Vendor</div>

@@ -74,9 +74,8 @@ func (db *Conn) ChangeIngredient(ctx context.Context, s *types.Substrate, oldI, 
 	} else if rows != 1 { // most likely cause is a bad vendor.uuid
 		return fmt.Errorf("substrateingredient was not changed")
 	}
-
 	i, j := 0, len(s.Ingredients)
-	for i < j && s.Ingredients[i] != oldI {
+	for i < j && s.Ingredients[i].UUID != oldI.UUID {
 		i++
 	}
 	s.Ingredients[i] = newI
@@ -101,7 +100,7 @@ func (db *Conn) RemoveIngredient(ctx context.Context, s *types.Substrate, i type
 	}
 
 	ndx, j := 0, len(s.Ingredients)
-	for ndx < j && s.Ingredients[ndx] != i {
+	for ndx < j && s.Ingredients[ndx].UUID != i.UUID {
 		ndx++
 	}
 	s.Ingredients = append(s.Ingredients[:ndx], s.Ingredients[ndx+1:]...)

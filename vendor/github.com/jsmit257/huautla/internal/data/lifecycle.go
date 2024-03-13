@@ -133,7 +133,7 @@ func (db *Conn) InsertLifecycle(ctx context.Context, lc types.Lifecycle, cid typ
 	return db.SelectLifecycle(ctx, lc.UUID, cid)
 }
 
-func (db *Conn) UpdateLifecycle(ctx context.Context, lc types.Lifecycle, cid types.CID) error {
+func (db *Conn) UpdateLifecycle(ctx context.Context, lc types.Lifecycle, cid types.CID) (types.Lifecycle, error) {
 	var err error
 	var result sql.Result
 	var rows int64
@@ -157,14 +157,35 @@ func (db *Conn) UpdateLifecycle(ctx context.Context, lc types.Lifecycle, cid typ
 		lc.BulkSubstrate.UUID,
 		lc.UUID); err != nil {
 
-		return err
+		return lc, err
 	} else if rows, err = result.RowsAffected(); err != nil {
-		return err
+		return lc, err
 	} else if rows != 1 {
 		err = fmt.Errorf("lifecycle was not updated")
 	}
 
-	return err
+	return lc, err
+}
+
+func (db *Conn) UpdateModified(ctx context.Context, lc *types.Lifecycle, modified time.Time, cid types.CID) (*types.Lifecycle, error) {
+	var err error
+	var result sql.Result
+	var rows int64
+
+	deferred, start, l := initAccessFuncs("UpdateModified", db.logger, lc.UUID, cid)
+	defer deferred(start, err, l)
+
+	if result, err = db.ExecContext(ctx, psqls["lifecycle"]["modified"], modified, lc.UUID); err != nil {
+		return lc, err
+	} else if rows, err = result.RowsAffected(); err != nil {
+		return lc, err
+	} else if rows != 1 {
+		err = fmt.Errorf("mtime was not updated")
+	} else {
+		lc.MTime = modified
+	}
+
+	return lc, err
 }
 
 func (db *Conn) DeleteLifecycle(ctx context.Context, id types.UUID, cid types.CID) error {

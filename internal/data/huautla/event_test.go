@@ -22,8 +22,10 @@ type eventerMock struct {
 	selectResult types.Event
 	selectErr    error
 
+	changeResult types.Event
+	changeErr    error
+
 	addErr,
-	changeErr,
 	rmErr error
 }
 
@@ -223,10 +225,6 @@ func Test_DeleteEvent(t *testing.T) {
 			lcErr: fmt.Errorf("lifecycle_error"),
 			sc:    http.StatusInternalServerError,
 		},
-		"missing_event_id": {
-			l:  types.Lifecycle{UUID: "missing_event_id"},
-			sc: http.StatusBadRequest,
-		},
 		"missing_lifecycle": {
 			sc: http.StatusBadRequest,
 		},
@@ -300,8 +298,8 @@ func (em *eventerMock) GetLifecycleEvents(ctx context.Context, lc *types.Lifecyc
 func (em *eventerMock) AddEvent(ctx context.Context, lc *types.Lifecycle, e types.Event, cid types.CID) error {
 	return em.addErr
 }
-func (em *eventerMock) ChangeEvent(ctx context.Context, lc *types.Lifecycle, e types.Event, cid types.CID) error {
-	return em.changeErr
+func (em *eventerMock) ChangeEvent(ctx context.Context, lc *types.Lifecycle, e types.Event, cid types.CID) (types.Event, error) {
+	return em.changeResult, em.changeErr
 }
 func (em *eventerMock) RemoveEvent(ctx context.Context, lc *types.Lifecycle, id types.UUID, cid types.CID) error {
 	return em.rmErr

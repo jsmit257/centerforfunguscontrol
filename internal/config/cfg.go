@@ -3,7 +3,7 @@ package config
 import "github.com/kelseyhightower/envconfig"
 
 type Config struct {
-	HuautlaHost string `envconfig:"HUAUTLA_HOST" default:"127.0.0.1"`
+	HuautlaHost string `envconfig:"HUAUTLA_HOST" default:"localhost"`
 	HuautlaPort int    `envconfig:"HUAUTLA_PORT" default:"5432"`
 	HuautlaUser string `envconfig:"HUAUTLA_USER" default:"postgres"`
 	HuautlaPass string `envconfig:"HUAUTLA_PASS" default:"root"`
@@ -17,7 +17,7 @@ type Config struct {
 
 func NewConfig() *Config {
 	result := &Config{}
-	if err := envconfig.Process("CFFC", result); err != nil {
+	if err := envconfig.Process("", result); err != nil {
 		panic(err)
 	}
 	return result

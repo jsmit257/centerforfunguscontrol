@@ -39,8 +39,8 @@ $(function () {
       }
     })
     .append($('<img class="remove active" />'))
-    .append($('<img class= "ok" />'))
     .append($('<img class="cancel" />'))
+    .append($('<img class= "ok" />'))
     .append($('<img class="add active" />'))
     .append($('<img class="edit active" />'))
     .append($('<img class="refresh active" />'))

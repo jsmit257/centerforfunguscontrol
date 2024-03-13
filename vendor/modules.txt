@@ -7,7 +7,7 @@ github.com/go-chi/chi/v5
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
-# github.com/jsmit257/huautla v0.0.0-20240311050050-5f101f84cc41
+# github.com/jsmit257/huautla v0.0.0-20240311050050-5f101f84cc41 => /home/johnny/dev/go/src/github.com/jsmit257/huautla
 ## explicit; go 1.20
 github.com/jsmit257/huautla
 github.com/jsmit257/huautla/internal/data
@@ -37,3 +37,4 @@ golang.org/x/sys/windows
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
+# github.com/jsmit257/huautla => /home/johnny/dev/go/src/github.com/jsmit257/huautla

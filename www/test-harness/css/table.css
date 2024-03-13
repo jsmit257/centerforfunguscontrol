@@ -1,6 +1,6 @@
 body>.main>.workspace>div .table {
   border-radius: 17px;
-  background-color: #aaaaaa22;
+  background-color: #aaa1;
   float: left;
   width: 100%;
 }
@@ -11,9 +11,8 @@ body>.main>.workspace>div .table>div {
 }
 
 body>.main>.workspace>div .table>.columns {
-  background-color: #ffffff33;
+  background-image: linear-gradient(180deg, #fff3, transparent);
   border-radius: 18px 18px 0 0;
-  /* margin-bottom: .3em; */
   padding-bottom: .3em;
   padding-top: .3em;
 }
@@ -25,6 +24,10 @@ body>.main>.workspace>div .table>.columns>div {
   text-align: center;
 }
 
+/* body>.main>.workspace>div .table>.rows {
+  height: 20em;
+  overflow-y: scroll;
+} */
 
 body>.main>.workspace>div .table>.rows>.row {
   border-radius: 0px;
@@ -38,6 +41,16 @@ body>.main>.workspace>div .table>.rows>.row>select,
 body>.main>.workspace>div .table>.rows>.row>div {
   float: left;
   line-height: 150%;
+  overflow: hidden;
+}
+
+body>.main>.workspace>div .table.lifecycle>.rows.add>.row.no-add {
+  display: none;
+}
+
+body>.main>.workspace>div .table>.rows>.row>.website,
+body>.main>.workspace>div .table>.rows>.row>.static.date {
+  text-align: center;
 }
 
 body>.main>.workspace>div .table>.rows>.row>input,
@@ -52,12 +65,19 @@ body>.main>.workspace>div .table>.rows>.row>.live {
   display: none;
 }
 
+body>.main>.workspace>div .table>.rows.editing>.row>.live,
 body>.main>.workspace>div .table>.rows>.row.editing>.live {
   display: revert;
 }
 
+body>.main>.workspace>div .table>.rows.editing>.row>.static,
 body>.main>.workspace>div .table>.rows>.row.editing>.static {
   display: none;
+}
+
+body>.main>.workspace>div .table>.rows.editing>.row>.static.const,
+body>.main>.workspace>div .table>.rows>.row.editing>.static.const {
+  display: block !important;
 }
 
 body>.main>.workspace>div .table>.rows>.row option {

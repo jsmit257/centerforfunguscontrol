@@ -19,9 +19,26 @@ $(function () {
     $t.addClass('selected')
   })
 
-  $('.static.date').on('format', (e, d) => {
-    console.log('date', d)
-    $(e.currentTarget).text(d.replace('T', ' ').replace(/(\.\d+)?Z/, ''))
+  // $('.static.date').on('set', (e, d) => {
+  //   console.log('this 1', e.currentTarget, 'date', d)
+  //   // $(e.currentTarget).text(d.replace('T', ' ').replace(/(\.\d+)?Z/, ''))
+  // })
+
+  $(document.body).on('set', '.static.date', (e, d) => {
+    // console.log('this 2', e.currentTarget, 'date', d)
+    $(e.currentTarget)
+      .text(d.replace('T', ' ').replace(/:\d{2}(\.\d+)?Z/, ''))
+      .data('value', d)
+  })
+
+  $(document.body).on('reset', '.static.date', e => {
+    // console.log('reset this', e.currentTarget, 'date', $(e.currentTarget)
+    //   .data('value'))
+    $(e.currentTarget).text(
+      $(e.currentTarget)
+        .data('value')
+        .replace('T', ' ')
+        .replace(/:\d{2}(\.\d+)?Z/, ''))
   })
 
   $('body').on('error-message', (e, ...data) => {

@@ -118,16 +118,22 @@ func (db *Conn) AddEvent(ctx context.Context, lc *types.Lifecycle, e types.Event
 		return err
 	} else if rows, err := result.RowsAffected(); err != nil {
 		return err
-	} else if rows != 1 { // most likely cause is a bad vendor.uuid
+	} else if rows != 1 { // most likely cause is a bad eventtype.uuid
 		return fmt.Errorf("event was not added")
 	}
 
-	lc.Events = append(lc.Events, e)
+	if e.EventType, err = db.SelectEventType(ctx, e.EventType.UUID, cid); err != nil {
+		return fmt.Errorf("couldn't fetch eventtype")
+	} else if _, err = db.UpdateModified(ctx, lc, e.MTime, cid); err != nil {
+		return fmt.Errorf("couldn't update lifecycle.mtime")
+	}
+
+	lc.Events = append([]types.Event{e}, lc.Events...)
 
 	return err
 }
 
-func (db *Conn) ChangeEvent(ctx context.Context, lc *types.Lifecycle, e types.Event, cid types.CID) error {
+func (db *Conn) ChangeEvent(ctx context.Context, lc *types.Lifecycle, e types.Event, cid types.CID) (types.Event, error) {
 	var err error
 	var result sql.Result
 
@@ -143,20 +149,26 @@ func (db *Conn) ChangeEvent(ctx context.Context, lc *types.Lifecycle, e types.Ev
 		e.UUID,
 		e.EventType.UUID)
 	if err != nil {
-		return err
+		return e, err
 	} else if rows, err := result.RowsAffected(); err != nil {
-		return err
-	} else if rows != 1 { // most likely cause is a bad vendor.uuid
-		return fmt.Errorf("event was not changed")
+		return e, err
+	} else if rows != 1 { // most likely cause is a bad eventtype.uuid
+		return e, fmt.Errorf("event was not changed")
+	}
+
+	if e.EventType, err = db.SelectEventType(ctx, e.EventType.UUID, cid); err != nil {
+		return e, fmt.Errorf("couldn't fetch eventtype")
+	} else if _, err = db.UpdateModified(ctx, lc, e.MTime, cid); err != nil {
+		return e, err
 	}
 
 	i, j := 0, len(lc.Events)
 	for i < j && lc.Events[i].UUID != e.UUID {
 		i++
 	}
-	lc.Events[i] = e
+	lc.Events = append(append([]types.Event{e}, lc.Events[:i]...), lc.Events[i+1:]...)
 
-	return err
+	return e, err
 }
 
 func (db *Conn) RemoveEvent(ctx context.Context, lc *types.Lifecycle, id types.UUID, cid types.CID) error {
@@ -174,6 +186,10 @@ func (db *Conn) RemoveEvent(ctx context.Context, lc *types.Lifecycle, id types.U
 		return err
 	} else if rows != 1 { // most likely cause is a bad vendor.uuid
 		return fmt.Errorf("event could not be removed")
+	}
+
+	if _, err = db.UpdateModified(ctx, lc, time.Now().UTC(), cid); err != nil {
+		return err
 	}
 
 	i, j := 0, len(lc.Events)

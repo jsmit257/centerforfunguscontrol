@@ -9,7 +9,13 @@ $(function () {
       .append($('<div class=uuid />').text(data.id))
       .append($('<div class="name static" />').text(data.name))
       .append($('<input class="name live" />').val(data.name))
-      .append($('<div class="website static" />').text(data.website))
+      .append($('<div class="website static" />')
+        .append($('<a />')
+          .attr({
+            href: data.website,
+            target: '_erehwon',
+            rel: "noreferrer noopener",
+          }).text(data.website)))
       .append($('<input class="website live" />').val(data.website))
   }
 
@@ -27,7 +33,9 @@ $(function () {
       success: (data, status, xhr) => {
         var $selected = $table.find('.selected')
         $selected.find('>.name.static').text($selected.find('>.name.live').val())
-        $selected.find('>.website.static').text($selected.find('>.website.live').val())
+        $selected.find('>.website.static>a')
+          .attr('href', $selected.find('>.website.live').val())
+          .text($selected.find('>.website.live').val())
       },
       buttonbar: $buttonbar
     })
@@ -59,7 +67,7 @@ $(function () {
 
   $buttonbar.find('>.remove').on('click', e => {
     if ($(e.currentTarget).hasClass('active')) {
-      $table.trigger('delete')
+      $table.trigger('delete', { buttonbar: $buttonbar })
     }
   })
 
@@ -71,6 +79,9 @@ $(function () {
     $vendor
       .addClass('active')
       .find('>.table>.rows')
-      .trigger('refresh', { newRow, newRow })
+      .trigger('refresh', {
+        newRow, newRow,
+        buttonbar: $buttonbar
+      })
   })
 })

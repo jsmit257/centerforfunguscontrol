@@ -32,7 +32,6 @@ type global struct {
 
 func main() {
 	cfg := config.NewConfig()
-
 	log.SetLevel(log.DebugLevel) // TODO: grab this from the config
 	log.SetFormatter(&log.JSONFormatter{})
 

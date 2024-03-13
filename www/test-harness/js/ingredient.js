@@ -48,7 +48,7 @@ $(function () {
 
   $buttonbar.find('>.remove').on('click', e => {
     if ($(e.currentTarget).hasClass('active')) {
-      $table.trigger('delete')
+      $table.trigger('delete', { buttonbar: $buttonbar })
     }
   })
 
@@ -60,6 +60,9 @@ $(function () {
     $ingredient
       .addClass('active')
       .find('>.table>.rows')
-      .trigger('refresh', { newRow: newRow })
+      .trigger('refresh', {
+        newRow: newRow,
+        buttonbar: $buttonbar
+      })
   })
 })

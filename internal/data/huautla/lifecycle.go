@@ -50,9 +50,9 @@ func (ha *HuautlaAdaptor) PostLifecycle(w http.ResponseWriter, r *http.Request) 
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
 	} else if l, err = ha.db.InsertLifecycle(r.Context(), l, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to insert lifecycle")
+	} else {
+		ms.send(w, l, http.StatusCreated)
 	}
-
-	ms.send(w, l, http.StatusCreated)
 }
 
 func (ha *HuautlaAdaptor) PatchLifecycle(w http.ResponseWriter, r *http.Request) {
@@ -68,11 +68,11 @@ func (ha *HuautlaAdaptor) PatchLifecycle(w http.ResponseWriter, r *http.Request)
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body") // XXX: better status code??
 	} else if err := json.Unmarshal(body, &l); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body") // XXX: better status code??
-	} else if err = ha.db.UpdateLifecycle(r.Context() /*types.UUID(id),*/, l, ms.cid); err != nil {
+	} else if l, err = ha.db.UpdateLifecycle(r.Context(), l, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to update lifecycle")
+	} else {
+		ms.send(w, l, http.StatusOK)
 	}
-
-	ms.send(w, nil, http.StatusNoContent)
 }
 
 func (ha *HuautlaAdaptor) DeleteLifecycle(w http.ResponseWriter, r *http.Request) {

@@ -25,7 +25,8 @@ type lifecyclerMock struct {
 	insertResult types.Lifecycle
 	insertErr    error
 
-	updateErr error
+	updateResult types.Lifecycle
+	updateErr    error
 
 	deleteErr error
 }
@@ -219,7 +220,7 @@ func Test_PatchLifecycle(t *testing.T) {
 		"happy_path": {
 			id:    "1",
 			stage: &types.Lifecycle{},
-			sc:    http.StatusNoContent,
+			sc:    http.StatusOK,
 		},
 		"missing_id": {
 			sc: http.StatusBadRequest,
@@ -350,8 +351,8 @@ func (vm *lifecyclerMock) InsertLifecycle(context.Context, types.Lifecycle, type
 	return vm.insertResult, vm.insertErr
 }
 
-func (vm *lifecyclerMock) UpdateLifecycle(context.Context /*types.UUID,*/, types.Lifecycle, types.CID) error {
-	return vm.updateErr
+func (vm *lifecyclerMock) UpdateLifecycle(context.Context, types.Lifecycle, types.CID) (types.Lifecycle, error) {
+	return vm.updateResult, vm.updateErr
 }
 
 func (vm *lifecyclerMock) DeleteLifecycle(context.Context, types.UUID, types.CID) error {

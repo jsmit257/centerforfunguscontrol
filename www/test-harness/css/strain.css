@@ -7,10 +7,6 @@ body>.main>.workspace>.strain>.table>.columns>div {
   width: 24%;
 }
 
-/* body>.main>.workspace>.strain>.table>.columns>.species {
-  width: 18%;
-} */
-
 body>.main>.workspace>.strain>.table>.rows>.row>input,
 body>.main>.workspace>.strain>.table>.rows>.row>select,
 body>.main>.workspace>.strain>.table>.rows>.row>div {
@@ -18,14 +14,8 @@ body>.main>.workspace>.strain>.table>.rows>.row>div {
   width: 23%;
 }
 
-/* body>.main>.workspace>.strain>.table>.rows>.row>.species {
-  padding-left: 0;
-  width: 18%;
-} */
-
 body>.main>.workspace>.strain>.table>.rows>.row>.create_date {
   padding-left: 0;
-  text-align: center;
 }
 
 body>.main>.workspace>.strain>.table.strainattribute {
@@ -40,7 +30,6 @@ body>.main>.workspace>.strain>.table.strainattribute>.columns>div {
 body>.main>.workspace>.strain>.table.strainattribute>.rows>.row>input,
 body>.main>.workspace>.strain>.table.strainattribute>.rows>.row>select,
 body>.main>.workspace>.strain>.table.strainattribute>.rows>.row>div {
-  border-style: none;
   margin-left: 1%;
-  width: 48%;
+  width: 47%;
 }

@@ -8,7 +8,7 @@ $(function () {
     return $('<div class="row hover" />')
       .append($('<div class=uuid />').text(data.id))
       .append($('<div class="name static" />').text(data.name))
-      .append($('<input class="name live" />').text(data.name))
+      .append($('<input class="name live" />').val(data.name))
   }
 
   $buttonbar.find('>.edit').on('click', e => {
@@ -48,7 +48,7 @@ $(function () {
 
   $buttonbar.find('>.remove').on('click', e => {
     if ($(e.currentTarget).hasClass('active')) {
-      $table.trigger('delete')
+      $table.trigger('delete', { buttonbar: $buttonbar })
     }
   })
 
@@ -60,6 +60,9 @@ $(function () {
     $stage
       .addClass('active')
       .find('>.table>.rows')
-      .trigger('refresh', { newRow: newRow })
+      .trigger('refresh', {
+        newRow: newRow,
+        buttonbar: $buttonbar
+      })
   })
 })

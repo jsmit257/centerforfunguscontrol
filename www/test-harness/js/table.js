@@ -14,7 +14,6 @@ $(function () {
     })
     .on('remove-selected', e => {
       var $selected = $(e.currentTarget).find('>.selected')
-      console.log('selected', $selected)
       if ($selected.next().trigger('click').length == 0) {
         $selected.prev().trigger('click')
       }
@@ -37,6 +36,7 @@ $(function () {
             }
             $table.append($row)
           })
+          args.buttonbar.find('.remove, .edit')[$table.children().length === 0 ? "removeClass" : "addClass"]('active')
           if ($table.find('.selected').length == 0) {
             $table.find('.row').first().click()
           }
@@ -49,10 +49,7 @@ $(function () {
 
       var $row = args.newRow()
         .trigger('click')
-        .addClass('editing')
-        .find('input, select')
-        .first()
-        .focus()
+        .addClass('selected editing')
       var $selected = $table
         .find('.selected')
         .removeClass('selected editing')
@@ -61,6 +58,9 @@ $(function () {
       } else {
         $row.insertBefore($selected)
       }
+      $row.find('input, select')
+        .first()
+        .focus()
 
       args.buttonbar.trigger('set', {
         "target": $table,
@@ -75,7 +75,13 @@ $(function () {
               dataType: 'json',
               data: args.data($selected),
               async: true,
-              success: args.success,
+              // async: typeof (args.async) === 'undefined' ? true : args.async,
+              success: (result, status, xhr) => {
+                args.success(result, status, xhr)
+                if ($table.children().length > 0) {
+                  args.buttonbar.find('.remove, .edit').addClass('active')
+                }
+              },
               error: args.error,
             })
           })
@@ -91,10 +97,11 @@ $(function () {
         .first()
         .focus()
 
+
       args.buttonbar.trigger('set', {
         "target": $table,
         "handlers": {
-          "cancel": console.log,
+          "cancel": args.cancel || console.log,
           "ok": args.ok || (e => {
             var $selected = $table.find('.selected')
             $.ajax({
@@ -103,7 +110,7 @@ $(function () {
               method: 'PATCH',
               dataType: 'json',
               data: args.data($selected),
-              async: true,
+              async: false,
               success: args.success,
               error: args.error || console.log,
             })
@@ -111,15 +118,16 @@ $(function () {
         }
       })
     })
-    .on('delete', (e, url) => {
+    .on('delete', (e, args) => {
       var $table = $(e.currentTarget)
       $.ajax({
-        url: url || `/${$table.attr('name')}/${$table.find('.selected>.uuid').text()}`,
+        url: args.url || `/${$table.attr('name')}/${$table.find('.selected>.uuid').text()}`,
         contentType: 'application/json',
         method: 'DELETE',
-        async: true,
+        async: false,
         success: (result, status, xhr) => {
           $table.trigger('remove-selected')
+          args.buttonbar.find('.remove, .edit')[$table.children().length === 0 ? "removeClass" : "addClass"]('active')
         },
         error: console.log,
       })

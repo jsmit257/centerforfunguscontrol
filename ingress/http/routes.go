@@ -12,7 +12,7 @@ import (
 )
 
 func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
-	ha, _ := huautla.New(
+	ha, err := huautla.New(
 		&types.Config{
 			PGHost: cfg.HuautlaHost,
 			PGPort: uint(cfg.HuautlaPort),
@@ -22,6 +22,9 @@ func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
 		},
 		l.WithField("database", "huautla"),
 		nil)
+	if err != nil {
+		panic(err)
+	}
 
 	r.Get("/vendors", ha.GetAllVendors)
 	r.Get("/vendor/{id}", ha.GetVendor)
@@ -75,6 +78,6 @@ func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
 	r.Delete("/lifecycle/{id}", ha.DeleteLifecycle)
 
 	r.Post("/lifecycle/{id}/events", ha.PostEvent)
-	r.Patch("/lifecycle/{lc_id}/events/{ev_id}", ha.PatchEvent)
+	r.Patch("/lifecycle/{lc_id}/events", ha.PatchEvent)
 	r.Delete("/lifecycle/{lc_id}/events/{ev_id}", ha.DeleteEvent)
 }

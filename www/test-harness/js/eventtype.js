@@ -43,7 +43,10 @@ $(function () {
       error: console.log,
     })
 
-    $(e.currentTarget).trigger('refresh', { newRow: newRow })
+    $(e.currentTarget).trigger('refresh', {
+      newRow: newRow,
+      buttonbar: $buttonbar
+    })
   })
 
   $buttonbar.find('>.edit').on('click', e => {
@@ -110,7 +113,7 @@ $(function () {
 
   $buttonbar.find('>.remove').on('click', e => {
     if ($(e.currentTarget).hasClass('active')) {
-      $table.trigger('delete')
+      $table.trigger('delete', { buttonbar: $buttonbar })
     }
   })
 
