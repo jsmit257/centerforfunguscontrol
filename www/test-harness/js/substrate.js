@@ -33,6 +33,10 @@ $(function () {
     $('.table.substrate')
       .removeClass('grain bulk all')
       .addClass($(e.currentTarget).val().toLowerCase())
+
+    if ($table.find(`.selected.${$(e.currentTarget).val().toLowerCase()}`).length === 0) {
+      $table.find(`.row.${$(e.currentTarget).val().toLowerCase()}`).first().click()
+    }
   })
 
   $table

@@ -18,6 +18,9 @@ body>.main>.workspace>.lifecycle>.ndx>.rows>.row {
 
 /* XXX: promote this to index.css in a safe way */
 body>.main>.workspace>.lifecycle>.table>.columns>.column.full {
+  font-size: 110%;
+  opacity: .5;
+  padding-bottom: .3em;
   width: 100%;
 }
 
@@ -62,5 +65,6 @@ body>.main>.workspace>.lifecycle>.table.events>.rows>.row>.humidity {
 
 body>.main>.workspace>.lifecycle>.table.events>.columns>div.eventtype,
 body>.main>.workspace>.lifecycle>.table.events>.rows>.row>.eventtype {
+  overflow: hidden;
   width: 27%;
 }

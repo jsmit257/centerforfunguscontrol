@@ -50,6 +50,7 @@ func main() {
 	r.Get("/", g.staticContent)
 	r.Get("/css/{f}", g.staticContent)
 	r.Get("/css/images/{f}", g.staticContent)
+	r.Get("/css/images/background/{f}", g.staticContent)
 	r.Get("/js/{f}", g.staticContent)
 	r.Get("/images/{f}", g.staticContent)
 

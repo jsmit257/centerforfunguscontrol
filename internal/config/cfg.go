@@ -17,7 +17,7 @@ type Config struct {
 
 func NewConfig() *Config {
 	result := &Config{}
-	if err := envconfig.Process("", result); err != nil {
+	if err := envconfig.Process("CFFC", result); err != nil {
 		panic(err)
 	}
 	return result

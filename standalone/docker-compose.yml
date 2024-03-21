@@ -1,0 +1,146 @@
+#
+# more detailed information about this file can be found here:
+# https://github.com/jsmit257/centerforfunguscontrol/master/standalone/README.md
+#
+---
+version: "3.1"
+
+x-pg-pass: &pgpass root
+
+services:
+
+  source:
+    # usage: don't, used by migration for a one time install
+    image: jsmit257/huautla:lkg
+    restart: always
+    hostname: huautla-source
+    environment:
+      POSTGRES_PASSWORD: *pgpass
+
+  migration:
+    # usage (2 separate commands): 
+    #
+    # $ docker-compose up --remove-orphans migration
+    # $ docker-compose down --remove-orphans
+    #
+    # creates a persistent store for huautla data on the host filesystem so 
+    # changes aren't lost between restarts; only run this once for a fresh
+    # install (although you could start as many fresh installs as you like);
+    #
+    # it creates a 'data/' directory for durable storage, but it fails if one
+    # already exists; if you're willing to lose everything in the database and
+    # start from scratch, then delete the 'data/' directory and try again;
+    # otherwise, consider the `restore:` service, assuming there are backups
+    depends_on: [ source ]
+    image: jsmit257/huautla:lkg
+    hostname: huautla-migration
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment:
+      SOURCE_HOST: huautla-source
+      SOURCE_USER: postgres
+      POSTGRES_PASSWORD: *pgpass
+    entrypoint: /migration-entrypoint.sh
+
+  huautla-standalone:
+    # usage: docker-compose up --remove-orphans -d huautla-standalone
+    #
+    # *but* you shouldn't ever really need to run this manually; it gets
+    # started by cffc-standalone; you could disable port forwarding unless
+    # you think you'll be poking around the SQL from a local client
+    #
+    # either way, try to remember to:
+    #
+    # $ docker-compose down --remove-orphans
+    #
+    # when you're done with it
+    image: postgres:bookworm
+    restart: always
+    hostname: huautla-standalone
+    ports:
+      - 5436:5432
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: *pgpass
+
+  backup:
+    # usage: docker-compose up --remove-orphans backup
+    #
+    # this is fine to run against a live server; it leaves an archive in the 
+    # host's `backups` directory; use the archive to restore an errant database
+    # to some other point in time using the `restore:` service
+    #
+    # it would be a very good idea(tm) to schedule this to run periodically,
+    # and perhaps wipe old archives while we're at it; it would also be good 
+    # to ship the archives elsewhere in case of hardware failure
+    depends_on: [ huautla-standalone ]
+    image: jsmit257/huautla:lkg
+    hostname: huautla-backup
+    volumes:
+      - ./backups:/pgbackup
+    environment:
+      SOURCE_HOST: huautla-standalone
+      SOURCE_USER: postgres
+      POSTGRES_PASSWORD: *pgpass
+    entrypoint: /backup-entrypoint.sh
+
+  restore:
+    # usage: RESTORE_POINT=<archive> docker-compose up --remove-orphans restore
+    #
+    # restores the specified database to the state contained in <archive>;
+    # you can find archives in the host directory called 'backups/'; the 
+    # filenames are modified ISO timestamps like YYYYmmDDT..., meaning 
+    # year/month/day/..., so you can sort by name descending and get the 
+    # latest archive names at the top, or choose an earlier one before any
+    # corruption happened; for convenience, the most recent backup is symlinked
+    # to the file named 'latest'
+    depends_on: [ huautla-standalone ]
+    image: jsmit257/huautla:lkg
+    hostname: huautla-restore
+    volumes:
+      - ./backups:/pgbackup
+    environment:
+      DEST_HOST: huautla-standalone
+      DEST_USER: postgres
+      RESTORE_POINT: ${RESTORE_POINT}
+      POSTGRES_PASSWORD: *pgpass
+    entrypoint: /restore-entrypoint.sh
+
+  cffc-standalone:
+    # usage: docker-compose up --remove-orphans -d cffc-standalone
+    #
+    # that's all there is to it; check that the host port isn't being
+    # used by anybody (docker-compose will tell you if it is) then http
+    # to it on localhost, or any interface on the host
+    #
+    # NB: the HUAUTLA_* environment variables could connect to any postgres
+    # server, but the huautla-standalone will still be started
+    #
+    # put a file called `image.png` in the `background` folder in this 
+    # directory and it will be used on the site; no need to restart this 
+    # service, just refresh the page
+    #
+    # the normal PSA: please try to shut down cleanly with:
+    #
+    # $ docker-compose down --remove-orphans
+    #
+    # this is a good candidate for a shutdown/logout event when you know
+    # nothing needs to be running and you want them to power down safely,
+    # mostly the database, this service doesn't really care much
+    depends_on: [ huautla-standalone ]
+    image: jsmit257/cffc:lkg
+    restart: always
+    hostname: cffc-standalone
+    ports:
+      - 8082:8080 # if you change the second port, also change environment:HTTP_PORT below
+    volumes:
+      - ./background:/www/test-harness/css/images/background
+    environment:
+      HUAUTLA_HOST: huautla-standalone
+      HUAUTLA_PORT: 5432
+      HUAUTLA_USER: postgres
+      HUAUTLA_PASSWORD: *pgpass
+      HUAUTLA_SSL: disable
+      HTTP_HOST: cffc-standalone
+      HTTP_PORT: 8080 # this should match the second port in the corresponding ports: list above

@@ -1,16 +1,18 @@
 #!/bin/bash
 
-psql "postgresql://postgres:root@${HUAUTLA_HOST:=localhost}:${HUAUTLA_PORT:=5432}" huautla <<-EOF
-  \c huautla
-  delete from events;
-  delete from lifecycles;
-	delete from strain_attributes;
-	delete from strains;
-	delete from substrate_ingredients;
-	delete from substrates;
-	delete from ingredients;
-	delete from vendors where uuid != '0';
+if which psql >/dev/null 2>&1; then
+  psql "postgresql://postgres:root@${HUAUTLA_HOST:=localhost}:${HUAUTLA_PORT:=5432}" huautla <<-EOF
+    \c huautla
+    delete from events;
+    delete from lifecycles;
+    delete from strain_attributes;
+    delete from strains;
+    delete from substrate_ingredients;
+    delete from substrates;
+    delete from ingredients;
+    delete from vendors where uuid != '0';
 EOF
+fi
 
 files=(
   ./tests/system/main_test.go

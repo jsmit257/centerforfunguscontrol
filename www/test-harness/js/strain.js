@@ -165,7 +165,7 @@ $(function () {
 
   $buttonbar.find('>.remove').on('click', e => {
     if ($(e.currentTarget).hasClass('active')) {
-      $table.trigger('delete')
+      $table.trigger('delete', { buttonbar: $buttonbar })
     }
   })
 
