@@ -2,29 +2,17 @@ body>.main>.workspace>.substrate>.table.substrate {
   width: 65%;
 }
 
-body>.main>.workspace>.substrate>.table.substrate>.columns>div {
-  width: 33%;
-}
-
+body>.main>.workspace>.substrate>.table.substrate>.columns>div,
 body>.main>.workspace>.substrate>.table.substrate>.rows>.row>input,
 body>.main>.workspace>.substrate>.table.substrate>.rows>.row>select,
 body>.main>.workspace>.substrate>.table.substrate>.rows>.row>div {
-  padding-left: 1%;
-  width: 32%;
+  padding-left: 2%;
+  width: 31%;
 }
 
 body>.main>.workspace>.substrate>.table.substrate.bulk>.rows>.row.grain,
 body>.main>.workspace>.substrate>.table.substrate.grain>.rows>.row.bulk {
   display: none;
-}
-
-body>.main>.workspace>.substrate>.table.ingredients {
-  float: right;
-  width: 34%;
-}
-
-body>.main>.workspace>.substrate>.table.ingredients>.columns>div {
-  width: 100%;
 }
 
 body>.main>.workspace>.substrate>.table.substrate>.columns>.column.type>select.types:focus-visible {
@@ -45,10 +33,15 @@ body>.main>.workspace>.substrate>.table.substrate>.columns>.column.type>select.t
   background-color: black;
 }
 
-body>.main>.workspace>.substrate>.table.ingredients>.rows>.row>input,
+body>.main>.workspace>.substrate>.table.ingredients {
+  float: right;
+  width: 34%;
+}
+
+body>.main>.workspace>.substrate>.table.ingredients>.columns>div,
 body>.main>.workspace>.substrate>.table.ingredients>.rows>.row>select,
 body>.main>.workspace>.substrate>.table.ingredients>.rows>.row>div {
   border-style: none;
-  margin-left: 1%;
-  width: 99%;
+  margin-left: 2%;
+  width: 98%;
 }

@@ -102,7 +102,7 @@ $(function () {
             $ingredients.append(newIngredientRow(a))
           })
           $ingredients.find('.row').first().click()
-          $buttonbar.find('.remove, .edit')[$ingredients.children().length > 0 ? 'removeClass' : 'addClass']('active')
+          $buttonbar.find('.remove')[$ingredients.children().length > 0 ? 'removeClass' : 'addClass']('active')
           $ingredientbar.find('.remove, .edit')[$ingredients.children().length === 0 ? 'removeClass' : 'addClass']('active')
         },
         error: console.log

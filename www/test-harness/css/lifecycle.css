@@ -4,7 +4,6 @@ body>.main>.workspace>.lifecycle>.ndx {
 
 body>.main>.workspace>.lifecycle>.ndx>.rows {
   margin-bottom: .5em;
-  /* margin-top: .5em; */
 }
 
 body>.main>.workspace>.lifecycle>.ndx>.rows>.row.new>.created_at::before {
@@ -20,7 +19,6 @@ body>.main>.workspace>.lifecycle>.ndx>.rows>.row {
 body>.main>.workspace>.lifecycle>.table>.columns>.column.full {
   font-size: 110%;
   opacity: .5;
-  padding-bottom: .3em;
   width: 100%;
 }
 
@@ -41,6 +39,10 @@ body>.main>.workspace>.lifecycle>.table.lifecycle>.rows>div>.label {
   width: 20%;
 }
 
+body>.main>.workspace>.lifecycle>.table.lifecycle>.rows.add>.row.no-add {
+  display: none;
+}
+
 body>.main>.workspace>.lifecycle>.table.events {
   float: right;
   margin-top: 2em;
@@ -54,6 +56,10 @@ body>.main>.workspace>.lifecycle>.table.events>.rows>.row>select {
   padding-left: 1%;
   text-align: center;
   width: 19%;
+}
+
+body>.main>.workspace>.lifecycle>.table.events>.columns>.column.full {
+  padding-bottom: .3em;
 }
 
 body>.main>.workspace>.lifecycle>.table.events>.columns>div.temperature,

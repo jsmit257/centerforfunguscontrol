@@ -3,10 +3,7 @@ body>.main>.workspace>.vendor.active>.table {
   width: 50%;
 }
 
-body>.main>.workspace>.vendor.active>.table>.columns>div {
-  width: 50%;
-}
-
+body>.main>.workspace>.vendor.active>.table>.columns>div,
 body>.main>.workspace>.vendor.active>.table>.rows>.row>div {
   margin-left: 2%;
   width: 48%;

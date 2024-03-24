@@ -4,7 +4,6 @@
 
 .selected {
   background-image: linear-gradient(0, transparent, #bbb3, #bbb3, transparent) !important;
-  /* background-color: #bbbbbb33 !important; */
   border-radius: 25px;
   cursor: default !important;
   text-decoration: none !important;
@@ -12,14 +11,9 @@
 
 .hover:hover {
   background-image: linear-gradient(0, transparent, #aaa2, transparent);
-  /* background-color: #aaaaaa22; */
   border-radius: 25px;
   cursor: pointer;
   text-decoration: underline;
-}
-
-a {
-  color: aliceblue;
 }
 
 body {
@@ -31,8 +25,19 @@ body {
   width: 80%;
 }
 
-body div {
+div {
   position: relative;
+}
+
+a {
+  color: aliceblue;
+}
+
+select,
+input {
+  border: none;
+  outline: none;
+  font-family: none;
 }
 
 body>.background-image {
@@ -66,7 +71,6 @@ body>.main>.header>.menuitem {
   font-weight: bolder;
   padding-bottom: 1em;
   padding-top: 1em;
-  position: relative;
   text-align: center;
   width: 14.25%;
 }
@@ -85,58 +89,4 @@ body>.main>.workspace>div {
 
 body>.main>.workspace>.active {
   display: block;
-}
-
-body>.main>.workspace>.active>form {
-  position: relative;
-}
-
-body>.main>.workspace>.active>form ul>li.attr {
-  list-style-type: disc;
-}
-
-body>.main>.workspace>.active>form ul>li.attr>div {
-  float: left;
-}
-
-body>.main>.workspace>.active>form ul>li.attr>div.label {
-  width: 8em;
-}
-
-body>.main>.workspace>.active>form ul>li.attr.expandable {
-  list-style-type: disc;
-}
-
-body>.main>.workspace>.active>form ul>li.attr.expandable>.label:hover {
-  cursor: pointer;
-}
-
-body>.main>.workspace>.active>form>ul li.attr.expandable>div.input {
-  display: none;
-}
-
-body>.main>.workspace>.active>form>ul li.attr.expandable>div.input>ul {
-  float: none;
-}
-
-body>.main>.workspace>.active>form>ul li.attr.expanded {
-  cursor: auto !important;
-  list-style-type: circle !important;
-}
-
-body>.main>.workspace>.active>form>ul li.attr.expanded>div.input {
-  clear: left;
-  display: revert;
-}
-
-body>.main>.workspace>.active>form>ul li.attr>.input>.live {
-  display: none;
-}
-
-body>.main>.workspace>.active>form>ul li.attr.editing>.input>.live {
-  display: inline;
-}
-
-body>.main>.workspace>.active>form>ul li.attr.editing>.input>.static {
-  display: none;
 }

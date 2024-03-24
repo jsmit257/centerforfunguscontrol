@@ -1,0 +1,34 @@
+body>.main>.workspace>div .table>.columns {
+  background-image: linear-gradient(180deg, #fff3, transparent);
+  border-radius: 18px 18px 0 0;
+  padding-bottom: .3em;
+  padding-top: .3em;
+}
+
+body>.main>.workspace>div .table>.columns>div {
+  float: left;
+  line-height: 150%;
+  font-weight: bolder;
+  text-align: center;
+}
+
+body>.main>.workspace>div .table>.columns>div[sort-key] {
+  cursor: pointer;
+}
+
+body>.main>.workspace>div .table>.columns>div[sort-key]>.sort-icon {
+  background-image: linear-gradient(45deg, black, transparent), url(./images/button-sprites.png);
+  background-position: -165px -450px;
+  background-repeat: no-repeat;
+  float: left;
+  margin-right: -12px;
+  width: 12px;
+}
+
+body>.main>.workspace>div .table>.columns>div[sort-order=sort-asc]>.sort-icon {
+  background-position: -437px -158px;
+}
+
+body>.main>.workspace>div .table>.columns>div[sort-order=sort-desc]>.sort-icon {
+  background-position: -421px -159px;
+}

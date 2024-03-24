@@ -6,6 +6,7 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
   <script src="./js/index.js" defer></script>
   <script src="./js/table.js" defer></script>
+  <script src="./js/column.js" defer></script>
   <script src="./js/buttonbar.js" defer></script>
   <script src="./js/lifecycle.js" defer></script>
   <script src="./js/vendor.js" defer></script>
@@ -18,6 +19,7 @@
   <!-- <link href="jquery-ui.min.css" rel="stylesheet"> -->
   <link href="./css/index.css" rel="stylesheet">
   <link href="./css/table.css" rel="stylesheet">
+  <link href="./css/column.css" rel="stylesheet">
   <link href="./css/buttonbar.css" rel="stylesheet">
   <link href="./css/lifecycle.css" rel="stylesheet">
   <link href="./css/vendor.css" rel="stylesheet">
@@ -152,8 +154,8 @@
       <div class="vendor">
         <div class="table">
           <div class="columns">
-            <div class="column name">Name</div>
-            <div class="column website">Website</div>
+            <div class="column name" sort-key="name">Name</div>
+            <div class="column website" sort-key="website">Website</div>
           </div>
           <div class="rows" name="vendor"></div>
           <div class="buttonbar"></div>
@@ -162,7 +164,7 @@
       <div class="ingredient">
         <div class="table">
           <div class="columns">
-            <div class="column name">Name</div>
+            <div class="column name" sort-key="name">Name</div>
           </div>
           <div class="rows" name="ingredient"></div>
           <div class="buttonbar"></div>
@@ -171,10 +173,10 @@
       <div class="strain">
         <div class="table strain">
           <div class="columns">
-            <div class="column name">Name</div>
-            <div class="column species">Species</div>
-            <div class="column vendor">Vendor</div>
-            <div class="column create_date">Created At</div>
+            <div class="column name" sort-key="name">Name</div>
+            <div class="column species" sort-key="species">Species</div>
+            <div class="column vendor" sort-key="vendor">Vendor</div>
+            <div class="column create_date" sort-key="create_date">Created At</div>
           </div>
           <div class="rows" name="strain"></div>
           <div class="buttonbar"></div>
@@ -182,7 +184,7 @@
         <datalist id="known-strain-names"></datalist>
         <div class="table strainattribute">
           <div class="columns">
-            <div class="column name">Attribute Name</div>
+            <div class="column name" sort-key="name">Attribute Name</div>
             <div class="column value">Value</div>
           </div>
           <div class="rows" name="strainattribute"></div>
@@ -192,7 +194,7 @@
       <div class="substrate">
         <div class="table substrate">
           <div class="columns">
-            <div class="column name">Name</div>
+            <div class="column name" sort-key="name">Name</div>
             <div class="column type">
               <span>Type</span>
               <select class="types">
@@ -201,14 +203,14 @@
                 <option value="All" selected="selected">All</option>
               </select>
             </div>
-            <div class="column vendor">Vendor</div>
+            <div class="column vendor" sort-key="vendor">Vendor</div>
           </div>
           <div class="rows" name="substrate"></div>
           <div class="buttonbar"></div>
         </div>
         <div class="table ingredients">
           <div class="columns">
-            <div class="column name">Ingredients</div>
+            <div class="column name" sort-key="ingredient">Ingredients</div>
           </div>
           <div class="rows" name="ingredients"></div>
           <div class="buttonbar"></div>
@@ -226,9 +228,9 @@
       <div class="eventtype">
         <div class="table">
           <div class="columns">
-            <div class="column name">Name</div>
-            <div class="column severity">Severity</div>
-            <div class="column stage">Stage</div>
+            <div class="column name" sort-key="name">Name</div>
+            <div class="column severity" sort-key="severity">Severity</div>
+            <div class="column stage" sort-key="stage">Stage</div>
           </div>
           <div class="rows" name="eventtype"></div>
           <div class="buttonbar"></div>
