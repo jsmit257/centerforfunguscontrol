@@ -5,7 +5,7 @@ type sqlMap map[string]map[string]string
 var psqls = sqlMap{
 
 	"event": {
-		"all-by-lifecycle": `
+		"all-by-observable": `
     select e.uuid,
            e.temperature,
            e.humidity,
@@ -21,9 +21,9 @@ var psqls = sqlMap{
         on e.eventtype_uuid = et.uuid
       join stages s
         on et.stage_uuid = s.uuid
-     where lifecycle_uuid = $1
+     where e.observable_uuid = $1
      order
-        by mtime desc`,
+        by e.mtime desc`,
 		"all-by-eventtype": `
     select e.uuid,
            e.temperature,
@@ -58,22 +58,20 @@ var psqls = sqlMap{
         on et.stage_uuid = s.uuid
      where e.uuid = $1`,
 		"add": `
-    insert
-      into events(uuid, temperature, humidity, mtime, ctime, lifecycle_uuid, eventtype_uuid)
-    select $1, $2, $3, $4, $5, lc.uuid, et.uuid
-      from lifecycles lc,
-           event_types et
-     where lc.uuid = $6
-       and et.uuid = $7`,
+      insert
+        into  events(uuid, temperature, humidity, mtime, ctime, observable_uuid, eventtype_uuid)
+      select  $1, $2, $3, $4, $5, $6, et.uuid
+        from  event_types et
+      where  et.uuid = $7`,
 		"change": `
-    update events e
-       set temperature = $1,
-           humidity = $2,
-           mtime = $3,
-           eventtype_uuid = et.uuid
-      from event_types et
-     where e.uuid = $4
-       and et.uuid = $5`,
+      update  events e
+        set  temperature = $1,
+              humidity = $2,
+              mtime = $3,
+              eventtype_uuid = et.uuid
+        from  event_types et
+      where  e.uuid = $4
+        and  et.uuid = $5`,
 		"remove": `delete from events where uuid = $1`,
 	},
 
@@ -116,6 +114,105 @@ var psqls = sqlMap{
 		"delete": `delete from event_types where uuid = $1`,
 	},
 
+	"generation": {
+		"ndx": `
+      select  g.uuid,
+              ps.uuid as plating_id,
+              ps.name as plating_name,
+              ps.type as plating_type,
+              psv.uuid as plating_vendor_uuid,
+              psv.name as plating_vendor_name,
+              psv.website as plating_vendor_website,
+              ls.uuid as liquid_uuid,
+              ls.name as liquid_name,
+              ls.type as liquid_type,
+              lsv.uuid as liquid_vendor_uuid,
+              lsv.name as liquid_vendor_name,
+              lsv.website as liquid_vendor_website,
+              s.uuid as source_uuid,
+              s.type,
+              lc.uuid as observable_id,
+              coalesce(lc.strain_uuid, s.progenitor_uuid) as strain_uuid,
+              st.name as strain_name,
+              st.species as strain_species,
+              st.ctime as strain_ctime,
+              stv.uuid as strain_vendor_uuid,
+              stv.name as strain_vendor_name,
+              stv.website as strain_vendor_website
+        from  generations g
+        join  sources s
+          on  g.uuid = s.generation_uuid
+        join  substrates ps
+          on  g.platingsubstrate_uuid = ps.uuid
+        join  vendors psv
+          on  ps.vendor_uuid = psv.uuid
+        join  substrates ls
+          on  g.liquidsubstrate_uuid = ls.uuid
+        join  vendors lsv
+          on  ls.vendor_uuid = lsv.uuid
+        left
+        join  events e
+          on  s.progenitor_uuid = e.uuid
+        left
+        join  lifecycles lc
+          on  e.observable_uuid = lc.uuid
+        join  strains st
+          on  st.uuid = coalesce(lc.strain_uuid, s.progenitor_uuid)
+        join  vendors stv
+          on  st.vendor_uuid = stv.uuid`,
+		"select": `
+      select  ps.uuid as plating_id,
+              ps.name as plating_name,
+              ps.type as plating_type,
+              psv.uuid as plating_vendor_uuid,
+              psv.name as plating_vendor_name,
+              psv.website as plating_vendor_website,
+              ls.uuid as liquid_uuid,
+              ls.name as liquid_name,
+              ls.type as liquid_type,
+              lsv.uuid as liquid_vendor_uuid,
+              lsv.name as liquid_vendor_name,
+              lsv.website as liquid_vendor_website,
+              g.mtime,
+              g.ctime
+        from  generations g
+        join  substrates ps
+          on  g.platingsubstrate_uuid = ps.uuid
+        join  vendors psv
+          on  ps.vendor_uuid = psv.uuid
+        join  substrates ls
+          on  g.liquidsubstrate_uuid = ls.uuid
+        join  vendors lsv
+          on  ls.vendor_uuid = lsv.uuid
+       where  g.uuid = $1`,
+		"insert": `
+      insert  into generations(uuid, platingsubstrate_uuid, liquidsubstrate_uuid, mtime, ctime)
+      select  $1,
+              ps.uuid,
+              ls.uuid,
+              $4,
+              $4
+        from  substrates ps,
+              substrates ls
+       where  ps.type = 'Agar'
+         and  ls.type = 'Liquid'
+         and  ps.uuid = $2
+         and  ls.uuid = $3`,
+		"update": `
+      update  generations g
+         set  platingsubstrate_uuid = ps.uuid,
+              liquidsubstrate_uuid = ls.uuid,
+              mtime = current_timestamp
+        from  substrates ps,
+              substrates ls
+       where  ps.type = 'Agar'
+         and  ls.type = 'Liquid'
+         and  ps.uuid = $1
+         and  ls.uuid = $2
+         and  g.uuid = $3`,
+		"delete": "delete from generations where uuid = $1",
+	},
+
 	"ingredient": {
 		"select-all": `select uuid, name from ingredients order by name`,
 		"select":     `select name from ingredients where uuid = $1`,
@@ -129,10 +226,11 @@ var psqls = sqlMap{
 		"index": `
       select uuid,
              location,
+             mtime,
              ctime
        from  lifecycles
       order
-         by  ctime desc`,
+         by  mtime desc`,
 		"select": `
       select  lc.location,
               lc.strain_cost,
@@ -235,8 +333,53 @@ var psqls = sqlMap{
         and bs.uuid = $11
         and bs.type = 'Bulk'
         and lifecycles.uuid = $12`,
-		"modified": `update lifecycles set mtime = $1 where uuid = $2`,
-		"delete":   `delete from lifecycles where uuid = $1`,
+		"delete": `delete from lifecycles where uuid = $1`,
+	},
+
+	"mtime": {
+		"touch": `update %s set mtime = $1 where uuid = $2`,
+	},
+
+	"source": {
+		"get": `
+      select  s.uuid,
+              s.type,
+              lc.uuid as lifecycle_uuid,
+              st.uuid as strain_uuid,
+              st.name as strain_name,
+              st.species,
+              st.ctime as strain_ctime,
+              v.uuid as strain_vendor_uuid,
+              v.name as strain_vendor_name,
+              v.website as strain_vendor_website
+        from  sources s
+        left
+        join  events e
+          on  s.progenitor_uuid = e.uuid
+        left
+        join  lifecycles lc
+          on  e.observable_uuid = lc.uuid
+        join  strains st
+          on  st.uuid = coalesce(lc.strain_uuid, s.progenitor_uuid)
+        join  vendors v
+          on  st.vendor_uuid = v.uuid
+       where  s.generation_uuid = $1`,
+		"add": `
+      insert
+        into  sources(uuid, type, progenitor_uuid, generation_uuid)
+      values  ($1, $2, $3, $4)`,
+		"change": `
+      update  sources s
+         set  type = $1,
+              mtime = current_timestamp
+       where  s.uuid = $2`,
+		"delete": `delete from sources where uuid = $1`,
+		"strain-from-event": `
+      select  lc.strain_uuid
+        from  lifecycles lc
+        join  events e
+          on  lc.uuid = e.observable_uuid
+       where  e.uuid = $1`,
 	},
 
 	"stage": {
@@ -255,7 +398,8 @@ var psqls = sqlMap{
               s.ctime,
               v.uuid as vendor_uuid,
               v.name as vendor_name,
-              v.website as vendor_website
+              v.website as vendor_website,
+              s.generation_uuid
         from  strains s
         join  vendors v
           on  s.vendor_uuid = v.uuid
@@ -267,7 +411,8 @@ var psqls = sqlMap{
               s.ctime,
               v.uuid as vendor_uuid,
               v.name as vendor_name,
-              v.website as vendor_website
+              v.website as vendor_website,
+              s.generation_uuid
         from  strains s
         join  vendors v
           on  s.vendor_uuid = v.uuid

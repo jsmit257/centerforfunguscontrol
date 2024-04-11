@@ -26,21 +26,26 @@ func (db *Conn) SelectAllStrains(ctx context.Context, cid types.CID) ([]types.St
 
 	defer rows.Close()
 
+	var generationID *types.UUID
+
 	for rows.Next() {
 		row := types.Strain{}
-		err = rows.Scan(
+		if err = rows.Scan(
 			&row.UUID,
 			&row.Species,
 			&row.Name,
 			&row.CTime,
 			&row.Vendor.UUID,
 			&row.Vendor.Name,
-			&row.Vendor.Website)
-
-		if err != nil {
+			&row.Vendor.Website,
+			&generationID,
+		); err != nil {
 			break
 		}
 
+		if generationID != nil {
+			row.Generation = &types.Generation{UUID: *generationID}
+		}
 		result = append(result, row)
 	}
 
@@ -55,6 +60,8 @@ func (db *Conn) SelectStrain(ctx context.Context, id types.UUID, cid types.CID) 
 
 	result := types.Strain{UUID: id}
 
+	var generationID *types.UUID
+
 	if err = db.
 		QueryRowContext(ctx, psqls["strain"]["select"], id).
 		Scan(
@@ -63,8 +70,9 @@ func (db *Conn) SelectStrain(ctx context.Context, id types.UUID, cid types.CID) 
 			&result.CTime,
 			&result.Vendor.UUID,
 			&result.Vendor.Name,
-			&result.Vendor.Website); err == nil {
-
+			&result.Vendor.Website,
+			&generationID,
+		); err == nil {
 		err = db.GetAllAttributes(ctx, &result, cid)
 	}
 

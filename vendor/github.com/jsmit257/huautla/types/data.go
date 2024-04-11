@@ -44,6 +44,7 @@ type (
 		Name       string    `json:"name"`
 		CTime      time.Time `json:"create_date"`
 		Vendor     `json:"vendor"`
+		Generation *Generation       `json:"generation,omitempty"`
 		Attributes []StrainAttribute `json:"attributes,omitempty"`
 	}
 
@@ -89,5 +90,22 @@ type (
 		MTime       time.Time `json:"modified_date"`
 		CTime       time.Time `json:"create_date"`
 		EventType   EventType `json:"event_type"`
+	}
+
+	Source struct {
+		UUID      `json:"id"`
+		Type      string     `json:"type"`
+		Lifecycle *Lifecycle `json:"lifecycle,omitempty"`
+		Strain    `json:"strain"`
+	}
+
+	Generation struct {
+		UUID             `json:"id"`
+		PlatingSubstrate Substrate `json:"plating_substrate"`
+		LiquidSubstrate  Substrate `json:"liquid_substrate"`
+		Sources          []Source  `json:"sources,omitempty"`
+		Events           []Event   `json:"events,omitempty"`
+		MTime            time.Time `json:"modified_date"`
+		CTime            time.Time `json:"create_date"`
 	}
 )

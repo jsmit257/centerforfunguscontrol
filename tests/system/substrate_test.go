@@ -24,9 +24,9 @@ func Test_HappySubstrate(t *testing.T) {
 		{Name: "Popcorn", Type: "Grain", Vendor: vendors[1]},
 		{Name: "Hemp", Type: "Grain", Vendor: vendors[3]},
 		{Name: "Birdseed", Type: "Grain", Vendor: vendors[0]},
-		{Name: "Agar", Type: "Bulk", Vendor: vendors[2]},
-		{Name: "Liquid culture", Type: "Bulk", Vendor: vendors[1]},
-		{Name: "Liquid culture", Type: "Bulk", Vendor: vendors[3]},
+		{Name: "Agar", Type: "Agar", Vendor: vendors[2]},
+		{Name: "Liquid culture", Type: "Liquid", Vendor: vendors[1]},
+		{Name: "Liquid culture", Type: "Liquid", Vendor: vendors[3]},
 		{Name: "Horse cookies", Type: "Bulk", Vendor: vendors[0]},
 	} {
 		b, err := json.Marshal(s)

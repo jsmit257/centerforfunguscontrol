@@ -26,7 +26,7 @@ func (db *Conn) SelectLifecycleIndex(ctx context.Context, cid types.CID) ([]type
 
 	for rows.Next() {
 		row := types.Lifecycle{}
-		if err = rows.Scan(&row.UUID, &row.Location, &row.CTime); err != nil {
+		if err = rows.Scan(&row.UUID, &row.Location, &row.MTime, &row.CTime); err != nil {
 			break
 		}
 		result = append(result, row)
@@ -155,8 +155,8 @@ func (db *Conn) UpdateLifecycle(ctx context.Context, lc types.Lifecycle, cid typ
 		lc.Strain.UUID,
 		lc.GrainSubstrate.UUID,
 		lc.BulkSubstrate.UUID,
-		lc.UUID); err != nil {
-
+		lc.UUID,
+	); err != nil {
 		return lc, err
 	} else if rows, err = result.RowsAffected(); err != nil {
 		return lc, err
@@ -167,23 +167,13 @@ func (db *Conn) UpdateLifecycle(ctx context.Context, lc types.Lifecycle, cid typ
 	return lc, err
 }
 
-func (db *Conn) UpdateModified(ctx context.Context, lc *types.Lifecycle, modified time.Time, cid types.CID) (*types.Lifecycle, error) {
+func (db *Conn) UpdateLifecycleMTime(ctx context.Context, lc *types.Lifecycle, modified time.Time, cid types.CID) (*types.Lifecycle, error) {
 	var err error
-	var result sql.Result
-	var rows int64
 
-	deferred, start, l := initAccessFuncs("UpdateModified", db.logger, lc.UUID, cid)
+	deferred, start, l := initAccessFuncs("UpdateLifecycleMTime", db.logger, lc.UUID, cid)
 	defer deferred(start, err, l)
 
-	if result, err = db.ExecContext(ctx, psqls["lifecycle"]["modified"], modified, lc.UUID); err != nil {
-		return lc, err
-	} else if rows, err = result.RowsAffected(); err != nil {
-		return lc, err
-	} else if rows != 1 {
-		err = fmt.Errorf("mtime was not updated")
-	} else {
-		lc.MTime = modified
-	}
+	lc.MTime, err = db.updateMTime(ctx, "lifecycles", modified, lc.UUID, cid)
 
 	return lc, err
 }

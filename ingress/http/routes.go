@@ -71,13 +71,28 @@ func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
 	r.Patch("/strain/{id}/attribute", ha.PatchStrainAttribute)
 	r.Delete("/strain/{st_id}/attribute/{at_id}", ha.DeleteStrainAttribute)
 
-	r.Get("/lifecycles", ha.GetLifecycleIndex) // TODO: needs to be implemented in huautla
+	r.Get("/lifecycles", ha.GetLifecycleIndex)
 	r.Get("/lifecycle/{id}", ha.GetLifecycle)
 	r.Post("/lifecycle", ha.PostLifecycle)
 	r.Patch("/lifecycle/{id}", ha.PatchLifecycle)
 	r.Delete("/lifecycle/{id}", ha.DeleteLifecycle)
 
-	r.Post("/lifecycle/{id}/events", ha.PostEvent)
-	r.Patch("/lifecycle/{lc_id}/events", ha.PatchEvent)
-	r.Delete("/lifecycle/{lc_id}/events/{ev_id}", ha.DeleteEvent)
+	r.Post("/lifecycle/{id}/events", ha.PostLifecycleEvent)
+	r.Patch("/lifecycle/{lc_id}/events", ha.PatchLifecycleEvent)
+	r.Delete("/lifecycle/{lc_id}/events/{ev_id}", ha.DeleteLifecycleEvent)
+
+	r.Get("/generations", ha.GetGenerationIndex)
+	r.Get("/generation/{id}", ha.GetGeneration)
+	r.Post("/generation", ha.PostGeneration)
+	r.Patch("/generation/{id}", ha.PatchGeneration)
+	r.Delete("/generation/{id}", ha.DeleteGeneration)
+
+	r.Post("/generation/{id}/events", ha.PostGenerationEvent)
+	r.Patch("/generation/{g_id}/events", ha.PatchGenerationEvent)
+	r.Delete("/generation/{g_id}/events/{ev_id}", ha.DeleteGenerationEvent)
+
+	r.Post("/generation/{id}/sources/strain", ha.PostStrainSource)
+	r.Post("/generation/{id}/sources/event", ha.PostEventSource)
+	r.Patch("/generation/{id}/sources", ha.PatchSource)
+	r.Delete("/generation/{g_id}/sources/{s_id}", ha.DeleteSource)
 }

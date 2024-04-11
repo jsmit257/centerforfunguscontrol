@@ -30,10 +30,10 @@ func (ha *HuautlaAdaptor) GetLifecycle(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
 	} else if id, err := url.QueryUnescape(id); err != nil {
 		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
-	} else if s, err := ha.db.SelectLifecycle(r.Context(), types.UUID(id), ms.cid); err != nil {
+	} else if l, err := ha.db.SelectLifecycle(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycle")
 	} else {
-		ms.send(w, s, http.StatusOK)
+		ms.send(w, l, http.StatusOK)
 	}
 }
 

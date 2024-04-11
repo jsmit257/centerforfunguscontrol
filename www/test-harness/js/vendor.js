@@ -72,7 +72,10 @@ $(function () {
   })
 
   $buttonbar.find('>.refresh').on('click', e => {
-    $table.trigger('refresh', { newRow: newRow })
+    $table.trigger('refresh', {
+      newRow: newRow,
+      buttonbar: $buttonbar
+    })
   })
 
   $vendor.on('activate', e => {

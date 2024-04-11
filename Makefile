@@ -18,7 +18,7 @@ run-docker:
 
 .PHONY: system-test
 tests: unit
-	docker-compose up --remove-orphans system-test
+	docker-compose up --build --remove-orphans system-test
 	docker tag cffc:latest jsmit257/cffc:lkg
 
 vet:

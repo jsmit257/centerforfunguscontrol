@@ -4,25 +4,20 @@ import "context"
 
 type (
 	DB interface {
-		Eventer
+		LifecycleEventer
 		EventTyper
+		Generationer
+		GenerationEventer
 		Ingredienter
 		Lifecycler
+		Observer
+		Sourcer
 		Stager
 		StrainAttributer
 		Strainer
 		SubstrateIngredienter
 		Substrater
 		Vendorer
-	}
-
-	Eventer interface {
-		SelectByEventType(ctx context.Context, et EventType, cid CID) ([]Event, error)
-		SelectEvent(ctx context.Context, id UUID, cid CID) (Event, error)
-		GetLifecycleEvents(ctx context.Context, lc *Lifecycle, cid CID) error
-		AddEvent(ctx context.Context, lc *Lifecycle, e Event, cid CID) error
-		ChangeEvent(ctx context.Context, lc *Lifecycle, e Event, cid CID) (Event, error)
-		RemoveEvent(ctx context.Context, lc *Lifecycle, id UUID, cid CID) error
 	}
 
 	EventTyper interface {
@@ -33,6 +28,21 @@ type (
 		DeleteEventType(ctx context.Context, id UUID, cid CID) error
 	}
 
+	Generationer interface {
+		SelectGenerationIndex(ctx context.Context, cid CID) ([]Generation, error)
+		SelectGeneration(ctx context.Context, id UUID, cid CID) (Generation, error)
+		InsertGeneration(ctx context.Context, g Generation, cid CID) (Generation, error)
+		UpdateGeneration(ctx context.Context, g Generation, cid CID) (Generation, error)
+		DeleteGeneration(ctx context.Context, id UUID, cid CID) error
+	}
+
+	GenerationEventer interface {
+		GetGenerationEvents(ctx context.Context, g *Generation, cid CID) error
+		AddGenerationEvent(ctx context.Context, g *Generation, e Event, cid CID) error
+		ChangeGenerationEvent(ctx context.Context, g *Generation, e Event, cid CID) (Event, error)
+		RemoveGenerationEvent(ctx context.Context, g *Generation, id UUID, cid CID) error
+	}
+
 	Ingredienter interface {
 		SelectAllIngredients(ctx context.Context, cid CID) ([]Ingredient, error)
 		SelectIngredient(ctx context.Context, id UUID, cid CID) (Ingredient, error)
@@ -41,12 +51,32 @@ type (
 		DeleteIngredient(ctx context.Context, id UUID, cid CID) error
 	}
 
+	LifecycleEventer interface {
+		GetLifecycleEvents(ctx context.Context, lc *Lifecycle, cid CID) error
+		AddLifecycleEvent(ctx context.Context, lc *Lifecycle, e Event, cid CID) error
+		ChangeLifecycleEvent(ctx context.Context, lc *Lifecycle, e Event, cid CID) (Event, error)
+		RemoveLifecycleEvent(ctx context.Context, lc *Lifecycle, id UUID, cid CID) error
+	}
+
 	Lifecycler interface {
 		SelectLifecycleIndex(ctx context.Context, cid CID) ([]Lifecycle, error)
 		SelectLifecycle(ctx context.Context, id UUID, cid CID) (Lifecycle, error)
 		InsertLifecycle(ctx context.Context, lc Lifecycle, cid CID) (Lifecycle, error)
 		UpdateLifecycle(ctx context.Context, lc Lifecycle, cid CID) (Lifecycle, error)
 		DeleteLifecycle(ctx context.Context, id UUID, cid CID) error
+	}
+
+	Observer interface {
+		SelectByEventType(ctx context.Context, et EventType, cid CID) ([]Event, error)
+		SelectEvent(ctx context.Context, id UUID, cid CID) (Event, error)
+	}
+
+	Sourcer interface {
+		// GetSources(ctx context.Context, g *Generation, cid CID) error
+		AddStrainSource(ctx context.Context, g *Generation, s Source, cid CID) error
+		AddEventSource(ctx context.Context, g *Generation, e Event, cid CID) error
+		ChangeSource(ctx context.Context, g *Generation, s Source, cid CID) error
+		RemoveSource(ctx context.Context, g *Generation, id UUID, cid CID) error
 	}
 
 	Stager interface {

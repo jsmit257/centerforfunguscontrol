@@ -9,17 +9,6 @@ import (
 	"github.com/jsmit257/huautla/types"
 )
 
-func (db *Conn) GetLifecycleEvents(ctx context.Context, lc *types.Lifecycle, cid types.CID) error {
-	var err error
-
-	deferred, start, l := initAccessFuncs("GetLifecycleEvents", db.logger, lc.UUID, cid)
-	defer deferred(start, err, l)
-
-	lc.Events, err = db.selectEventsList(ctx, psqls["event"]["all-by-lifecycle"], lc.UUID)
-
-	return err
-}
-
 func (db *Conn) SelectByEventType(ctx context.Context, et types.EventType, cid types.CID) ([]types.Event, error) {
 	var err error
 
@@ -54,8 +43,8 @@ func (db *Conn) selectEventsList(ctx context.Context, query string, id types.UUI
 			&row.EventType.Name,
 			&row.EventType.Severity,
 			&row.EventType.Stage.UUID,
-			&row.EventType.Stage.Name); err != nil {
-
+			&row.EventType.Stage.Name,
+		); err != nil {
 			return result, err
 		}
 		result = append(result, row)
@@ -84,119 +73,92 @@ func (db *Conn) SelectEvent(ctx context.Context, id types.UUID, cid types.CID) (
 			&result.EventType.Name,
 			&result.EventType.Severity,
 			&result.EventType.Stage.UUID,
-			&result.EventType.Stage.Name); err != nil {
-
+			&result.EventType.Stage.Name,
+		); err != nil {
 		return result, err
 	}
 
 	return result, err
 }
 
-func (db *Conn) AddEvent(ctx context.Context, lc *types.Lifecycle, e types.Event, cid types.CID) error {
+func (db *Conn) addEvent(ctx context.Context, oID types.UUID, events []types.Event, e *types.Event, cid types.CID) ([]types.Event, error) {
 	var err error
 	var result sql.Result
-
-	deferred, start, l := initAccessFuncs("AddEvent", db.logger, lc.UUID, cid)
-	defer deferred(start, err, l)
 
 	e.UUID = types.UUID(db.generateUUID().String())
 	e.MTime = time.Now().UTC()
 	e.CTime = e.MTime
 
-	result, err = db.ExecContext(ctx, psqls["event"]["add"],
+	if result, err = db.ExecContext(ctx, psqls["event"]["add"],
 		e.UUID,
 		e.Temperature,
 		e.Humidity,
 		e.MTime,
 		e.CTime,
-		lc.UUID,
-		e.EventType.UUID)
-	if err != nil {
+		oID,
+		e.EventType.UUID,
+	); err != nil {
 		if isPrimaryKeyViolation(err) {
-			return db.AddEvent(ctx, lc, e, cid) // FIXME: infinite loop?
+			return db.addEvent(ctx, oID, events, e, cid)
 		}
-		return err
+		return events, err
 	} else if rows, err := result.RowsAffected(); err != nil {
-		return err
+		return events, err
 	} else if rows != 1 { // most likely cause is a bad eventtype.uuid
-		return fmt.Errorf("event was not added")
+		return events, fmt.Errorf("event was not added")
 	}
 
 	if e.EventType, err = db.SelectEventType(ctx, e.EventType.UUID, cid); err != nil {
-		return fmt.Errorf("couldn't fetch eventtype")
-	} else if _, err = db.UpdateModified(ctx, lc, e.MTime, cid); err != nil {
-		return fmt.Errorf("couldn't update lifecycle.mtime")
+		return events, fmt.Errorf("couldn't fetch eventtype")
 	}
 
-	lc.Events = append([]types.Event{e}, lc.Events...)
-
-	return err
+	return append([]types.Event{*e}, events...), err
 }
 
-func (db *Conn) ChangeEvent(ctx context.Context, lc *types.Lifecycle, e types.Event, cid types.CID) (types.Event, error) {
+func (db *Conn) changeEvent(ctx context.Context, events []types.Event, e *types.Event, cid types.CID) ([]types.Event, error) {
 	var err error
-	var result sql.Result
-
-	deferred, start, l := initAccessFuncs("ChangeEvent", db.logger, lc.UUID, cid)
-	defer deferred(start, err, l)
 
 	e.MTime = time.Now().UTC()
 
-	result, err = db.ExecContext(ctx, psqls["event"]["change"],
+	if result, err := db.ExecContext(ctx, psqls["event"]["change"],
 		e.Temperature,
 		e.Humidity,
 		e.MTime,
 		e.UUID,
-		e.EventType.UUID)
-	if err != nil {
-		return e, err
+		e.EventType.UUID,
+	); err != nil {
+		return events, err
 	} else if rows, err := result.RowsAffected(); err != nil {
-		return e, err
+		return events, err
 	} else if rows != 1 { // most likely cause is a bad eventtype.uuid
-		return e, fmt.Errorf("event was not changed")
+		return events, fmt.Errorf("event was not changed")
 	}
 
 	if e.EventType, err = db.SelectEventType(ctx, e.EventType.UUID, cid); err != nil {
-		return e, fmt.Errorf("couldn't fetch eventtype")
-	} else if _, err = db.UpdateModified(ctx, lc, e.MTime, cid); err != nil {
-		return e, err
+		return events, fmt.Errorf("couldn't fetch eventtype")
 	}
 
-	i, j := 0, len(lc.Events)
-	for i < j && lc.Events[i].UUID != e.UUID {
+	i, j := 0, len(events)
+	for i < j && events[i].UUID != e.UUID {
 		i++
 	}
-	lc.Events = append(append([]types.Event{e}, lc.Events[:i]...), lc.Events[i+1:]...)
 
-	return e, err
+	return append(append([]types.Event{*e}, events[:i]...), events[i+1:]...), nil
 }
 
-func (db *Conn) RemoveEvent(ctx context.Context, lc *types.Lifecycle, id types.UUID, cid types.CID) error {
-
-	var err error
-
-	deferred, start, l := initAccessFuncs("RemoveEvent", db.logger, lc.UUID, cid)
-	defer deferred(start, err, l)
-
-	result, err := db.ExecContext(ctx, psqls["event"]["remove"], id)
-
-	if err != nil {
-		return err
+func (db *Conn) removeEvent(ctx context.Context, events []types.Event, id types.UUID, cid types.CID) ([]types.Event, error) {
+	if result, err := db.ExecContext(ctx, psqls["event"]["remove"], id); err != nil {
+		return events, err
 	} else if rows, err := result.RowsAffected(); err != nil {
-		return err
+		return events, err
 	} else if rows != 1 { // most likely cause is a bad vendor.uuid
-		return fmt.Errorf("event could not be removed")
+		return events, fmt.Errorf("event could not be removed")
 	}
 
-	if _, err = db.UpdateModified(ctx, lc, time.Now().UTC(), cid); err != nil {
-		return err
-	}
-
-	i, j := 0, len(lc.Events)
-	for i < j && lc.Events[i].UUID != id {
+	i, j := 0, len(events)
+	for i < j && events[i].UUID != id {
 		i++
 	}
-	lc.Events = append(lc.Events[:i], lc.Events[i+1:]...)
 
-	return nil
+	return append(events[:i], events[i+1:]...), nil
 }

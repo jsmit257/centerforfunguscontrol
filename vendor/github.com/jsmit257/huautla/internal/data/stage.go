@@ -25,7 +25,9 @@ func (db *Conn) SelectAllStages(ctx context.Context, cid types.CID) ([]types.Sta
 
 	for rows.Next() {
 		row := types.Stage{}
-		rows.Scan(&row.UUID, &row.Name)
+		if err = rows.Scan(&row.UUID, &row.Name); err != nil {
+			return result, err
+		}
 		result = append(result, row)
 	}
 

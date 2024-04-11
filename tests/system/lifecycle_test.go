@@ -20,7 +20,7 @@ func Test_HappyLifecycle(t *testing.T) {
 
 	for _, l := range []types.Lifecycle{
 		{Location: "1st chair, 2nd violin", Strain: strains[0], GrainSubstrate: substrates[0], BulkSubstrate: substrates[9]},
-		{Location: "cat box", Strain: strains[3], GrainSubstrate: substrates[2], BulkSubstrate: substrates[8]},
+		{Location: "cat box", Strain: strains[3], GrainSubstrate: substrates[2], BulkSubstrate: substrates[9]},
 		{Location: "6 underground", Strain: strains[5], GrainSubstrate: substrates[2], BulkSubstrate: substrates[9]},
 	} {
 		b, err := json.Marshal(l)

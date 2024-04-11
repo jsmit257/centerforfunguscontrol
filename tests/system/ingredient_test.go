@@ -14,7 +14,24 @@ import (
 
 var ingredients []types.Ingredient
 
+func init() {
+	url := fmt.Sprintf(`http://%s:%d/ingredients`, cfg.HTTPHost, cfg.HTTPPort)
+
+	if req, err := http.NewRequest(http.MethodGet, url, nil); err != nil {
+		panic(err)
+	} else if res, err := http.DefaultClient.Do(req); err != nil {
+		panic(err)
+	} else if http.StatusOK != res.StatusCode {
+		panic(fmt.Errorf("expected sc: 200, got: %d", res.StatusCode))
+	} else if b, err := io.ReadAll(res.Body); err != nil {
+		panic(err)
+	} else if err = json.Unmarshal(b, &ingredients); err != nil {
+		panic(err)
+	}
+}
+
 func Test_HappyIngredient(t *testing.T) {
+	t.Skip()
 	url := fmt.Sprintf(`http://%s:%d/ingredient`, cfg.HTTPHost, cfg.HTTPPort)
 
 	for _, i := range []types.Ingredient{

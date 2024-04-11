@@ -1,18 +1,17 @@
 body>.main>.workspace>.lifecycle>.ndx {
-  width: 32%;
+  float: right;
+  width: 34%;
 }
 
-body>.main>.workspace>.lifecycle>.ndx>.rows {
-  margin-bottom: .5em;
+body>.main>.workspace>.lifecycle>.table.lifecycle>.rows,
+body>.main>.workspace>.lifecycle>.table.ndx>.rows {
+  height: 18em;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 body>.main>.workspace>.lifecycle>.ndx>.rows>.row.new>.created_at::before {
   content: '*'
-}
-
-body>.main>.workspace>.lifecycle>.ndx>.rows>.row {
-  font-size: initial;
-  line-height: initial;
 }
 
 /* XXX: promote this to index.css in a safe way */
@@ -24,15 +23,13 @@ body>.main>.workspace>.lifecycle>.table>.columns>.column.full {
 
 body>.main>.workspace>.lifecycle>.ndx>.rows>.row>div,
 body>.main>.workspace>.lifecycle>.ndx>.columns>.header {
-  float: left;
-  padding-left: 3%;
-  width: 47%;
+  width: 50%;
 }
 
 body>.main>.workspace>.lifecycle>.table.lifecycle {
-  float: right;
-  width: 67%;
+  width: 65%;
 }
+
 
 body>.main>.workspace>.lifecycle>.table.lifecycle>.rows>div>.label {
   padding-left: 1%;
@@ -45,8 +42,8 @@ body>.main>.workspace>.lifecycle>.table.lifecycle>.rows.add>.row.no-add {
 
 body>.main>.workspace>.lifecycle>.table.events {
   float: right;
-  margin-top: 2em;
-  width: 67%;
+  margin-top: 1em;
+  width: 100%;
 }
 
 body>.main>.workspace>.lifecycle>.table.events>.columns>div,
@@ -55,7 +52,7 @@ body>.main>.workspace>.lifecycle>.table.events>.rows>.row>input,
 body>.main>.workspace>.lifecycle>.table.events>.rows>.row>select {
   padding-left: 1%;
   text-align: center;
-  width: 19%;
+  width: 14%;
 }
 
 body>.main>.workspace>.lifecycle>.table.events>.columns>.column.full {
@@ -66,11 +63,11 @@ body>.main>.workspace>.lifecycle>.table.events>.columns>div.temperature,
 body>.main>.workspace>.lifecycle>.table.events>.columns>div.humidity,
 body>.main>.workspace>.lifecycle>.table.events>.rows>.row>.temperature,
 body>.main>.workspace>.lifecycle>.table.events>.rows>.row>.humidity {
-  width: 14%;
+  width: 10%;
 }
 
 body>.main>.workspace>.lifecycle>.table.events>.columns>div.eventtype,
 body>.main>.workspace>.lifecycle>.table.events>.rows>.row>.eventtype {
   overflow: hidden;
-  width: 27%;
+  width: 45%;
 }

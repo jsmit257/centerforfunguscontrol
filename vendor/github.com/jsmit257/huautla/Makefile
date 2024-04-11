@@ -6,24 +6,38 @@ build:
 
 .PHONY: unit
 unit:
-	go test -cover ./. ./internal/...
+	go test -cover ./. ./types/... ./internal/...
 
+.PHONY: tag-dockerfile
+tag-dockerfile:
+	docker tag huautla:latest huautla:lkg
+	
 .PHONY: postgres
 postgres:
-	docker-compose up -d postgres
-	sleep 2s
+	docker-compose up --build --remove-orphans -d postgres
 
-.PHONY: install
-install: postgres
-	docker-compose up --build --force-recreate install
-	make docker-down
+.PHONY: inspect
+inspect:
+	docker-compose exec -it postgres psql -Upostgres huautla
+
+.PHONY: install-system-test
+install-system-test: postgres
+	sleep 2s
+	docker-compose exec \
+		-ePOSTGRES_HOST=huautla \
+		-ePOSTGRES_PORT=5432 \
+		-ePOSTGRES_USER=postgres \
+		-ePOSTGRES_PASSWORD=root \
+		postgres \
+		/bin/sh -c "cd /huautla && ./bin/install-system-test.sh"
+	docker tag huautla:latest jsmit257/huautla:lkg
+	# make docker-down
 
 .PHONY: system-test
-system-test: postgres
-	docker-compose up --build --force-recreate install-system-test
-	# -POSTGRES_SSLMODE="${POSTGRES_SSLMODE}" docker-compose up --build --force-recreate system-test
-	-docker-compose up --build --force-recreate system-test
-	make docker-down
+system-test: docker-down unit install-system-test
+	docker-compose up system-test
+	# docker push jsmit257/huautla:lkg
+	# make docker-down
 
 vet:
 	go vet ./...

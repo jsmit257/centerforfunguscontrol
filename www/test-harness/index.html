@@ -50,6 +50,7 @@
             <div class="column full">Choose a Lifecycle</div>
           </div>
           <div class="rows" name="lifecycle"></div>
+          <div class="buttonbar"></div>
         </div>
 
         <div class="table lifecycle">
@@ -140,11 +141,11 @@
         <div class="table events">
           <div class="columns">
             <div class="column full">Events</div>
-            <div class="column eventtype">Type/Stage</div>
+            <div class="column eventtype" sort-key="eventtype">Type/Stage</div>
             <div class="column temperature">Temperature</div>
             <div class="column humidity">Humidity</div>
-            <div class="column modified_date">Modified At</div>
-            <div class="column create_date">Created At</div>
+            <div class="column modified_date" sort-key="modified_date">Modified At</div>
+            <div class="column create_date" sort-key="create_date">Created At</div>
           </div>
           <div class="rows" name="event"></div>
           <div class="buttonbar"></div>
@@ -238,6 +239,25 @@
       </div>
     </div>
     <div class="footer"></div>
+  </div>
+  <div class="powered-by">
+    <div>Powered by:</div>
+    <ul>
+      <li>
+        <div class="short-text">Huautla</div>
+        <div class="long-text">
+          <a href="https://github.com/jsmit257/huautla">Huautla</a>
+          <a href="https://jsmit257.github.io/huautla">(README)</a>
+        </div>
+      </li>
+      <li>
+        <div class="short-text">CFFC</div>
+        <div class="long-text">
+          <a href="https://github.com/jsmit257/centerforfunguscontrol">CFFC</a>
+          <a href="https://jsmit257.github.io/centerforfunguscontrol">(README)</a>
+        </div>
+      </li>
+    </ul>
   </div>
   <script defer>
     console.log('click', $('body>.main>.header>.menuitem[name=vendor]').trigger('click'))

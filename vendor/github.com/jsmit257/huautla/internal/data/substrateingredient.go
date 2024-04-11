@@ -25,9 +25,11 @@ func (db *Conn) GetAllIngredients(ctx context.Context, s *types.Substrate, cid t
 
 	for rows.Next() {
 		row := types.Ingredient{}
-		rows.Scan(
+		if err = rows.Scan(
 			&row.UUID,
-			&row.Name)
+			&row.Name); err != nil {
+			return err
+		}
 		s.Ingredients = append(s.Ingredients, row)
 	}
 

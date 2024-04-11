@@ -63,7 +63,7 @@ $(function () {
         method: 'GET',
         async: true,
         success: (result, status, xhr) => {
-          var substrates = { bulk: [], grain: [] }
+          var substrates = { bulk: [], grain: [], liquid: [], agar: [] }
           result.forEach(r => {
             substrates[r.type.toLowerCase()]
               .push($(`<option value="${r.id}">${r.name} | ${r.vendor.name}</option>`)
@@ -198,6 +198,7 @@ $(function () {
 
   function newEventRow(data) {
     data ||= { event_type: { stage: {} }, modified_date: "Now", create_date: "Now" }
+
     return $('<div class="row hover" />')
       .append($('<div class=uuid />').text(data.id))
       .append($('<div class="eventtype static" />').text(data.event_type.name + "/" + data.event_type.stage.name))
@@ -418,6 +419,14 @@ $(function () {
   })
 
   $eventbar.find('.refresh').remove()
+
+  // XXX: consider changing this to put delete/refresh on the ndx and remove them 
+  //      from (or leave them in) the main table; and/or, add filters for 
+  //      sunset/unmodified, etc
+  $lifecycle.find('.table.ndx>.buttonbar')
+    .empty()
+    .append($('<div />')
+      .html('&nbsp'))
 
   $lifecycle.on('activate', e => {
     $lifecycle

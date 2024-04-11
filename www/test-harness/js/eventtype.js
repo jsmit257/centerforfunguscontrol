@@ -4,11 +4,13 @@ $(function () {
   var $buttonbar = $eventtype.find('>.table>.buttonbar')
 
   var severities = [
+    $('<option value=Begin>Begin</option>'),
     $('<option value=Info>Info</option>'),
     $('<option value=Warn>Warn</option>'),
     $('<option value=Error>Error</option>'),
     $('<option value=Fatal>Fatal</option>'),
-    $('<option value=RIP>RIP</option>')
+    $('<option value=RIP>RIP</option>'),
+    $('<option value=Generation>Generation</option>'),
   ]
   var stages = []
 

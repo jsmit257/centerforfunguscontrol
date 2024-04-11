@@ -1,32 +1,49 @@
 $(function () {
-  // var comparator = (insert, k, l, r) => {
-  //   return (k, $l, $r) => {
-  //     if (typeof $r === 'undefined') {
-  //       return true
-  //     }
-  //     switch ($l.find(`.static.${k}`).text().localeCompare($r.find(`.static.${k}`).text())) {
-  //       case insert:
-  //       case 0:
-  //         $l.insertBefore($r)
-  //         return true
-  //       default:
-  //         return false
-  //     }
-  //   }
-  // }
-
   $('body>.main>.workspace>div .table>.rows')
+    .on('keyup', e => {
+      var btn;
+
+      switch (e.which) {
+        case 13:
+          btn = 'ok'
+          break;
+        case 27:
+          btn = 'cancel'
+          break
+        case 38: // up
+        case 40: // down
+        default:
+          console.log('which', e.which)
+          return
+      }
+
+      $(e.currentTarget)
+        .parents('.table')
+        .first()
+        .find(`.buttonbar>.${btn}`)
+        .click()
+    })
     .on('click', '>.row', e => {
       var $row = $(e.currentTarget)
+
       if ($row.hasClass('selected')) {
         e.stopPropagation()
         return false
       }
+
       $row
         .parent()
         .find('.row.selected')
-        .removeClass('selected editing')
+        .removeClass('selected')
+
       $row.addClass('selected')
+    })
+    .on('dblclick', '>.row', e => {
+      $(e.currentTarget)
+        .parents('.table')
+        .first()
+        .find('.buttonbar>.edit')
+        .click()
     })
     .on('remove-selected', e => {
       var $selected = $(e.currentTarget).find('>.selected')
@@ -36,8 +53,14 @@ $(function () {
       $selected.remove()
     })
     .on('refresh', (e, args) => {
-      args ||= {}
       var $table = $(e.currentTarget)
+
+      args ||= {}
+      args.buttonbar ||= $table
+        .parents('.table')
+        .first()
+        .find('.buttonbar')
+
       $.ajax({
         url: args.url || `/${$(e.currentTarget).attr('name')}s`,
         method: 'GET',
@@ -113,7 +136,6 @@ $(function () {
         .first()
         .focus()
 
-
       args.buttonbar.trigger('set', {
         "target": $table,
         "handlers": {
@@ -150,6 +172,7 @@ $(function () {
     })
     .on('sort', (e, key, order) => {
       var rows = []
+
       $(e.currentTarget)
         .children()
         .get()
@@ -163,32 +186,4 @@ $(function () {
         })
         .forEach(l => { $(e.currentTarget).append(l) })
     })
-  // .data('sort-asc', comparator(-1))
-  // .data('sort-desc', comparator(1))
-  // .on('merge-sort', (e, key, order) => {
-  //   var $table = $(e.currentTarget)
-  //   var sort = $table.data(order || 'sort-asc')
-  //   var rows = []
-  //   $table.children().get().forEach(v => { rows.push($(v)) })
-  //   var _ = function mergeSort(list) {
-  //     if (list.length < 2) {
-  //       return list
-  //     }
-  //     var middle = Math.floor(list.length / 2)
-  //     var black = mergeSort(list.slice(0, middle))
-  //     var red = mergeSort(list.slice(middle))
-  //     for (var [i, j, before] = [0, red.length, 0]; i < j; i++) {
-  //       while (!sort(key, red[i], black[before])) {
-  //         before += 1
-  //       }
-  //       if (before === black.length) {
-  //         red.slice(i).reverse().forEach(l => { l.insertAfter(black[before - 1]) })
-  //         black.push(...red.slice(i))
-  //         break
-  //       }
-  //       black.splice(before, 0, red[i])
-  //     }
-  //     return black
-  //   }(rows)
-  // })
 })

@@ -10,10 +10,10 @@ body>.main>.workspace>div .table>div {
   width: 100%;
 }
 
-/* body>.main>.workspace>div .table>.rows {
-  max-height: 20em;
-  overflow-y: scroll;
-} */
+body>.main>.workspace>div .table>.rows {
+  max-height: 30em;
+  overflow-y: auto;
+}
 
 body>.main>.workspace>div .table>.rows>.row {
   border-radius: 0px;
@@ -26,7 +26,6 @@ body>.main>.workspace>div .table>.rows>.row>input,
 body>.main>.workspace>div .table>.rows>.row>select,
 body>.main>.workspace>div .table>.rows>.row>div {
   float: left;
-  line-height: 150%;
   overflow: hidden;
 }
 

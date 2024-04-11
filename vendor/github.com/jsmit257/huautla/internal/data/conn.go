@@ -100,6 +100,6 @@ func initAccessFuncs(method string, l *log.Entry, id types.UUID, cid types.CID) 
 		l
 }
 
-func isPrimaryKeyViolation(err error) bool {
+func isPrimaryKeyViolation(error) bool {
 	return false
 }

@@ -11,10 +11,14 @@ import (
 )
 
 type huautlaMock struct {
-	types.Eventer
 	types.EventTyper
+	types.Generationer
+	types.GenerationEventer
 	types.Ingredienter
+	types.LifecycleEventer
 	types.Lifecycler
+	types.Observer
+	types.Sourcer
 	types.Stager
 	types.StrainAttributer
 	types.Strainer

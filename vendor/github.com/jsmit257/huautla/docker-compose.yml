@@ -10,55 +10,25 @@ x-pg-ssl: &pgssl disable
 services:
 
   postgres:
-    image: postgres:bookworm
+    image: huautla:latest
+    build: .
     restart: always
     hostname: huautla
     ports:
-      - 5433:5432
-    environment:
-      POSTGRES_PASSWORD: *pgpass
-
-  install:
-    depends_on: [ postgres ]
-    image: install
-    build:
-      context: .
-      dockerfile: dockerfile.Install
+      - 5434:5432
     volumes: [ .:/huautla ]
     environment:
-      POSTGRES_HOST: *pghost
-      POSTGRES_PORT: *pgport
-      POSTGRES_USER: *pguser
       POSTGRES_PASSWORD: *pgpass
-      POSTGRES_SSLMODE: *pgssl
-    working_dir: /huautla
-    command: ./bin/install-prod.sh
-
-  install-system-test:
-    depends_on: [ postgres ]
-    image: install
-    build:
-      context: .
-      dockerfile: dockerfile.Install
-    volumes: [ .:/huautla ]
-    environment:
-      POSTGRES_HOST: *pghost
-      POSTGRES_PORT: *pgport
-      POSTGRES_USER: *pguser
-      POSTGRES_PASSWORD: *pgpass
-      POSTGRES_SSLMODE: *pgssl
-    working_dir: /huautla
-    command: ./bin/install-system-test.sh
 
   system-test:
-    depends_on: [ install-system-test ]
+    depends_on: [ postgres ]
     image: golang:bookworm
-    volumes: [ .:/huautla ]
+    volumes: [ .:/go/src/github.com/jsmit257/huautla ]
     environment:
       POSTGRES_HOST: *pghost
       POSTGRES_PORT: *pgport
       POSTGRES_USER: *pguser
       POSTGRES_PASSWORD: *pgpass
       POSTGRES_SSLMODE: *pgssl
-    working_dir: /huautla
+    working_dir: /go/src/github.com/jsmit257/huautla
     command: ./bin/system-test.sh
