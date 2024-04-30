@@ -148,6 +148,9 @@
             <div class="column create_date" sort-key="create_date">Created At</div>
           </div>
           <div class="rows" name="event"></div>
+          <div class="sidebar">
+            <div class="content">&nbsp;</div>
+          </div>
           <div class="buttonbar"></div>
         </div>
 
@@ -199,6 +202,8 @@
             <div class="column type">
               <span>Type</span>
               <select class="types">
+                <option value="Agar">Agar</option>
+                <option value="Liquid">Liquid</option>
                 <option value="Grain">Grain</option>
                 <option value="Bulk">Bulk</option>
                 <option value="All" selected="selected">All</option>
@@ -237,6 +242,22 @@
           <div class="buttonbar"></div>
         </div>
       </div>
+      <div class="generation">
+
+        <div class="table events">
+          <div class="columns">
+            <div class="column full">Events</div>
+            <div class="column eventtype" sort-key="eventtype">Type/Stage</div>
+            <div class="column temperature">Temperature</div>
+            <div class="column humidity">Humidity</div>
+            <div class="column modified_date" sort-key="modified_date">Modified At</div>
+            <div class="column create_date" sort-key="create_date">Created At</div>
+          </div>
+          <div class="rows" name="event"></div>
+          <div class="buttonbar"></div>
+        </div>
+
+      </div>
     </div>
     <div class="footer"></div>
   </div>
@@ -255,6 +276,7 @@
         <div class="long-text">
           <a href="https://github.com/jsmit257/centerforfunguscontrol">CFFC</a>
           <a href="https://jsmit257.github.io/centerforfunguscontrol">(README)</a>
+          <a href="https://jsmit257.github.io/centerforfunguscontrol/standalone">(Standalone)</a>
         </div>
       </li>
     </ul>

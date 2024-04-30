@@ -10,7 +10,9 @@ type (
 		GenerationEventer
 		Ingredienter
 		Lifecycler
+		Noter
 		Observer
+		Photoer
 		Sourcer
 		Stager
 		StrainAttributer
@@ -66,9 +68,23 @@ type (
 		DeleteLifecycle(ctx context.Context, id UUID, cid CID) error
 	}
 
+	Noter interface {
+		GetNotes(ctx context.Context, id UUID, cid CID) ([]Note, error)
+		AddNote(ctx context.Context, id UUID, notes []Note, n Note, cid CID) ([]Note, error)
+		ChangeNote(ctx context.Context, notes []Note, n Note, cid CID) ([]Note, error)
+		RemoveNote(ctx context.Context, notes []Note, id UUID, cid CID) ([]Note, error)
+	}
+
 	Observer interface {
 		SelectByEventType(ctx context.Context, et EventType, cid CID) ([]Event, error)
 		SelectEvent(ctx context.Context, id UUID, cid CID) (Event, error)
+	}
+
+	Photoer interface {
+		GetPhotos(ctx context.Context, id UUID, cid CID) ([]Photo, error)
+		AddPhoto(ctx context.Context, id UUID, photos []Photo, p Photo, cid CID) ([]Photo, error)
+		ChangePhoto(ctx context.Context, photos []Photo, p Photo, cid CID) ([]Photo, error)
+		RemovePhoto(ctx context.Context, photos []Photo, id UUID, cid CID) ([]Photo, error)
 	}
 
 	Sourcer interface {

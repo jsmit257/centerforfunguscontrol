@@ -3,6 +3,7 @@
 if which psql >/dev/null 2>&1; then
   psql "postgresql://postgres:root@${HUAUTLA_HOST:=localhost}:${HUAUTLA_PORT:=5432}" huautla <<-EOF
     \c huautla
+    delete from notes;
     delete from event_photos;
     delete from sources;
     delete from generations;

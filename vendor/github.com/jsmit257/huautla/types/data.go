@@ -19,6 +19,20 @@ type (
 		PGSSL  string
 	}
 
+	Note struct {
+		UUID  `json:"id,omitempty"`
+		Note  string    `json:"note,omitempty"`
+		MTime time.Time `json:"modified_at,omitempty"`
+		CTime time.Time `json:"create_at,omitempty"`
+	}
+
+	Photo struct {
+		UUID     `json:"id"`
+		Filename string    `json:"image"`
+		Notes    []Note    `json:"notes"`
+		CTime    time.Time `json:"create_at"`
+	}
+
 	Vendor struct {
 		UUID    `json:"id"`
 		Name    string `json:"name"`
@@ -40,12 +54,12 @@ type (
 
 	Strain struct {
 		UUID       `json:"id"`
-		Species    string    `json:"species,omitempty"`
-		Name       string    `json:"name"`
-		CTime      time.Time `json:"create_date"`
+		Species    string `json:"species,omitempty"`
+		Name       string `json:"name"`
 		Vendor     `json:"vendor"`
 		Generation *Generation       `json:"generation,omitempty"`
 		Attributes []StrainAttribute `json:"attributes,omitempty"`
+		CTime      time.Time         `json:"create_date"`
 	}
 
 	StrainAttribute struct {
@@ -68,28 +82,31 @@ type (
 
 	Lifecycle struct {
 		UUID           `json:"id"`
-		Location       string    `json:"location"`
-		StrainCost     float32   `json:"strain_cost,omitempty"`
-		GrainCost      float32   `json:"grain_cost,omitempty"`
-		BulkCost       float32   `json:"bulk_cost,omitempty"`
-		Yield          float32   `json:"yield,omitempty"`
-		Count          int16     `json:"count,omitempty"`
-		Gross          float32   `json:"gross,omitempty"`
-		MTime          time.Time `json:"modified_date,omitempty"`
-		CTime          time.Time `json:"create_date"`
+		Location       string  `json:"location"`
+		StrainCost     float32 `json:"strain_cost,omitempty"`
+		GrainCost      float32 `json:"grain_cost,omitempty"`
+		BulkCost       float32 `json:"bulk_cost,omitempty"`
+		Yield          float32 `json:"yield,omitempty"`
+		Count          int16   `json:"count,omitempty"`
+		Gross          float32 `json:"gross,omitempty"`
 		Strain         `json:"strain,omitempty"`
 		GrainSubstrate Substrate `json:"grain_substrate,omitempty"`
 		BulkSubstrate  Substrate `json:"bulk_substrate,omitempty"`
 		Events         []Event   `json:"events,omitempty"`
+		Notes          []Note    `json:"notes,omitempty"`
+		MTime          time.Time `json:"modified_date,omitempty"`
+		CTime          time.Time `json:"create_date"`
 	}
 
 	Event struct {
 		UUID        `json:"id"`
 		Temperature float32   `json:"temperature"`
 		Humidity    int8      `json:"humidity,omitempty"`
+		EventType   EventType `json:"event_type"`
+		Photos      []Photo   `json:"photos,omitempty"`
+		Notes       []Note    `json:"notes,omitempty"`
 		MTime       time.Time `json:"modified_date"`
 		CTime       time.Time `json:"create_date"`
-		EventType   EventType `json:"event_type"`
 	}
 
 	Source struct {
@@ -105,6 +122,7 @@ type (
 		LiquidSubstrate  Substrate `json:"liquid_substrate"`
 		Sources          []Source  `json:"sources,omitempty"`
 		Events           []Event   `json:"events,omitempty"`
+		Notes            []Note    `json:"notes,omitempty"`
 		MTime            time.Time `json:"modified_date"`
 		CTime            time.Time `json:"create_date"`
 	}

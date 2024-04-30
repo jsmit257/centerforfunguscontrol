@@ -17,7 +17,9 @@ type huautlaMock struct {
 	types.Ingredienter
 	types.LifecycleEventer
 	types.Lifecycler
+	types.Noter
 	types.Observer
+	types.Photoer
 	types.Sourcer
 	types.Stager
 	types.StrainAttributer

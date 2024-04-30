@@ -10,13 +10,16 @@ body>.main>.workspace>.substrate>.table.substrate>.rows>.row>div {
   width: 31%;
 }
 
-body>.main>.workspace>.substrate>.table.substrate.bulk>.rows>.row.grain,
-body>.main>.workspace>.substrate>.table.substrate.grain>.rows>.row.bulk {
+body>.main>.workspace>.substrate>.table.substrate>.rows>.row {
   display: none;
 }
 
-body>.main>.workspace>.substrate>.table.substrate>.columns>.column.type>select.types:focus-visible {
-  border-style: none;
+body>.main>.workspace>.substrate>.table.substrate.all>.rows>.row,
+body>.main>.workspace>.substrate>.table.substrate.agar>.rows>.row.agar,
+body>.main>.workspace>.substrate>.table.substrate.liquid>.rows>.row.liquid,
+body>.main>.workspace>.substrate>.table.substrate.bulk>.rows>.row.bulk,
+body>.main>.workspace>.substrate>.table.substrate.grain>.rows>.row.grain {
+  display: revert;
 }
 
 body>.main>.workspace>.substrate>.table.substrate>.columns>.column.type>select.types {

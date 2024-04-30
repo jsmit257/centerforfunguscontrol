@@ -6,6 +6,8 @@ $(function () {
   var $ingredientbar = $substrate.find('>.table.ingredients>.buttonbar')
 
   var types = [
+    '<option value="Agar">Agar</option>',
+    '<option value="Liquid">Liquid</option>',
     '<option value="Grain">Grain</option>',
     '<option value="Bulk">Bulk</option>',
   ]
@@ -29,15 +31,17 @@ $(function () {
         .val(data.vendor.id))
   }
 
-  $('.table.substrate>.columns>.column.type>select').on('change', e => {
-    $('.table.substrate')
-      .removeClass('grain bulk all')
-      .addClass($(e.currentTarget).val().toLowerCase())
+  $('.table.substrate>.columns>.column.type>select')
+    .on('change', e => {
+      $('.table.substrate')
+        .removeClass('agar liquid grain bulk all')
+        .addClass($(e.currentTarget).val().toLowerCase())
 
-    if ($table.find(`.selected.${$(e.currentTarget).val().toLowerCase()}`).length === 0) {
-      $table.find(`.row.${$(e.currentTarget).val().toLowerCase()}`).first().click()
-    }
-  })
+      if ($table.find(`.selected.${$(e.currentTarget).val().toLowerCase()}`).length === 0) {
+        $table.find(`.row.${$(e.currentTarget).val().toLowerCase()}`).first().click()
+      }
+    })
+    .trigger('change')
 
   $table
     .on('reinit', e => {

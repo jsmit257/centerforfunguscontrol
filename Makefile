@@ -8,6 +8,10 @@ unit:
 postgres:
 	docker-compose up -d postgres
 
+.PHONY: inspect
+inspect:
+	docker-compose exec -it postgres psql -Upostgres huautla
+
 .PHONY: run-local
 run-local:
 	go run ./ingress/http/... 2>&1 | tee log.json | jq .
@@ -17,7 +21,7 @@ run-docker:
 	docker-compose up --build --remove-orphans -d run-docker
 
 .PHONY: system-test
-tests: unit
+tests: docker-down unit
 	docker-compose up --build --remove-orphans system-test
 	docker tag cffc:latest jsmit257/cffc:lkg
 

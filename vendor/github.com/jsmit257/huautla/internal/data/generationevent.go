@@ -14,7 +14,7 @@ func (db *Conn) GetGenerationEvents(ctx context.Context, g *types.Generation, ci
 	deferred, start, l := initAccessFuncs("GetGenerationEvents", db.logger, g.UUID, cid)
 	defer deferred(start, err, l)
 
-	g.Events, err = db.selectEventsList(ctx, psqls["event"]["all-by-observable"], g.UUID)
+	g.Events, err = db.selectEventsList(ctx, psqls["event"]["all-by-observable"], g.UUID, cid)
 
 	return err
 }

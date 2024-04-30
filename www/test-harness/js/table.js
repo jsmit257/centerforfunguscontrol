@@ -13,7 +13,6 @@ $(function () {
         case 38: // up
         case 40: // down
         default:
-          console.log('which', e.which)
           return
       }
 
@@ -32,9 +31,15 @@ $(function () {
       }
 
       $row
+        .parents('.table')
+        .first()
+        .find('.buttonbar')
+        .trigger('reset')
+
+      $row
         .parent()
         .find('.row.selected')
-        .removeClass('selected')
+        .removeClass('selected editing')
 
       $row.addClass('selected')
     })
@@ -79,6 +84,11 @@ $(function () {
           if ($table.find('.selected').length == 0) {
             $table.find('.row').first().click()
           }
+          $table
+            .parents('.table')
+            .first()
+            .find('.columns>.column[sort-order]')
+            .removeAttr('sort-order')
         },
         error: args.error || console.log
       })

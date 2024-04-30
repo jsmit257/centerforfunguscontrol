@@ -50,9 +50,9 @@ func (ha *HuautlaAdaptor) PostStage(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body") // XXX: better status code??
 	} else if s, err = ha.db.InsertStage(r.Context(), s, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to insert stage")
+	} else {
+		ms.send(w, s, http.StatusCreated)
 	}
-
-	ms.send(w, s, http.StatusCreated)
 }
 
 func (ha *HuautlaAdaptor) PatchStage(w http.ResponseWriter, r *http.Request) {
@@ -72,9 +72,9 @@ func (ha *HuautlaAdaptor) PatchStage(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body") // XXX: better status code??
 	} else if err = ha.db.UpdateStage(r.Context(), types.UUID(id), s, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to update stage")
+	} else {
+		ms.send(w, nil, http.StatusNoContent)
 	}
-
-	ms.send(w, nil, http.StatusNoContent)
 }
 
 func (ha *HuautlaAdaptor) DeleteStage(w http.ResponseWriter, r *http.Request) {

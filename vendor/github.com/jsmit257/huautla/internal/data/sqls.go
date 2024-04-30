@@ -6,41 +6,57 @@ var psqls = sqlMap{
 
 	"event": {
 		"all-by-observable": `
-    select e.uuid,
-           e.temperature,
-           e.humidity,
-           e.mtime at time zone 'utc',
-           e.ctime at time zone 'utc',
-           et.uuid as eventtype_uuid,
-           et.name as eventtype_name,
-           et.severity as eventtype_severity,
-           s.uuid as stage_uuid,
-           s.name as stage_name
-      from events e
-      join event_types et
-        on e.eventtype_uuid = et.uuid
-      join stages s
-        on et.stage_uuid = s.uuid
-     where e.observable_uuid = $1
-     order
-        by e.mtime desc`,
+      select e.uuid,
+             e.temperature,
+             e.humidity,
+             e.mtime at time zone 'utc',
+             e.ctime at time zone 'utc',
+             et.uuid as eventtype_uuid,
+             et.name as eventtype_name,
+             et.severity as eventtype_severity,
+             s.uuid as stage_uuid,
+             s.name as stage_name,
+             n.uuid as note_uuid,
+             n.note,
+             n.mtime as note_modified_at,
+             n.ctime as note_create_at,
+             coalesce((select 1 from event_photos ep where ep.event_uuid = e.uuid limit 1), 0) as has_photos
+       from  events e
+       join  event_types et
+         on  e.eventtype_uuid = et.uuid
+       join  stages s
+         on  et.stage_uuid = s.uuid
+       left
+       join  notes n
+         on  e.uuid = n.notable_uuid
+      where  e.observable_uuid = $1
+      order
+         by  e.mtime desc, e.uuid, n.mtime desc`,
 		"all-by-eventtype": `
-    select e.uuid,
-           e.temperature,
-           e.humidity,
-           e.mtime,
-           e.ctime,
-           et.uuid as eventtype_uuid,
-           et.name as eventtype_name,
-           et.severity as eventtype_severity,
-           s.uuid as stage_uuid,
-           s.name as stage_name
-      from events e
-      join event_types et
-        on e.eventtype_uuid = et.uuid
-      join stages s
-        on et.stage_uuid = s.uuid
-     where et.uuid = $1`,
+      select  e.uuid,
+              e.temperature,
+              e.humidity,
+              e.mtime,
+              e.ctime,
+              et.uuid as eventtype_uuid,
+              et.name as eventtype_name,
+              et.severity as eventtype_severity,
+              s.uuid as stage_uuid,
+              s.name as stage_name,
+              n.uuid as note_uuid,
+              n.note,
+              n.mtime as note_modified_at,
+              n.ctime as note_create_at,
+              coalesce((select 1 from event_photos ep where ep.event_uuid = e.uuid limit 1), 0) as has_photos
+        from  events e
+        join  event_types et
+          on  e.eventtype_uuid = et.uuid
+        join  stages s
+          on  et.stage_uuid = s.uuid
+        left
+        join  notes n
+          on  e.uuid = n.notable_uuid
+       where  et.uuid = $1`,
 		"select": `
     select e.temperature,
            e.humidity,
@@ -75,18 +91,45 @@ var psqls = sqlMap{
 		"remove": `delete from events where uuid = $1`,
 	},
 
+	"eventphoto": {
+		"get": `
+      select  p.uuid,
+              p.filename,
+              p.ctime,
+              n.uuid as note_uuid,
+              n.note,
+              n.mtime as note_modified_at,
+              n.ctime as note_create_at
+        from  event_photos p
+        left
+        join  notes n
+          on  p.uuid = n.notable_uuid
+       where  p.event_uuid = $1
+       order
+          by  p.mtime desc, p.uuid, n.mtime desc`,
+		"add": `
+      insert into event_photos(uuid, filename, event_uuid, mtime, ctime)
+      values ($1, $2, $3, $4, $4)`,
+		"change": `
+      update  event_photos
+         set  filename = $1,
+              mtime = current_timestamp
+       where  uuid = $2`,
+		"remove": `delete from event_photos where uuid = $1`,
+	},
+
 	"eventtype": {
 		"select-all": `
-    select e.uuid,
-           e.name,
-           e.severity,
-           s.uuid as stage_uuid,
-           s.name as stage_name
-      from event_types e
-      join stages s
-        on e.stage_uuid = s.uuid
-     order
-        by s.name, e.name`,
+      select  e.uuid,
+              e.name,
+              e.severity,
+              s.uuid as stage_uuid,
+              s.name as stage_name
+        from  event_types e
+        join  stages s
+          on  e.stage_uuid = s.uuid
+      order
+          by  s.name, e.name`,
 		"select": `
     select e.name,
            e.severity,
@@ -138,7 +181,9 @@ var psqls = sqlMap{
               st.ctime as strain_ctime,
               stv.uuid as strain_vendor_uuid,
               stv.name as strain_vendor_name,
-              stv.website as strain_vendor_website
+              stv.website as strain_vendor_website,
+              g.mtime as generation_mtime,
+              g.ctime as generation_ctime
         from  generations g
         join  sources s
           on  g.uuid = s.generation_uuid
@@ -159,7 +204,9 @@ var psqls = sqlMap{
         join  strains st
           on  st.uuid = coalesce(lc.strain_uuid, s.progenitor_uuid)
         join  vendors stv
-          on  st.vendor_uuid = stv.uuid`,
+          on  st.vendor_uuid = stv.uuid
+       order
+          by  g.uuid`,
 		"select": `
       select  ps.uuid as plating_id,
               ps.name as plating_name,
@@ -338,6 +385,27 @@ var psqls = sqlMap{
 
 	"mtime": {
 		"touch": `update %s set mtime = $1 where uuid = $2`,
+	},
+
+	"note": {
+		"get": `
+      select  uuid,
+              note,
+              mtime,
+              ctime
+        from  notes
+       where  notable_uuid = $1
+       order
+          by  mtime desc`,
+		"add": `
+      insert into notes(uuid, note, notable_uuid, mtime, ctime)
+      values ($1, $2, $3, $4, $4)`,
+		"change": `
+      update  notes
+         set  note = $1,
+              mtime = $2
+       where  uuid = $3`,
+		"remove": `delete from notes where uuid = $1`,
 	},
 
 	"source": {

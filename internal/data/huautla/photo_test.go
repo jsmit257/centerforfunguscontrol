@@ -1,0 +1,269 @@
+package huautla
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	log "github.com/sirupsen/logrus"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/require"
+
+	"github.com/jsmit257/huautla/types"
+)
+
+type photoerMock struct {
+	getResult,
+	addResult,
+	changeResult,
+	rmResult []types.Photo
+
+	getErr,
+	addErr,
+	changeErr,
+	rmErr error
+}
+
+func Test_PostPhoto(t *testing.T) {
+	t.Parallel()
+
+	set := map[string]struct {
+		id     types.UUID
+		p      *types.Photo
+		getErr error
+		updErr error
+		sc     int
+	}{
+		"happy_path": {
+			id: "happy path",
+			p:  &types.Photo{},
+			sc: http.StatusOK,
+		},
+		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
+		"get_error": {
+			id:     "get error",
+			getErr: fmt.Errorf("some error"),
+			sc:     http.StatusInternalServerError,
+		},
+		"missing_body": {
+			id: "missing body",
+			sc: http.StatusBadRequest,
+		},
+		"post_error": {
+			id:     "post error",
+			p:      &types.Photo{},
+			updErr: fmt.Errorf("some error"),
+			sc:     http.StatusInternalServerError,
+		},
+	}
+
+	for k, v := range set {
+		k, v := k, v
+		ha := &HuautlaAdaptor{
+			db: &huautlaMock{
+				Photoer: &photoerMock{
+					addErr: v.updErr,
+					getErr: v.getErr,
+				},
+			},
+			log:   log.WithFields(log.Fields{"test": "Test_PostPhoto", "case": k}),
+			mtrcs: nil,
+		}
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}}
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					context.Background(),
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodPost,
+				"url",
+				bytes.NewReader(serializePhoto(v.p)))
+
+			ha.PostPhoto(w, r)
+
+			require.Equal(t, v.sc, w.Code)
+		})
+	}
+}
+
+func Test_ChangePhoto(t *testing.T) {
+	t.Parallel()
+
+	set := map[string]struct {
+		id     types.UUID
+		p      *types.Photo
+		getErr error
+		updErr error
+		sc     int
+	}{
+		"happy_path": {
+			id: "happy path",
+			p:  &types.Photo{},
+			sc: http.StatusOK,
+		},
+		"get_error": {
+			id:     "get error",
+			getErr: fmt.Errorf("some error"),
+			sc:     http.StatusInternalServerError,
+		},
+		"missing_body": {
+			id: "missing body",
+			sc: http.StatusBadRequest,
+		},
+		"patch_error": {
+			id:     "post error",
+			p:      &types.Photo{},
+			updErr: fmt.Errorf("some error"),
+			sc:     http.StatusInternalServerError,
+		},
+	}
+
+	for k, v := range set {
+		k, v := k, v
+		ha := &HuautlaAdaptor{
+			db: &huautlaMock{
+				Photoer: &photoerMock{
+					changeErr: v.updErr,
+					getErr:    v.getErr,
+				},
+			},
+			log:   log.WithFields(log.Fields{"test": "Test_ChangePhoto", "case": k}),
+			mtrcs: nil,
+		}
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}}
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					context.Background(),
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodPost,
+				"url",
+				bytes.NewReader(serializePhoto(v.p)))
+
+			ha.PatchPhoto(w, r)
+
+			require.Equal(t, v.sc, w.Code)
+		})
+	}
+}
+
+func Test_DeletePhoto(t *testing.T) {
+	t.Parallel()
+
+	set := map[string]struct {
+		id, oID types.UUID
+		getErr  error
+		updErr  error
+		sc      int
+	}{
+		"happy_path": {
+			oID: "happy path",
+			id:  "happy path",
+			sc:  http.StatusOK,
+		},
+		"missing_id": {
+			oID: "happy path",
+			sc:  http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			oID: "happy path",
+			id:  "%zzz",
+			sc:  http.StatusBadRequest,
+		},
+		"get_error": {
+			oID:    "get error",
+			getErr: fmt.Errorf("some error"),
+			sc:     http.StatusInternalServerError,
+		},
+		"patch_error": {
+			oID:    "post error",
+			id:     "post error",
+			updErr: fmt.Errorf("some error"),
+			sc:     http.StatusInternalServerError,
+		},
+	}
+
+	for k, v := range set {
+		k, v := k, v
+		ha := &HuautlaAdaptor{
+			db: &huautlaMock{
+				Photoer: &photoerMock{
+					rmErr:  v.updErr,
+					getErr: v.getErr,
+				},
+			},
+			log:   log.WithFields(log.Fields{"test": "Test_DeletePhoto", "case": k}),
+			mtrcs: nil,
+		}
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id", "id"}, Values: []string{
+				string(v.oID),
+				string(v.id),
+			}}
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					context.Background(),
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodPost,
+				"url",
+				bytes.NewReader(serializePhoto(nil)))
+
+			ha.DeletePhoto(w, r)
+
+			require.Equal(t, v.sc, w.Code)
+		})
+	}
+}
+
+func serializePhoto(p *types.Photo) []byte {
+	if p == nil {
+		return []byte{}
+	}
+	result, _ := json.Marshal(p)
+	return result
+}
+
+func (pm *photoerMock) GetPhotos(context.Context, types.UUID, types.CID) ([]types.Photo, error) {
+	return pm.getResult, pm.getErr
+}
+
+func (pm *photoerMock) AddPhoto(context.Context, types.UUID, []types.Photo, types.Photo, types.CID) ([]types.Photo, error) {
+	return pm.addResult, pm.addErr
+}
+
+func (pm *photoerMock) ChangePhoto(context.Context, []types.Photo, types.Photo, types.CID) ([]types.Photo, error) {
+	return pm.changeResult, pm.changeErr
+}
+
+func (pm *photoerMock) RemovePhoto(context.Context, []types.Photo, types.UUID, types.CID) ([]types.Photo, error) {
+	return pm.rmResult, pm.rmErr
+}

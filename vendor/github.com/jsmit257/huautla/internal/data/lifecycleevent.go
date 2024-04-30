@@ -14,7 +14,7 @@ func (db *Conn) GetLifecycleEvents(ctx context.Context, lc *types.Lifecycle, cid
 	deferred, start, l := initAccessFuncs("GetLifecycleEvents", db.logger, lc.UUID, cid)
 	defer deferred(start, err, l)
 
-	lc.Events, err = db.selectEventsList(ctx, psqls["event"]["all-by-observable"], lc.UUID)
+	lc.Events, err = db.selectEventsList(ctx, psqls["event"]["all-by-observable"], lc.UUID, cid)
 
 	return err
 }
