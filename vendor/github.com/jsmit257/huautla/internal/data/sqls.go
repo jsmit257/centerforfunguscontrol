@@ -18,8 +18,8 @@ var psqls = sqlMap{
              s.name as stage_name,
              n.uuid as note_uuid,
              n.note,
-             n.mtime as note_modified_at,
-             n.ctime as note_create_at,
+             n.mtime as note_mtime,
+             n.ctime as note_ctime,
              coalesce((select 1 from event_photos ep where ep.event_uuid = e.uuid limit 1), 0) as has_photos
        from  events e
        join  event_types et
@@ -45,8 +45,8 @@ var psqls = sqlMap{
               s.name as stage_name,
               n.uuid as note_uuid,
               n.note,
-              n.mtime as note_modified_at,
-              n.ctime as note_create_at,
+              n.mtime as note_mtime,
+              n.ctime as note_ctime,
               coalesce((select 1 from event_photos ep where ep.event_uuid = e.uuid limit 1), 0) as has_photos
         from  events e
         join  event_types et
@@ -98,8 +98,8 @@ var psqls = sqlMap{
               p.ctime,
               n.uuid as note_uuid,
               n.note,
-              n.mtime as note_modified_at,
-              n.ctime as note_create_at
+              n.mtime as note_mtime,
+              n.ctime as note_ctime
         from  event_photos p
         left
         join  notes n

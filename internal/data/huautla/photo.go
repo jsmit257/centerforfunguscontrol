@@ -1,15 +1,52 @@
 package huautla
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/jsmit257/huautla/types"
 )
+
+func (ha *HuautlaAdaptor) writePhoto(r *http.Request) (string, error) {
+	var err error
+
+	var data []byte
+	if data, err = io.ReadAll(r.Body); err != nil {
+		return "", err
+	} else if len(data) < 4 {
+		return "", fmt.Errorf("invalid request body")
+	}
+
+	filetype := map[[4]byte]string{
+		{0x89, 'P', 'N', 'G'}:    "image/png",
+		{0xff, 0xd8, 0xff, 0xe0}: "image/jpeg",
+		{'G', 'I', 'F', '8'}:     "image/gif",
+		{'M', 'M', 0, '*'}:       "image/tiff",
+		{'I', 'I', '*', 0}:       "image/tiff",
+	}[[4]byte(data[:4])]
+	if filetype == "" {
+		filetype = append(r.Header[http.CanonicalHeaderKey("Content-Type")], "image/x-unknown")[0]
+	}
+
+	ext := map[string]string{
+		"image/jpeg": "jpg",
+		"image/jpg":  "jpg",
+		"image/png":  "png",
+		"image/gif":  "gif",
+		"image/tiff": "tiff",
+	}[filetype]
+	if ext == "" {
+		ext = "unk"
+	}
+
+	name := fmt.Sprintf("%s.%s", uuid.New().String(), ext)
+
+	return name, ha.filer("photos/"+name, data, 0644)
+}
 
 func (ha *HuautlaAdaptor) getPhotos(w http.ResponseWriter, r *http.Request) (oID string, photos []types.Photo, err error) {
 	ms := ha.start("GetPhotos")
@@ -34,10 +71,8 @@ func (ha *HuautlaAdaptor) PostPhoto(w http.ResponseWriter, r *http.Request) {
 
 	if oID, photos, err := ha.getPhotos(w, r); err != nil {
 		return
-	} else if body, err := io.ReadAll(r.Body); err != nil {
+	} else if p.Filename, err = ha.writePhoto(r); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
-	} else if err := json.Unmarshal(body, &p); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
 	} else if photos, err = ha.db.AddPhoto(r.Context(), types.UUID(oID), photos, p, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add photo")
 	} else {
@@ -54,10 +89,10 @@ func (ha *HuautlaAdaptor) PatchPhoto(w http.ResponseWriter, r *http.Request) {
 
 	if _, photos, err := ha.getPhotos(w, r); err != nil {
 		return
-	} else if body, err := io.ReadAll(r.Body); err != nil {
+	} else if p.UUID = types.UUID(chi.URLParam(r, "id")); p.UUID == "" {
+		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if p.Filename, err = ha.writePhoto(r); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
-	} else if err := json.Unmarshal(body, &p); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
 	} else if photos, err = ha.db.ChangePhoto(r.Context(), photos, p, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to change photo")
 	} else {

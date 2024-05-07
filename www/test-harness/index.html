@@ -3,8 +3,11 @@
 
 <head>
   <title>test harness</title>
+
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
   <script src="./js/index.js" defer></script>
+  <script src="./js/note.js" defer></script>
+  <script src="./js/photo.js" defer></script>
   <script src="./js/table.js" defer></script>
   <script src="./js/column.js" defer></script>
   <script src="./js/buttonbar.js" defer></script>
@@ -18,6 +21,8 @@
 
   <!-- <link href="jquery-ui.min.css" rel="stylesheet"> -->
   <link href="./css/index.css" rel="stylesheet">
+  <link href="./css/note.css" rel="stylesheet">
+  <link href="./css/photo.css" rel="stylesheet">
   <link href="./css/table.css" rel="stylesheet">
   <link href="./css/column.css" rel="stylesheet">
   <link href="./css/buttonbar.css" rel="stylesheet">
@@ -124,12 +129,12 @@
               <input class="live" type="number">
             </div>
 
-            <div class="row modified_date hover">
+            <div class="row ctime hover">
               <div class="label">Modified At</div>
               <div class="static const date"></div>
             </div>
 
-            <div class="row create_date hover">
+            <div class="row ctime hover">
               <div class="label">Created At</div>
               <div class="static const date"></div>
             </div>
@@ -144,8 +149,8 @@
             <div class="column eventtype" sort-key="eventtype">Type/Stage</div>
             <div class="column temperature">Temperature</div>
             <div class="column humidity">Humidity</div>
-            <div class="column modified_date" sort-key="modified_date">Modified At</div>
-            <div class="column create_date" sort-key="create_date">Created At</div>
+            <div class="column ctime" sort-key="ctime">Modified At</div>
+            <div class="column ctime" sort-key="ctime">Created At</div>
           </div>
           <div class="rows" name="event"></div>
           <div class="sidebar">
@@ -180,7 +185,7 @@
             <div class="column name" sort-key="name">Name</div>
             <div class="column species" sort-key="species">Species</div>
             <div class="column vendor" sort-key="vendor">Vendor</div>
-            <div class="column create_date" sort-key="create_date">Created At</div>
+            <div class="column ctime" sort-key="ctime">Created At</div>
           </div>
           <div class="rows" name="strain"></div>
           <div class="buttonbar"></div>
@@ -250,8 +255,8 @@
             <div class="column eventtype" sort-key="eventtype">Type/Stage</div>
             <div class="column temperature">Temperature</div>
             <div class="column humidity">Humidity</div>
-            <div class="column modified_date" sort-key="modified_date">Modified At</div>
-            <div class="column create_date" sort-key="create_date">Created At</div>
+            <div class="column ctime" sort-key="ctime">Modified At</div>
+            <div class="column ctime" sort-key="ctime">Created At</div>
           </div>
           <div class="rows" name="event"></div>
           <div class="buttonbar"></div>
@@ -282,7 +287,7 @@
     </ul>
   </div>
   <script defer>
-    console.log('click', $('body>.main>.header>.menuitem[name=vendor]').trigger('click'))
+    $(setTimeout(500, console.log('click', $('body>.main>.header>.menuitem[name=vendor]').click())))
   </script>
 </body>
 

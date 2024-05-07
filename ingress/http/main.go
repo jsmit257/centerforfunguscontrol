@@ -53,6 +53,7 @@ func main() {
 	r.Get("/css/images/background/{f}", g.staticContent)
 	r.Get("/js/{f}", g.staticContent)
 	r.Get("/images/{f}", g.staticContent)
+	r.Get("/photos/{f}", g.staticContent)
 
 	newHC(r)
 	newHuautla(cfg, r, log)

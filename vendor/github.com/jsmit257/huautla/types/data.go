@@ -22,15 +22,15 @@ type (
 	Note struct {
 		UUID  `json:"id,omitempty"`
 		Note  string    `json:"note,omitempty"`
-		MTime time.Time `json:"modified_at,omitempty"`
-		CTime time.Time `json:"create_at,omitempty"`
+		MTime time.Time `json:"mtime,omitempty"`
+		CTime time.Time `json:"ctime,omitempty"`
 	}
 
 	Photo struct {
 		UUID     `json:"id"`
 		Filename string    `json:"image"`
 		Notes    []Note    `json:"notes"`
-		CTime    time.Time `json:"create_at"`
+		CTime    time.Time `json:"ctime"`
 	}
 
 	Vendor struct {
@@ -59,7 +59,7 @@ type (
 		Vendor     `json:"vendor"`
 		Generation *Generation       `json:"generation,omitempty"`
 		Attributes []StrainAttribute `json:"attributes,omitempty"`
-		CTime      time.Time         `json:"create_date"`
+		CTime      time.Time         `json:"ctime"`
 	}
 
 	StrainAttribute struct {
@@ -94,8 +94,8 @@ type (
 		BulkSubstrate  Substrate `json:"bulk_substrate,omitempty"`
 		Events         []Event   `json:"events,omitempty"`
 		Notes          []Note    `json:"notes,omitempty"`
-		MTime          time.Time `json:"modified_date,omitempty"`
-		CTime          time.Time `json:"create_date"`
+		MTime          time.Time `json:"mtime,omitempty"`
+		CTime          time.Time `json:"ctime"`
 	}
 
 	Event struct {
@@ -105,8 +105,8 @@ type (
 		EventType   EventType `json:"event_type"`
 		Photos      []Photo   `json:"photos,omitempty"`
 		Notes       []Note    `json:"notes,omitempty"`
-		MTime       time.Time `json:"modified_date"`
-		CTime       time.Time `json:"create_date"`
+		MTime       time.Time `json:"mtime"`
+		CTime       time.Time `json:"ctime"`
 	}
 
 	Source struct {
@@ -123,7 +123,7 @@ type (
 		Sources          []Source  `json:"sources,omitempty"`
 		Events           []Event   `json:"events,omitempty"`
 		Notes            []Note    `json:"notes,omitempty"`
-		MTime            time.Time `json:"modified_date"`
-		CTime            time.Time `json:"create_date"`
+		MTime            time.Time `json:"mtime"`
+		CTime            time.Time `json:"ctime"`
 	}
 )

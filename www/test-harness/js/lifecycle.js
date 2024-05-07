@@ -7,14 +7,55 @@ $(function () {
   var $eventbar = $lifecycle.find('.table.events>.buttonbar')
 
   var fields = ['id', 'location', 'strain_cost', 'grain_cost', 'bulk_cost', 'yield', 'count', 'gross']
-  var eventtypes = []
 
-  function newNdxRow(data) {
-    // data ||= {}
+  let newNdxRow = (data) => {
     return $('<div class="row hover" />')
       .append($('<div class=uuid />').text(data.id))
-      .append($('<div class="created_at static date" />').text(data.create_date.replace('T', ' ').replace(/:\d{2}(\..+)?Z.*/, '')))
+      .append($('<div class="created_at static date" />').text(data.ctime.replace('T', ' ').replace(/:\d{2}(\..+)?Z.*/, '')))
       .append($('<div class="location static" />').text(data.location))
+  }
+
+  let selectLists = _ => {
+    $.ajax({
+      url: '/strains',
+      method: 'GET',
+      async: true,
+      success: (result, status, xhr) => {
+        var strains = []
+        result.forEach(r => {
+          strains.push($(`<option value="${r.id}">${r.name} | Species: ${r.species || "unknown"} | Vendor: ${r.vendor.name}</option>`)
+            .data('strain', r))
+        })
+        $table
+          .find('>.row.strain>select.live')
+          .empty()
+          .append(strains)
+      },
+      error: console.log,
+    })
+
+    $.ajax({
+      url: '/substrates',
+      method: 'GET',
+      async: true,
+      success: (result, status, xhr) => {
+        var substrates = { bulk: [], grain: [], liquid: [], agar: [] }
+        result.forEach(r => {
+          substrates[r.type.toLowerCase()]
+            .push($(`<option value="${r.id}">${r.name} | Vendor: ${r.vendor.name}</option>`)
+              .data('substrate', r))
+        })
+        $table
+          .find('>.row.grain_substrate>select.live')
+          .empty()
+          .append(substrates.grain)
+        $table
+          .find('.row.bulk_substrate>select.live')
+          .empty()
+          .append(substrates.bulk)
+      },
+      error: console.log,
+    })
   }
 
   $ndx.on('click', '>.row', e => {
@@ -38,55 +79,14 @@ $(function () {
         .data('lifecycle', lc)
         .parent()
         .find('.columns>.column>span.title')
-        .text(`${lc.strain.name} - ${new Date(lc.create_date).toLocaleString()}`)
-
-      $.ajax({
-        url: '/strains',
-        method: 'GET',
-        async: true,
-        success: (result, status, xhr) => {
-          var strains = []
-          result.forEach(r => {
-            strains.push($(`<option value="${r.id}">${r.name} | Species: ${r.species || "unknown"} | Vendor: ${r.vendor.name}</option>`)
-              .data('strain', r))
-          })
-          $table
-            .find('>.row.strain>select.live')
-            .empty()
-            .append(strains)
-        },
-        error: console.log,
-      })
-
-      $.ajax({
-        url: '/substrates',
-        method: 'GET',
-        async: true,
-        success: (result, status, xhr) => {
-          var substrates = { bulk: [], grain: [], liquid: [], agar: [] }
-          result.forEach(r => {
-            substrates[r.type.toLowerCase()]
-              .push($(`<option value="${r.id}">${r.name} | ${r.vendor.name}</option>`)
-                .data('substrate', r))
-          })
-          $table
-            .find('>.row.grain_substrate>select.live')
-            .empty()
-            .append(substrates.grain)
-          $table
-            .find('.row.bulk_substrate>select.live')
-            .empty()
-            .append(substrates.bulk)
-        },
-        error: console.log,
-      })
+        .text(`${lc.strain.name} - ${new Date(lc.ctime).toLocaleString()}`)
 
       fields.forEach(n => {
         $table.find(`.row.${n}>.static`).text(lc[n] || 0)
         $table.find(`.row.${n}>.live`).val(lc[n] || 0)
       })
-      $table.find(`.row.modified_date>.static`).trigger('set', lc.modified_date)
-      $table.find(`.row.create_date>.static`).trigger('set', lc.create_date)
+      $table.find(`.row.mtime>.static`).trigger('set', lc.mtime)
+      $table.find(`.row.ctime>.static`).trigger('set', lc.ctime)
 
       $table
         .find(`.row.strain>.static`)
@@ -104,13 +104,15 @@ $(function () {
       $events.trigger('send', lc.events)
     })
     .on('edit', (e, args) => {
+      selectLists()
+
       $table
         .trigger('set-editing', 'edit')
         .find('input, select')
         .first()
         .focus()
 
-      var $modifiedDate = $table.find('.modified_date>.static').text("Now")
+      var $modifiedDate = $table.find('.mtime>.static').text("Now")
 
       args.buttonbar.trigger('set', {
         target: $table,
@@ -141,6 +143,8 @@ $(function () {
       })
     })
     .on('add', (e, args) => {
+      selectLists()
+
       $table
         .trigger('set-editing', 'add')
         .find('input, select')
@@ -148,7 +152,7 @@ $(function () {
         .first()
         .focus()
 
-      $table.find('.modified_date>.static, .create_date>.static').text("Now")
+      $table.find('.mtime>.static, .ctime>.static').text("Now")
 
       $events.empty()
 
@@ -196,49 +200,52 @@ $(function () {
         .text(status ? `(${status})` : '')
     })
 
-  function newEventRow(data) {
-    data ||= { event_type: { stage: {} }, modified_date: "Now", create_date: "Now" }
-
+  let newEventRow = (data = { event_type: { stage: {} }, mtime: "Now", ctime: "Now" }) => {
     return $('<div class="row hover" />')
       .append($('<div class=uuid />').text(data.id))
       .append($('<div class="eventtype static" />').text(data.event_type.name + "/" + data.event_type.stage.name))
       .append($('<select class="eventtype live" />')
         .data('eventtype_uuid', data.event_type.id)
-        .append(eventtypes)
         .val(data.event_type.id))
       .append($('<div class="temperature static" />').text(data.temperature))
       .append($('<input class="temperature live" min="0" type="number">').val(data.temperature))
       .append($('<div class="humidity static" />').text(data.humidity))
       .append($('<input class="humidity live" type="number" min="0" max="100">').val(data.humidity))
-      .append($('<div class="modified_date static const date" />')
-        .data('value', data.modified_date)
-        .text(data.modified_date.replace('T', ' ').replace(/:\d{1,2}(\..+)?Z.*/, '')))
-      .append($('<div class="create_date static const date" />')
-        .data('value', data.modified_date)
-        .text(data.create_date.replace('T', ' ').replace(/:\d{1,2}(\..+)?Z.*/, '')))
+      .append($('<div class="mtime static const date" />')
+        .data('value', data.mtime)
+        .text(data.mtime.replace('T', ' ').replace(/:\d{1,2}(\..+)?Z.*/, '')))
+      .append($('<div class="ctime static const date" />')
+        .data('value', data.ctime)
+        .text(data.ctime.replace('T', ' ').replace(/:\d{1,2}(\..+)?Z.*/, '')))
   }
 
-  $events.on('send', (e, ...ev) => {
-    ev ||= []
-
-    $events.data('events', ev)
+  let getEventtypes = $events => {
+    let $result
 
     $.ajax({
       url: '/eventtypes',
       method: 'GET',
       async: false,
       success: (result, status, xhr) => {
-        eventtypes.length = 0
+        let eventtypes = []
         result.forEach(r => {
           eventtypes.push($(`<option value="${r.id}">${r.name + "/" + r.stage.name}</option>`))
         })
-        $events
-          .find('>.row.eventtypes>select.live')
+        $result = $events
+          .find('>.row.selected>select.eventtype.live')
           .empty()
           .append(eventtypes)
       },
       error: console.log,
     })
+
+    return $result
+  }
+
+  $events.on('send', (e, ...ev) => {
+    ev ||= []
+
+    let $events = $(e.currentTarget).data('events', ev)
 
     $events.empty()
     ev.forEach(evt => { $events.append(newEventRow(evt)) })
@@ -273,7 +280,7 @@ $(function () {
           "bulk_substrate": {
             "id": $table.find('.row.bulk_substrate>.live').val(),
           },
-          "create_date": new Date($table.find('.row.create_date>.static').text()).toISOString()
+          "ctime": new Date($table.find('.row.ctime>.static').text()).toISOString()
         })
       },
       success: (result, status, xhr) => {
@@ -352,12 +359,11 @@ $(function () {
     if (!$(e.currentTarget).hasClass('active')) {
       return
     }
-    $events.find('.selected>select.eventtype')
-      .empty()
-      .append(eventtypes)
+
+    getEventtypes($events)
       .val($events.find('.selected>.eventtype.live').data('eventtype_uuid'))
 
-    var $modifiedDate = $events.find('.selected>.modified_date.static').text("Now")
+    var $modifiedDate = $events.find('.selected>.mtime.static').text("Now")
 
     $events.trigger('edit', {
       url: `/lifecycle/${$table.find('.row.id>.uuid').text()}/events`,
@@ -369,7 +375,7 @@ $(function () {
           "event_type": {
             "id": $selected.find('>.eventtype.live').val()
           },
-          "create_date": new Date($selected.find('>.create_date.static').data('value')).toISOString(),
+          "ctime": new Date($selected.find('>.ctime.static').data('value')).toISOString(),
         })
       },
       success: (data, status, xhr) => { $table.trigger('send', data) },
@@ -384,6 +390,7 @@ $(function () {
     if (!$(e.currentTarget).hasClass('active')) {
       return
     }
+
     $events.trigger('add', {
       newRow: newEventRow,
       url: `/lifecycle/${$table.find('.row.id>.uuid').text()}/events`,
@@ -403,6 +410,8 @@ $(function () {
       error: (xhr, status, error) => { $events.trigger('remove-selected') },
       buttonbar: $eventbar
     })
+
+    getEventtypes($events)
   })
 
   $eventbar.find('.remove').on('click', e => {

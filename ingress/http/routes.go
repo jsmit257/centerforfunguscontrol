@@ -101,6 +101,6 @@ func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
 	r.Delete("/notes/{o_id}/{id}", ha.DeleteNote)
 
 	r.Post("/photos/{o_id}", ha.PostPhoto)
-	r.Patch("/photos/{o_id}", ha.PatchPhoto)
+	r.Patch("/photos/{o_id}/{id}", ha.PatchPhoto)
 	r.Delete("/photos/{o_id}/{id}", ha.DeletePhoto)
 }

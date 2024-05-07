@@ -3,8 +3,8 @@ package huautla
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -33,16 +33,17 @@ func Test_PostPhoto(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
-		id     types.UUID
-		p      *types.Photo
-		getErr error
-		updErr error
-		sc     int
+		id       types.UUID
+		data     []byte
+		getErr   error
+		updErr   error
+		writeErr error
+		sc       int
 	}{
 		"happy_path": {
-			id: "happy path",
-			p:  &types.Photo{},
-			sc: http.StatusOK,
+			id:   "happy path",
+			data: []byte{0x89, 0x50, 0x4e, 0x47},
+			sc:   http.StatusOK,
 		},
 		"missing_id": {
 			sc: http.StatusBadRequest,
@@ -60,9 +61,15 @@ func Test_PostPhoto(t *testing.T) {
 			id: "missing body",
 			sc: http.StatusBadRequest,
 		},
+		"write_error": {
+			id:       "write_error",
+			data:     []byte{0xff, 0xd8, 0xff, 0xe0},
+			writeErr: fmt.Errorf("some error"),
+			sc:       http.StatusBadRequest,
+		},
 		"post_error": {
 			id:     "post error",
-			p:      &types.Photo{},
+			data:   []byte{0x00, 0x00, 0x00, 0x00},
 			updErr: fmt.Errorf("some error"),
 			sc:     http.StatusInternalServerError,
 		},
@@ -79,6 +86,9 @@ func Test_PostPhoto(t *testing.T) {
 			},
 			log:   log.WithFields(log.Fields{"test": "Test_PostPhoto", "case": k}),
 			mtrcs: nil,
+			filer: func(string, []byte, fs.FileMode) error {
+				return v.writeErr
+			},
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -94,7 +104,7 @@ func Test_PostPhoto(t *testing.T) {
 					rctx),
 				http.MethodPost,
 				"url",
-				bytes.NewReader(serializePhoto(v.p)))
+				bytes.NewReader(v.data))
 
 			ha.PostPhoto(w, r)
 
@@ -103,33 +113,49 @@ func Test_PostPhoto(t *testing.T) {
 	}
 }
 
-func Test_ChangePhoto(t *testing.T) {
+func Test_PatchPhoto(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
-		id     types.UUID
-		p      *types.Photo
-		getErr error
-		updErr error
-		sc     int
+		id, oID  types.UUID
+		data     []byte
+		getErr   error
+		updErr   error
+		writeErr error
+		sc       int
 	}{
 		"happy_path": {
-			id: "happy path",
-			p:  &types.Photo{},
-			sc: http.StatusOK,
+			oID:  "happy path",
+			id:   "happy path",
+			data: []byte{0x89, 0x50, 0x4e, 0x47},
+			sc:   http.StatusOK,
+		},
+		"missing_photo_id": {
+			oID: "missing_photo_id",
+			sc:  http.StatusBadRequest,
 		},
 		"get_error": {
+			oID:    "get error",
 			id:     "get error",
 			getErr: fmt.Errorf("some error"),
 			sc:     http.StatusInternalServerError,
 		},
 		"missing_body": {
-			id: "missing body",
-			sc: http.StatusBadRequest,
+			oID: "missing body",
+			id:  "missing body",
+			sc:  http.StatusBadRequest,
+		},
+		"write_error": {
+			oID:      "write_error",
+			id:       "write_error",
+			data:     []byte{0x47, 0x49, 0x46, 0x38},
+			writeErr: fmt.Errorf("some error"),
+			sc:       http.StatusBadRequest,
 		},
 		"patch_error": {
+			oID:    "post error",
 			id:     "post error",
-			p:      &types.Photo{},
+			data:   []byte{0x4d, 0x4d, 0x00, 0x2a},
 			updErr: fmt.Errorf("some error"),
 			sc:     http.StatusInternalServerError,
 		},
@@ -144,8 +170,11 @@ func Test_ChangePhoto(t *testing.T) {
 					getErr:    v.getErr,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_ChangePhoto", "case": k}),
+			log:   log.WithFields(log.Fields{"test": "Test_PatchPhoto", "case": k}),
 			mtrcs: nil,
+			filer: func(string, []byte, fs.FileMode) error {
+				return v.writeErr
+			},
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -153,7 +182,10 @@ func Test_ChangePhoto(t *testing.T) {
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id", "id"}, Values: []string{
+				string(v.oID),
+				string(v.id),
+			}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					context.Background(),
@@ -161,7 +193,7 @@ func Test_ChangePhoto(t *testing.T) {
 					rctx),
 				http.MethodPost,
 				"url",
-				bytes.NewReader(serializePhoto(v.p)))
+				bytes.NewReader(v.data))
 
 			ha.PatchPhoto(w, r)
 
@@ -189,7 +221,7 @@ func Test_DeletePhoto(t *testing.T) {
 			sc:  http.StatusBadRequest,
 		},
 		"urldecode_error": {
-			oID: "happy path",
+			oID: "urldecode_error",
 			id:  "%zzz",
 			sc:  http.StatusBadRequest,
 		},
@@ -235,21 +267,13 @@ func Test_DeletePhoto(t *testing.T) {
 					rctx),
 				http.MethodPost,
 				"url",
-				bytes.NewReader(serializePhoto(nil)))
+				bytes.NewReader(nil))
 
 			ha.DeletePhoto(w, r)
 
 			require.Equal(t, v.sc, w.Code)
 		})
 	}
-}
-
-func serializePhoto(p *types.Photo) []byte {
-	if p == nil {
-		return []byte{}
-	}
-	result, _ := json.Marshal(p)
-	return result
 }
 
 func (pm *photoerMock) GetPhotos(context.Context, types.UUID, types.CID) ([]types.Photo, error) {

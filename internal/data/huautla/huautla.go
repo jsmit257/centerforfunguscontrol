@@ -2,7 +2,9 @@ package huautla
 
 import (
 	"encoding/json"
+	"io/fs"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,6 +19,7 @@ type (
 	HuautlaAdaptor struct {
 		db    types.DB
 		log   *log.Entry
+		filer func(string, []byte, fs.FileMode) error
 		mtrcs interface{}
 	}
 
@@ -37,6 +40,7 @@ func New(cfg *types.Config, log *log.Entry, mtrcs interface{}) (*HuautlaAdaptor,
 			db:    db,
 			log:   log,
 			mtrcs: mtrcs,
+			filer: os.WriteFile,
 		}, nil
 	}
 }

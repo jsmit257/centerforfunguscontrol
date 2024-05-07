@@ -1,19 +1,12 @@
 $(function () {
   $('body>.main>.workspace>div .table>.rows')
     .on('keyup', e => {
-      var btn;
-
-      switch (e.which) {
-        case 13:
-          btn = 'ok'
-          break;
-        case 27:
-          btn = 'cancel'
-          break
-        case 38: // up
-        case 40: // down
-        default:
-          return
+      let btn = {
+        13: 'ok',
+        27: 'cancel'
+      }[e.which]
+      if (!btn) {
+        return
       }
 
       $(e.currentTarget)
@@ -58,7 +51,7 @@ $(function () {
       $selected.remove()
     })
     .on('refresh', (e, args) => {
-      var $table = $(e.currentTarget)
+      let $table = $(e.currentTarget)
 
       args ||= {}
       args.buttonbar ||= $table
@@ -71,14 +64,14 @@ $(function () {
         method: 'GET',
         async: true,
         success: (result, sc, xhr) => {
-          var selected = $table.find('.selected>.uuid').text()
+          let selected = $table.find('.selected>.uuid').text()
           $table.empty()
           result.forEach(r => {
-            var $row = args.newRow(r)
-            if (r.id === selected) {
-              $row.addClass('selected')
-            }
+            let $row = args.newRow(r)
             $table.append($row)
+            if (r.id === selected) {
+              $row.click()
+            }
           })
           args.buttonbar.find('.remove, .edit')[$table.children().length === 0 ? "removeClass" : "addClass"]('active')
           if ($table.find('.selected').length == 0) {

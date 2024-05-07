@@ -26,118 +26,66 @@ The only build artifacts from this project are the docker images at [dockerhub](
 
 Only the minimal seed data is captured in the image, the test data is lost when the test container exits. 
 
+TODO: webhook with github/et al.
+
+### Scripts
+Some of the scripts in [bin](./bin/) are meant to run locally (regardless of whether postgres runs locally), and others are meant to run from inside the docker container (although they may also run locally). All scripts accept the same environment variable _patterns_ that differ in prefix but serve the same general purpose. For instance, backup requires `SOURCE_*` variables for `*_HOST`, `*_POST`, etc, while restore requires `DEST_*` prefixes. Migration, of course, requires both. In the case of local create/init scripts that only connect for writing, the prefix is `POSTGRES_`. The patternized names and their meanings are listed below:
+
+- `*_HOST`: (required) data source hostname; typically, the hostname of a vanilla instance of `jsmit257/huautla:lkg` or similar as defined in a `docker-compose.yml`
+- `*_PORT`: (optional, default:5432) postgres port on the source host
+- `*_USER`: (optional, default:postgres) user with admin privileges on the source server
+- `POSTGRES_PASSWORD`: (required) password for the postgres user(s). This is rarely used and may not be needed where it is used. Most importantly there is currently no differentiation between SOURCE and DEST passwords. Nonetheless, attempt to avoid saving this anywhere including command history if it's at-all sensitive
+
+Only three local scripts are interesting unless you're fixing something:
+- [install prod](./bin/install-prod.sh) creates the database, creates roles and permissions, creates tables/triggers/functions, seeds production data (a few necessary values) and exits
+  ##### required parameters:
+    - `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+- [install system test](./bin/install-system-test.sh) calls `install-prod.sh`, then loads additional data expected by [system tests](./tests/system/)
+  ##### required parameters:
+    - `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+- [system test](./bin/system-test.sh) runs the `go` system tests; it does *not* run any prerequisites
+  ##### required parameters:
+    - `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+
+All the above have `make` targets that run the right things with sane defaults, in the right order, and fail at the right time, so generally prefer those over running the scripts manually.
+
 Additional entrypoints are also packaged in the image for the purpose of persistence management. Reference implementations for all the following features are documented in [cffc standalone](https://github.com/jsmit257/centerforfunguscontrol/blob/master/standalone/docker-compose.yml). The scripts themselves have descriptive errors, where possible.
 
 - [migration](./bin/migration-entrypoint.sh): moves data from a source to a destination. In the reference implementation, the source is the minimally pre-seeded huautla database, and the destination is a short-lived empty database with a volume mounted from the host - hence, persistent. This should only be run once - the service issues appropriate errors for troubleshooting.
-  #### parameters:
-    - `SOURCE_HOST`: (required) data source hostname; typically, the hostname of a vanilla instance of `jsmit257/huautla:lkg` or similar
-    - `SOURCE_PORT`: (optional, default:5432) postgres port on the source host
-    - `SOURCE_USER`: (optional, default:postgres) user with admin privileges on the source server
-    - `DEST_HOST`: (optional, default:localhost) instance to seed from the source; the service fails with a descriptive error if a database already exists
-    - `DEST_PORT`: (optional, default:5432) postgres port on the destination host
-    - `DEST_USER`: (optional, default:postgres) user with admin privileges on the destination server
+  ##### required parameters:
+    - `SOURCE_HOST`, `SOURCE_PORT`, `SOURCE_USER`, `DEST_HOST`, `DEST_PORT`, `DEST_USER`
 
   The product of this execise is a `data/` directory suitable for mounting as a volume in a simple `golang:latest` container.
 
 - [backup](./bin/backup-entrypoint.sh): archives a running instance to the `/pgbackups` directory. This is mostly only useful if that directory is mapped to a persistent volume.
-  #### parameters:
-    - `BACKUP_DIR`: (optional) used when this script is run outside a container; default is '/pgbackup'. Directory must exist on the post, or the command fails.
-    - `SOURCE_HOST`: (required) data source hostname
-    - `SOURCE_PORT`: (optional, default:5432) postgres port on the source host
-    - `SOURCE_USER`: (optional, default:postgres) user with read on the source server
-    - `POSTGRES_PASSWORD`: (required) password for the source user. This is typically supplied by a `docker-compose.yml` and/or `.env` file. These password is typically `root` when used with a vanilla `postgres:<whatever>` tag, but attempt to avoid saving this anywhere including command history if it's at-all sensitive
+  ##### required parameters:
+    - `SOURCE_HOST`, `SOURCE_PORT`, `SOURCE_USER`, `POSTGRES_PASSWORD`
+  ##### additional parameters:
+    - `BACKUP_DIR`: (optional) used when this script is run outside a container; default is '/pgbackup'. Directory must exist on the host, or the command fails.
 
 - [restore](./bin/restore-entrypoint.sh): restores an archive to a running instance of the huautla database This is mostly only useful if that directory is mapped to a persistent volume.
-  #### parameters:
-    - `BACKUP_DIR`: (optional) used when this script is run outside a container; default is '/pgbackup'. Directory must exist on the post, or the command fails.
-    - `DEST_HOST`: (required) data destination hostname
-    - `DEST_PORT`: (optional, default:5432) postgres port on the destination host
-    - `DEST_USER`: (optional, default:postgres) user with admin privileges on the destination server
-    - `POSTGRES_PASSWORD`: (required) password for the destination user. The same recommendations and caveats apply as with `backup`
+  ##### required parameters:
+    - `DEST_HOST`, `DEST_PORT`, `DEST_USER`, `POSTGRES_PASSWORD`
+  ##### additional parameters:
+    - `BACKUP_DIR`: (optional) used when this script is run outside a container; default is '/pgbackup'. Directory must exist on the post, or lthe command fails.
     - `RESTORE_POINT`: (required) one of the archives created by the backup script. See the reference implementation for a description of this parameter
 
-TODO: webhook with github/et al.
-
 ### Local Database
-If all you're after is installing a new huautla database to a local server, the [install prod](./bin/install-prod.sh) script can run standalone to create and seed the DB. Unlike migration, this reads DDL and DML directly from scripts. Run it from `$PROJ_ROOT/bin` or relative paths in the script will fail. See [vars](./bin/vars.sh) for variable names and defaults.
+If all you're after is installing a new huautla database to a local server, the [install prod](./bin/install-prod.sh) script can run standalone to create and seed the DB. Unlike migration, this reads DDL and DML directly from scripts. Run it as `$PROJ_ROOT/bin/install-prod.sh` or relative paths in the script will fail. See [vars](./bin/vars.sh) for variable names and defaults.
 
 This only works correctly if the `huautla` database doesn't exist. 
 
 ### Using
 Public bindings are consolidated in the [api](./types/api.go) and [data types](./types/data.go).
 
-### Object Model
-These are the database tables described as a golang object tree; the sql perspective is [here](./sql/init.sql), and there are [cliff-notes](./sql/cliff-notes); no, this isn't really yaml
+### [Object Model](docs/orm.png)
+This image is not a 1:1 mapping to [database tables](./sql/init.sql), but it accurately describes the objects in the public API: 
 
-```yaml
-vendor: &vendor
-  uuid: surrogate key
-  name: must be unique
+![orm](docs/orm.png)
 
-strainattribute: &strainattribute
-  uuid: surrogate key
-  name: the key in the key/value pair, can't be changed after it's created
-  value: arbitrary value - use it for anything
+Then, this simplified version shows specifically the cycle in the graph where generations create new strains: 
 
-strain: &strain
-  uuid: surrogate key
-  name: just a name, without a vendor it doesn't mean much
-  vendor: *vendor ### vendors give reputation to names, so (name+vendor) is unique in this table
-  attributes: list of *strainattribute
-
-ingredient: &ingredient
-  uuid: surrogate key
-  name: unique in this table, but can be shared by many substrates
-
-substrate: &substrate
-  uuid: surrogate key
-  name: the name the vendor gave it
-  type: constrained to ('Bulk', 'Grain', TBD)
-  vendor: *vendor ### substrates are unique by (name+vendor) for the same reasons as strains
-  ingredients: list of 0 or more *ingredient
-
-grainsubstrate: &grainsubstrate *substrate
-  ### these are just substrates that pass an API level check (not a check constraint on the database, yet) that only allows types of 'Grain'
-
-bulksubstrate: &bulksubstrate
-  ### like grainsubstrate, except the type check is for 'Bulk'
-
-stage: &stage
-  uuid: surrogate key
-  name: unique to this table
-
-eventtype: &eventtype
-  uuid: surrogate key
-  name: something short and descriptive
-  severity: label for quick filtering of log noise
-  stage: *stage ### unique with name, b/c some types wouldn't apply to some stages, and there may be dublicate names
-
-event: &event
-  uuid: surrogate key
-  temperature:
-  humidity:
-  mtime: date/time when this record was last modified
-  ctime: date/time when this record was created
-  eventtype: *eventtype
-
-lifecycle:
-  uuid: surrogate key
-  name: unique identifier ### probably going away or being otherwise refactored
-  location: where the bin/bag/jar/agar is being stored
-  grain_cost:
-  bulk_cost:
-  yield: in grams, how much dried or fresh product was shipped (see gross)
-  count: how many caps were harvested?
-  market_price: TBD - this should be the market value when the lifecycle begins; it may go up, it may go down, the only thing you know for sure is this is where it's at now; once entered, you cacn't change this, but that's not an invitation to speculate
-  gross: product fresh weight, mostly to anticipate weight loss from dehydration
-  mtime: date/time when this record was last modified
-  ctime: date/time when this record was created
-  strain: *strain
-  grainsubstrate: *grainsubstrate
-  bulksubstrate: *bulksubstrate
-  events: list of *event
-```
-The root of anything interesting is the Lifecycle. It's generally a path from inception to completion, but it's a 'cycle' and not a 'span' because it doesn't always start at the beginning, and it will eventually support spawning one lifecycle to create new lifecycles, which makes them more tree-like than discrete instances (though ironically not cyclical). But that isn't really finished yet
+![orm](docs/cycle.png)
 
 ### Configuring
 Basically, fill out this form and submit it to `huautla.New()`, along with a logger.
@@ -150,11 +98,11 @@ Config struct {
   PGSSL  string
 }
 ```
-There's a workable reference implementation in the system test [init()](./tests/system/main_test.go) function.
+There's a workable reference implementation in the system test [init()](./tests/system/main_test.go) function. The SSL field exists for testing with `postgres:bookworm` (and probably others) who don't ship with SSL enabled by default.
 
 ### Testing
-- `make unit` obviously handles the unit-testing - i.e. how the persistence-bindings respond to cretain events from the database server
-- `make tests` loads additional data, partly to make sure any referential- or other integrity-constraints aren't violated, then runs the [system tests](./tests/system) to veryfy basic CRUD opeartions, including all possible errors thrown from the database.
+- `make unit` obviously handles the unit-testing - i.e. how the persistence-bindings respond to cretain all possible events from the database server
+- `make system-test` stops any running postgres docker service; runs the unit tests, builds a new database with production seed-data, loads additional/ephemeral test data, then runs [system tests](./tests/system) against the docker container to veryfy basic CRUD opeartions, including all possible errors thrown from the database, and referential- or other integrity-constraints violations. An `huautla/lkg` image is tagged after sample data is loaded (since that's part of the test), but the test data is not persisted in the image.l
 
 ### Contributing
 Please do!!! The (forthcoming) [license](./LICENCE.md) is open and free with attribution.

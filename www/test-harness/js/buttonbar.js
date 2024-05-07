@@ -38,11 +38,11 @@ $(function () {
         wrappers[clazz] = wrapper
       }
     })
-    .append($('<img class="remove active" />'))
+    .append($('<img class="remove" />'))
     .append($('<img class="cancel" />'))
     .append($('<img class= "ok" />'))
     .append($('<img class="add active" />'))
-    .append($('<img class="edit active" />'))
+    .append($('<img class="edit" />'))
     .append($('<img class="refresh active" />'))
 
   $buttonbars.find('img').attr('src', '/images/transparent.png')

@@ -20,9 +20,9 @@ $(function () {
         .append(vendors)
         .data('vendor_uuid', data.vendor.id)
         .val(data.vendor.id))
-      .append($('<div class="create_date static const date" />')
-        .data('value', data.create_date)
-        .text((data.create_date || "Now").replace('T', ' ').replace(/:\d{2}(\.\d+)?Z/, '')))
+      .append($('<div class="ctime static const date" />')
+        .data('value', data.ctime)
+        .text((data.ctime || "Now").replace('T', ' ').replace(/:\d{2}(\.\d+)?Z/, '')))
   }
 
   $table
@@ -150,7 +150,7 @@ $(function () {
         $selected.find('>.uuid').text(data.id)
         $selected.find('>.name.static').text($selected.find('>.name.live').val())
         $selected.find('>.species.static').html($selected.find('>.species.live').val() || "&nbsp")
-        $selected.find('>.create_date.static').text(data.create_date.replace('T', ' ').replace(/(\..+)?Z.*/, ''))
+        $selected.find('>.ctime.static').text(data.ctime.replace('T', ' ').replace(/(\..+)?Z.*/, ''))
         $selected
           .find('>.vendor.static')
           .text($selected.find('>.vendor.live>option:selected').text())
