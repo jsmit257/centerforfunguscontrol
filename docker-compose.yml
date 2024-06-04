@@ -26,7 +26,7 @@ services:
     ports: [ 8080:8080 ]
     volumes:
       - ./www/test-harness/css/images/background/:/www/test-harness/css/images/background/
-      - ./photos:/photos
+      - ./album:/album
     environment:
       HUAUTLA_HOST: *pghost
       HUAUTLA_PORT: *pgport

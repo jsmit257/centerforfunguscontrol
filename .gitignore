@@ -1,6 +1,7 @@
 www/test-harness/css/images/background
 log.json
+album
 standalone/data
 standalone/background
 standalone/backups
-
+standalone/album

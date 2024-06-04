@@ -5,8 +5,9 @@ $(function () {
 
   function newRow(data) {
     data ||= {}
-    return $('<div class="row hover" />')
-      .append($('<div class=uuid />').text(data.id))
+    return $('<div>')
+      .addClass('row hover')
+      .attr('id', data.id)
       .append($('<div class="name static" />').text(data.name))
       .append($('<input class="name live" />').val(data.name))
   }
@@ -38,7 +39,7 @@ $(function () {
       },
       success: (data, status, xhr) => {
         var $selected = $table.find('.selected')
-        $selected.find('>.uuid').text(data.id)
+        $selected.attr('id', data.id)
         $selected.find('>.name.static').text($selected.find('>.name.live').val())
       },
       error: (xhr, status, error) => { $table.trigger('remove-selected') },

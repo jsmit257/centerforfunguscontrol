@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,6 +29,98 @@ type photoerMock struct {
 	addErr,
 	changeErr,
 	rmErr error
+}
+
+func photoHelper(d []byte) (io.Reader, string) {
+	var b = &bytes.Buffer{}
+	var w = multipart.NewWriter(b)
+
+	fw, _ := w.CreateFormFile("file", "sample.png")
+	_, _ = io.Copy(fw, bytes.NewReader(d))
+	w.Close()
+
+	return b, w.FormDataContentType()
+}
+
+func sendPhoto(f func(w http.ResponseWriter, r *http.Request), data []byte, meth string, url chi.RouteParams) *httptest.ResponseRecorder {
+	w := httptest.NewRecorder()
+	defer w.Result().Body.Close()
+	rctx := chi.NewRouteContext()
+	rctx.URLParams = url
+	reader, contentType := photoHelper(data)
+	r, _ := http.NewRequestWithContext(
+		context.WithValue(
+			context.Background(),
+			chi.RouteCtxKey,
+			rctx),
+		meth,
+		"url",
+		reader)
+	r.Header.Set("Content-Type", contentType)
+
+	f(w, r)
+
+	return w
+}
+
+func Test_GetPhoto(t *testing.T) {
+	t.Parallel()
+
+	set := map[string]struct {
+		id     types.UUID
+		getErr error
+		sc     int
+	}{
+		"happy_path": {
+			id: "happy path",
+			sc: http.StatusOK,
+		},
+		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
+		"get_error": {
+			id:     "get error",
+			getErr: fmt.Errorf("some error"),
+			sc:     http.StatusInternalServerError,
+		},
+	}
+
+	for k, v := range set {
+		k, v := k, v
+		ha := &HuautlaAdaptor{
+			db: &huautlaMock{
+				Photoer: &photoerMock{
+					getErr: v.getErr,
+				},
+			},
+			log:   log.WithFields(log.Fields{"test": "Test_GetPhotos", "case": k}),
+			mtrcs: nil,
+		}
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}}
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					context.Background(),
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodGet,
+				"url",
+				bytes.NewReader(nil))
+
+			ha.GetPhotos(w, r)
+
+			require.Equal(t, v.sc, w.Code)
+		})
+	}
 }
 
 func Test_PostPhoto(t *testing.T) {
@@ -92,21 +186,11 @@ func Test_PostPhoto(t *testing.T) {
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
-
-			w := httptest.NewRecorder()
-			defer w.Result().Body.Close()
-			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}}
-			r, _ := http.NewRequestWithContext(
-				context.WithValue(
-					context.Background(),
-					chi.RouteCtxKey,
-					rctx),
+			w := sendPhoto(
+				ha.PostPhoto,
+				v.data,
 				http.MethodPost,
-				"url",
-				bytes.NewReader(v.data))
-
-			ha.PostPhoto(w, r)
+				chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}})
 
 			require.Equal(t, v.sc, w.Code)
 		})
@@ -178,24 +262,14 @@ func Test_PatchPhoto(t *testing.T) {
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
-
-			w := httptest.NewRecorder()
-			defer w.Result().Body.Close()
-			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id", "id"}, Values: []string{
-				string(v.oID),
-				string(v.id),
-			}}
-			r, _ := http.NewRequestWithContext(
-				context.WithValue(
-					context.Background(),
-					chi.RouteCtxKey,
-					rctx),
-				http.MethodPost,
-				"url",
-				bytes.NewReader(v.data))
-
-			ha.PatchPhoto(w, r)
+			w := sendPhoto(
+				ha.PatchPhoto,
+				v.data,
+				http.MethodPatch,
+				chi.RouteParams{Keys: []string{"o_id", "id"}, Values: []string{
+					string(v.oID),
+					string(v.id),
+				}})
 
 			require.Equal(t, v.sc, w.Code)
 		})

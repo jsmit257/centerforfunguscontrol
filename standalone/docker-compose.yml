@@ -27,15 +27,15 @@ services:
     # changes aren't lost between restarts; only run this once for a fresh
     # install (although you could start as many fresh installs as you like);
     #
-    # it creates a 'data/' directory for durable storage, but it fails if one
+    # it creates a '_data/' directory for durable storage, but it fails if one
     # already exists; if you're willing to lose everything in the database and
-    # start from scratch, then delete the 'data/' directory and try again;
+    # start from scratch, then delete the '_data/' directory and try again;
     # otherwise, consider the `restore:` service, assuming there are backups
     depends_on: [ source ]
     image: jsmit257/huautla:lkg
     hostname: huautla-migration
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - ./_data:/var/lib/postgresql/data
     environment:
       SOURCE_HOST: huautla-source
       SOURCE_USER: postgres
@@ -60,9 +60,10 @@ services:
     ports:
       - 5436:5432
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - ./_data:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: *pgpass
+    #entrypoint: chown -Rv postgres:postgres /var/lib/postgresql
 
   backup:
     # usage: docker-compose up --remove-orphans backup
@@ -136,7 +137,7 @@ services:
       - 8082:8080 # if you change the second port, also change environment:HTTP_PORT below
     volumes:
       - ./background:/www/test-harness/css/images/background
-      - ./photos:/photos
+      - ./album:/album
     environment:
       HUAUTLA_HOST: huautla-standalone
       HUAUTLA_PORT: 5432
@@ -145,3 +146,4 @@ services:
       HUAUTLA_SSL: disable
       HTTP_HOST: cffc-standalone
       HTTP_PORT: 8080 # this should match the second port in the corresponding ports: list above
+      GOCOVERDIR: /tmp

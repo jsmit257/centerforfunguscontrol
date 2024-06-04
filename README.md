@@ -32,7 +32,7 @@ And, 3 ways to run the HTTP server:
 
 Now you have to choose which of the 9 configurations best suits your current need. Sorry if that doesn't seem helpful, but there are just a few canned configurations, one of which should be sufficient for your case:
 - the standalone solution described [here](./standalone/README.md) is arguably the best for a high-availability server with persistent storage, even if you're actively developing the project.
-- `make run-local` all the database and http server configurations can be set on the commandline, as needed, and web-resources are published in real-time, so this usually best for development.
+- `make run-local` all the database and http server configurations can be set on the commandline, as needed, with defaults assuming local resources, and web-resources are published in real-time, so this is usually best for development.
 - `make tests`: do this before pushing new tags to dockerhub; the server stays up for user testing
 
 Of course, you can run more than one instance for different reasons, even connected to the same database, but be especially careful never to let two server processes access the same postgres `data/` directory.

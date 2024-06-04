@@ -35,7 +35,8 @@ install-system-test: postgres
 
 .PHONY: system-test
 system-test: docker-down unit install-system-test
-	docker-compose up system-test
+	docker-compose up system-test >out 2>&1
+	cat out
 	# docker push jsmit257/huautla:lkg
 	# make docker-down
 

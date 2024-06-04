@@ -71,6 +71,10 @@ func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
 	r.Patch("/strain/{id}/attribute", ha.PatchStrainAttribute)
 	r.Delete("/strain/{st_id}/attribute/{at_id}", ha.DeleteStrainAttribute)
 
+	r.Get("/strain/{id}/generation", ha.GetGeneratedStrain)
+	r.Patch("/strain/{sid}/generation/{gid}", ha.PatchGeneratedStrain)
+	r.Delete("/strain/{sid}/generation", ha.DeleteGeneratedStrain)
+
 	r.Get("/lifecycles", ha.GetLifecycleIndex)
 	r.Get("/lifecycle/{id}", ha.GetLifecycle)
 	r.Post("/lifecycle", ha.PostLifecycle)
@@ -96,11 +100,16 @@ func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
 	r.Patch("/generation/{id}/sources", ha.PatchSource)
 	r.Delete("/generation/{g_id}/sources/{s_id}", ha.DeleteSource)
 
+	r.Get("/notes/{o_id}", ha.GetNotes)
 	r.Post("/notes/{o_id}", ha.PostNote)
 	r.Patch("/notes/{o_id}", ha.PatchNote)
 	r.Delete("/notes/{o_id}/{id}", ha.DeleteNote)
 
+	r.Get("/photos/{o_id}", ha.GetPhotos)
 	r.Post("/photos/{o_id}", ha.PostPhoto)
 	r.Patch("/photos/{o_id}/{id}", ha.PatchPhoto)
 	r.Delete("/photos/{o_id}/{id}", ha.DeletePhoto)
+
+	r.Get("/reports/lifecycles", ha.GetLifecyclesByAttrs)
+	r.Get("/reports/generations", ha.GetGenerationsByAttrs)
 }

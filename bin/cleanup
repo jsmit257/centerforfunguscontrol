@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# make a *real* temp file and be sure to clean it up
+tmpfile="/tmp/`dd if=/dev/urandom bs=8 count=1 | od -x -Anone | sed 's/\s//g'`"
+uuidpat='[[:xdigit:]]\{8\}-[[:xdigit:]]\{4\}-[[:xdigit:]]\{4\}-[[:xdigit:]]\{4\}-[[:xdigit:]]\{12\}'
+
+psql -hlocalhost -Upostgres -p5433 -dhuautla -c"select filename from photos;" -qt >"$tmpfile"
+
+pushd album
+
+for f in *; do
+	echo $f | sed "/$uuidpat/ q 0; q 1" >/dev/null 2>&1 || continue
+	
+	grep "$f" "$tmpfile" >/dev/null 2>&1 && continue
+
+	echo rm -v "$f"
+done
+
+popd
+
+rm -v "$tmpfile"
+

@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/jsmit257/huautla/types"
@@ -13,7 +15,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var strains = []types.Strain{}
+var (
+	strains     []types.Strain
+	sampledata  bytes.Buffer
+	contentType string
+)
+
+func init() {
+	const samplefile = "../../www/test-harness/images/sample.png"
+
+	w := multipart.NewWriter(&sampledata)
+
+	if sample, err := os.Open(samplefile); err != nil {
+		panic(err)
+	} else if sample == nil {
+		panic(fmt.Errorf("sample image data is nil"))
+	} else if fw, err := w.CreateFormFile("file", samplefile); err != nil {
+		panic(err)
+	} else if _, err = io.Copy(fw, sample); err != nil {
+		panic(err)
+	}
+
+	w.Close()
+
+	contentType = w.FormDataContentType()
+}
 
 func Test_HappyStrain(t *testing.T) {
 	url := fmt.Sprintf(`http://%s:%d/strain`, cfg.HTTPHost, cfg.HTTPPort)
@@ -45,5 +71,63 @@ func Test_HappyStrain(t *testing.T) {
 		require.Nil(t, err)
 
 		strains = append(strains, s)
+	}
+}
+
+func createPhoto(t *testing.T, id types.UUID) types.UUID {
+	url := fmt.Sprintf(`http://%s:%d/photos`, cfg.HTTPHost, cfg.HTTPPort)
+
+	req, err := http.NewRequest(
+		http.MethodPost,
+		fmt.Sprintf("%s/%s", url, id),
+		bytes.NewReader(sampledata.Bytes()))
+	require.Nil(t, err)
+
+	req.Header.Set("Content-Type", contentType)
+
+	res, err := http.DefaultClient.Do(req)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, res.StatusCode, "strain: %v", id)
+
+	var b []byte
+	b, err = io.ReadAll(res.Body)
+	require.Nil(t, err)
+
+	var photos []types.Photo
+	err = json.Unmarshal(b, &photos)
+	require.Nil(t, err)
+	require.Equal(t, 1, len(photos))
+
+	return photos[0].UUID
+}
+
+func createNote(t *testing.T, id types.UUID, note string) {
+	url := fmt.Sprintf(`http://%s:%d/notes`, cfg.HTTPHost, cfg.HTTPPort)
+
+	b, err := json.Marshal(types.Note{Note: note})
+	require.Nil(t, err)
+
+	req, err := http.NewRequest(
+		http.MethodPost,
+		fmt.Sprintf("%s/%s", url, id),
+		bytes.NewReader(b))
+	require.Nil(t, err)
+
+	res, err := http.DefaultClient.Do(req)
+	require.Nil(t, err)
+	require.Equal(t, http.StatusOK, res.StatusCode)
+
+	b, err = io.ReadAll(res.Body)
+	require.Nil(t, err)
+
+	var notes []types.Note
+	err = json.Unmarshal(b, &notes)
+	require.Nil(t, err)
+	require.Equal(t, 1, len(notes))
+}
+
+func Test_HappyStrainPhoto(t *testing.T) {
+	for _, s := range strains {
+		createNote(t, createPhoto(t, s.UUID), s.Name)
 	}
 }

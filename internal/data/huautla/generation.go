@@ -18,7 +18,34 @@ func (ha *HuautlaAdaptor) GetGenerationIndex(w http.ResponseWriter, r *http.Requ
 	if g, err := ha.db.SelectGenerationIndex(r.Context(), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch generations")
 	} else {
-		ms.l.WithField("generations", g).Error("response?")
+		ms.send(w, g, http.StatusOK)
+	}
+}
+
+func (ha *HuautlaAdaptor) GetGenerationsByAttrs(w http.ResponseWriter, r *http.Request) {
+	ms := ha.start("GetGenerationsByAttrs")
+	defer ms.end()
+
+	q, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		ms.error(w, err, http.StatusBadRequest, "query string is malformed")
+		return
+	}
+
+	p := types.ReportAttrs{}
+	for k, v := range q {
+		if v[0] == "" {
+			ms.l.Errorf("query value is empty for: %s", k)
+		} else {
+			p[k] = types.UUID(v[0])
+		}
+	}
+
+	if len(p) == 0 {
+		ms.error(w, fmt.Errorf("on report parameters supplied"), http.StatusBadRequest, "on report parameters supplied")
+	} else if g, err := ha.db.SelectGenerationsByAttrs(r.Context(), p, ms.cid); err != nil {
+		ms.error(w, err, http.StatusInternalServerError, "failed to fetch generations")
+	} else {
 		ms.send(w, g, http.StatusOK)
 	}
 }
@@ -27,11 +54,9 @@ func (ha *HuautlaAdaptor) GetGeneration(w http.ResponseWriter, r *http.Request) 
 	ms := ha.start("GetGeneration")
 	defer ms.end()
 
-	if id := chi.URLParam(r, "id"); id == "" {
-		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
-	} else if id, err := url.QueryUnescape(id); err != nil {
-		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
-	} else if g, err := ha.db.SelectGeneration(r.Context(), types.UUID(id), ms.cid); err != nil {
+	if id, err := getUUIDByName("id", w, r, ms); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "failed to fetch uuid")
+	} else if g, err := ha.db.SelectGeneration(r.Context(), id, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch generation")
 	} else {
 		ms.send(w, g, http.StatusOK)
@@ -65,10 +90,12 @@ func (ha *HuautlaAdaptor) PatchGeneration(w http.ResponseWriter, r *http.Request
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if _, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body") // XXX: better status code??
 	} else if err := json.Unmarshal(body, &g); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body") // XXX: better status code??
+		ms.error(w, err, http.StatusBadRequest, fmt.Sprintf("couldn't unmarshal request body %s", string(body))) // XXX: better status code??
 	} else if g, err = ha.db.UpdateGeneration(r.Context(), g, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to update generation")
 	} else {
@@ -80,11 +107,9 @@ func (ha *HuautlaAdaptor) DeleteGeneration(w http.ResponseWriter, r *http.Reques
 	ms := ha.start("DeleteGeneration")
 	defer ms.end()
 
-	if id := chi.URLParam(r, "id"); id == "" {
-		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
-	} else if id, err := url.QueryUnescape(id); err != nil {
-		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
-	} else if err := ha.db.DeleteGeneration(r.Context(), types.UUID(id), ms.cid); err != nil {
+	if id, err := getUUIDByName("id", w, r, ms); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "failed to fetch uuid")
+	} else if err := ha.db.DeleteGeneration(r.Context(), id, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete generation")
 	} else {
 		ms.send(w, nil, http.StatusNoContent)

@@ -30,11 +30,13 @@ func (db *Conn) SelectAllStrains(ctx context.Context, cid types.CID) ([]types.St
 
 	for rows.Next() {
 		row := types.Strain{}
+
 		if err = rows.Scan(
 			&row.UUID,
 			&row.Species,
 			&row.Name,
 			&row.CTime,
+			&row.DTime,
 			&row.Vendor.UUID,
 			&row.Vendor.Name,
 			&row.Vendor.Website,
@@ -46,6 +48,7 @@ func (db *Conn) SelectAllStrains(ctx context.Context, cid types.CID) ([]types.St
 		if generationID != nil {
 			row.Generation = &types.Generation{UUID: *generationID}
 		}
+
 		result = append(result, row)
 	}
 
@@ -68,11 +71,16 @@ func (db *Conn) SelectStrain(ctx context.Context, id types.UUID, cid types.CID) 
 			&result.Species,
 			&result.Name,
 			&result.CTime,
+			&result.DTime,
 			&result.Vendor.UUID,
 			&result.Vendor.Name,
 			&result.Vendor.Website,
 			&generationID,
 		); err == nil {
+		if generationID != nil {
+			result.Generation = &types.Generation{UUID: *generationID}
+		}
+
 		err = db.GetAllAttributes(ctx, &result, cid)
 	}
 
@@ -124,4 +132,43 @@ func (db *Conn) UpdateStrain(ctx context.Context, id types.UUID, s types.Strain,
 func (db *Conn) DeleteStrain(ctx context.Context, id types.UUID, cid types.CID) error {
 	// TODO: delete all attributes first
 	return db.deleteByUUID(ctx, id, cid, "DeleteStrain", "strain", db.logger)
+}
+
+func (db *Conn) GeneratedStrain(ctx context.Context, id types.UUID, cid types.CID) (types.Strain, error) {
+	var err error
+
+	deferred, start, l := initAccessFuncs("GeneratedStrains", db.logger, id, cid)
+	defer deferred(start, err, l)
+
+	result := types.Strain{}
+
+	return result, db.
+		QueryRowContext(ctx, psqls["strain"]["generated-strain"], id).
+		Scan(
+			&result.UUID,
+			&result.Species,
+			&result.Name,
+			&result.Vendor.UUID,
+			&result.Vendor.Name,
+			&result.Vendor.Website,
+			&result.CTime,
+		)
+}
+
+func (db *Conn) UpdateGeneratedStrain(ctx context.Context, gid *types.UUID, sid types.UUID, cid types.CID) error {
+	var err error
+
+	deferred, start, l := initAccessFuncs("UpdateGeneratedStrain", db.logger, sid, cid)
+	defer deferred(start, err, l)
+
+	result, err := db.ExecContext(ctx, psqls["strain"]["update-gen-strain"], gid, sid)
+	if err != nil {
+		return err
+	} else if rows, err := result.RowsAffected(); err != nil {
+		return err
+	} else if rows != 1 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }

@@ -24,6 +24,8 @@ func (db *Conn) SelectLifecycleIndex(ctx context.Context, cid types.CID) ([]type
 		return nil, err
 	}
 
+	defer rows.Close()
+
 	for rows.Next() {
 		row := types.Lifecycle{}
 		if err = rows.Scan(&row.UUID, &row.Location, &row.MTime, &row.CTime); err != nil {
@@ -33,61 +35,106 @@ func (db *Conn) SelectLifecycleIndex(ctx context.Context, cid types.CID) ([]type
 	}
 
 	return result, err
-
 }
 
 func (db *Conn) SelectLifecycle(ctx context.Context, id types.UUID, cid types.CID) (types.Lifecycle, error) {
 	var err error
+	var result []types.Lifecycle
 
 	deferred, start, l := initAccessFuncs("SelectLifecycle", db.logger, id, cid)
 	defer deferred(start, err, l)
 
-	result := types.Lifecycle{UUID: id}
-
-	if err = db.
-		QueryRowContext(ctx, psqls["lifecycle"]["select"], id).
-		Scan(
-			&result.Location,
-			&result.StrainCost,
-			&result.GrainCost,
-			&result.BulkCost,
-			&result.Yield,
-			&result.Count,
-			&result.Gross,
-			&result.MTime,
-			&result.CTime,
-			&result.Strain.UUID,
-			&result.Strain.Species,
-			&result.Strain.Name,
-			&result.Strain.CTime,
-			&result.Strain.Vendor.UUID,
-			&result.Strain.Vendor.Name,
-			&result.Strain.Vendor.Website,
-			&result.GrainSubstrate.UUID,
-			&result.GrainSubstrate.Name,
-			&result.GrainSubstrate.Type,
-			&result.GrainSubstrate.Vendor.UUID,
-			&result.GrainSubstrate.Vendor.Name,
-			&result.GrainSubstrate.Vendor.Website,
-			&result.BulkSubstrate.UUID,
-			&result.BulkSubstrate.Name,
-			&result.BulkSubstrate.Type,
-			&result.BulkSubstrate.Vendor.UUID,
-			&result.BulkSubstrate.Vendor.Name,
-			&result.BulkSubstrate.Vendor.Website); err != nil {
-
-		return result, err
+	result, err = db.SelectLifecyclesByAttrs(ctx, types.ReportAttrs{"lifecycle-id": id}, cid)
+	if err != nil {
+		return types.Lifecycle{}, err
+	} else if l := len(result); l == 1 {
+		return result[0], nil
+	} else if l == 0 {
+		err = sql.ErrNoRows
+	} else {
+		err = fmt.Errorf("too many rows returned for SelectLifecycle")
 	}
 
-	if err = db.GetAllAttributes(ctx, &result.Strain, cid); err != nil {
-		return result, err
-	} else if err = db.GetAllIngredients(ctx, &result.GrainSubstrate, cid); err != nil {
-		return result, err
-	} else if err = db.GetAllIngredients(ctx, &result.BulkSubstrate, cid); err != nil {
-		return result, err
+	return types.Lifecycle{}, err
+}
+
+func (db *Conn) SelectLifecyclesByAttrs(ctx context.Context, p types.ReportAttrs, cid types.CID) ([]types.Lifecycle, error) {
+	var err error
+	var rows *sql.Rows
+
+	deferred, start, l := initAccessFuncs("SelectLifecyclesByAttr", db.logger, "nil", cid)
+	defer deferred(start, err, l)
+
+	result := make([]types.Lifecycle, 0, 1000)
+
+	var generationID *types.UUID
+
+	rows, err = db.QueryContext(ctx, psqls["lifecycle"]["select"],
+		p.Get("lifecycle-id"),
+		p.Get("strain-id"),
+		p.Get("grain-id"),
+		p.Get("bulk-id"))
+	if err != nil {
+		return nil, err
 	}
 
-	err = db.GetLifecycleEvents(ctx, &result, cid)
+	defer rows.Close()
+
+	for rows.Next() {
+		row := types.Lifecycle{}
+
+		if err = rows.Scan(
+
+			&row.UUID,
+			&row.Location,
+			&row.StrainCost,
+			&row.GrainCost,
+			&row.BulkCost,
+			&row.Yield,
+			&row.Count,
+			&row.Gross,
+			&row.MTime,
+			&row.CTime,
+			&row.Strain.UUID,
+			&row.Strain.Species,
+			&row.Strain.Name,
+			&generationID,
+			&row.Strain.CTime,
+			&row.Strain.Vendor.UUID,
+			&row.Strain.Vendor.Name,
+			&row.Strain.Vendor.Website,
+			&row.GrainSubstrate.UUID,
+			&row.GrainSubstrate.Name,
+			&row.GrainSubstrate.Type,
+			&row.GrainSubstrate.Vendor.UUID,
+			&row.GrainSubstrate.Vendor.Name,
+			&row.GrainSubstrate.Vendor.Website,
+			&row.BulkSubstrate.UUID,
+			&row.BulkSubstrate.Name,
+			&row.BulkSubstrate.Type,
+			&row.BulkSubstrate.Vendor.UUID,
+			&row.BulkSubstrate.Vendor.Name,
+			&row.BulkSubstrate.Vendor.Website,
+		); err != nil {
+			break
+		}
+
+		if generationID != nil {
+			row.Strain.Generation = &types.Generation{UUID: *generationID}
+		}
+
+		if err = db.GetAllAttributes(ctx, &row.Strain, cid); err != nil {
+			break
+		} else if err = db.GetAllIngredients(ctx, &row.GrainSubstrate, cid); err != nil {
+			break
+		} else if err = db.GetAllIngredients(ctx, &row.BulkSubstrate, cid); err != nil {
+			break
+		} else if err = db.GetLifecycleEvents(ctx, &row, cid); err != nil {
+			break
+		}
+
+		result = append(result, row)
+	}
 
 	return result, err
 }

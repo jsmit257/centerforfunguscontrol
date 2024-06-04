@@ -11,6 +11,8 @@ type (
 
 	SubstrateType string
 
+	ReportAttrs map[string]UUID
+
 	Config struct {
 		PGHost string
 		PGUser string
@@ -29,7 +31,8 @@ type (
 	Photo struct {
 		UUID     `json:"id"`
 		Filename string    `json:"image"`
-		Notes    []Note    `json:"notes"`
+		Notes    []Note    `json:"notes,omitempty"`
+		MTime    time.Time `json:"mtime,omitempty"`
 		CTime    time.Time `json:"ctime"`
 	}
 
@@ -60,6 +63,7 @@ type (
 		Generation *Generation       `json:"generation,omitempty"`
 		Attributes []StrainAttribute `json:"attributes,omitempty"`
 		CTime      time.Time         `json:"ctime"`
+		DTime      *time.Time        `json:"dtime,omitempty"`
 	}
 
 	StrainAttribute struct {

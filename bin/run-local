@@ -1,0 +1,10 @@
+#!/bin/sh
+
+go run ./ingress/http/... >log.json 2>&1 & 
+
+prc=$!
+
+tail -f log.json | jq .
+
+kill $prc
+

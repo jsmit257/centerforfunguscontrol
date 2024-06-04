@@ -14,14 +14,15 @@ inspect:
 
 .PHONY: run-local
 run-local:
-	go run ./ingress/http/... 2>&1 | tee log.json | jq .
+	(go run ./ingress/http/... >log.json 2>&1 & k=$!; tail -f log.json | jq -a .; kill $k)
 
 .PHONY: run-docker
 run-docker:
 	docker-compose up --build --remove-orphans -d run-docker
 
-.PHONY: system-test
-tests: docker-down unit
+.PHONY: tests
+tests: docker-down
+# tests: docker-down unit
 	docker-compose up --build --remove-orphans system-test
 	docker tag cffc:latest jsmit257/cffc:lkg
 

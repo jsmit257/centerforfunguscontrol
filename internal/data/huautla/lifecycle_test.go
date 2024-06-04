@@ -3,6 +3,7 @@ package huautla
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -82,6 +83,78 @@ func Test_GetLifecycleIndex(t *testing.T) {
 	}
 }
 
+func Test_GetLifecyclesByAttrs(t *testing.T) {
+	t.Parallel()
+
+	type tc struct {
+		query  string
+		result []types.Lifecycle
+		err    error
+		sc     int
+	}
+
+	set := map[string]tc{
+		"happy_strain": {
+			query:  "strain-id=1234",
+			result: []types.Lifecycle{},
+			sc:     http.StatusOK,
+		},
+		"unparseable": {
+			query:  "bulkID=%zzz",
+			result: []types.Lifecycle{},
+			sc:     http.StatusBadRequest,
+		},
+		"empty_value": {
+			query:  "strainID",
+			result: []types.Lifecycle{},
+			sc:     http.StatusBadRequest,
+		},
+		"no_values": {
+			result: []types.Lifecycle{},
+			sc:     http.StatusBadRequest,
+		},
+		"db_error": {
+			query: "strain-id=1234",
+			err:   fmt.Errorf("db error"),
+			sc:    http.StatusInternalServerError,
+		},
+	}
+
+	for k, v := range set {
+		k, v := k, v
+		ha := &HuautlaAdaptor{
+			db: &huautlaMock{
+				Lifecycler: &lifecyclerMock{
+					selectIndexResult: v.result,
+					selectIndexErr:    v.err,
+				},
+			},
+			log:   log.WithFields(log.Fields{"test": "Test_GetLifecyclesByAttrs2", "case": k}),
+			mtrcs: nil,
+		}
+
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					context.Background(),
+					chi.RouteCtxKey,
+					chi.NewRouteContext()),
+				http.MethodGet,
+				fmt.Sprintf("/reports/lifecycles?%s", v.query),
+				nil)
+			ha.GetLifecyclesByAttrs(w, r)
+			require.Equal(t, v.sc, w.Code)
+			if w.Code == http.StatusOK {
+				checkResult(t, w.Body, &[]types.Lifecycle{}, &v.result)
+			}
+		})
+	}
+}
+
 func Test_GetLifecycle(t *testing.T) {
 	t.Parallel()
 
@@ -102,6 +175,11 @@ func Test_GetLifecycle(t *testing.T) {
 		"url_decode_error": {
 			id: "%zzz",
 			sc: http.StatusBadRequest,
+		},
+		"missing_row": {
+			id:  "abcdefg",
+			err: sql.ErrNoRows,
+			sc:  http.StatusBadRequest,
 		},
 		"db_error": {
 			id:  "1",
@@ -342,19 +420,30 @@ func serializeLifecycle(l *types.Lifecycle) []byte {
 func (vm *lifecyclerMock) SelectLifecycleIndex(context.Context, types.CID) ([]types.Lifecycle, error) {
 	return vm.selectIndexResult, vm.selectIndexErr
 }
+func (vm *lifecyclerMock) SelectLifecyclesByAttrs(context.Context, types.ReportAttrs, types.CID) ([]types.Lifecycle, error) {
+	return vm.selectIndexResult, vm.selectIndexErr
+}
 
+//	func (vm *lifecyclerMock) SelectLifecyclesByStrain(context.Context, types.UUID, types.CID) ([]types.Lifecycle, error) {
+//		return vm.selectIndexResult, vm.selectIndexErr
+//	}
+//
+//	func (vm *lifecyclerMock) SelectLifecyclesByGrain(context.Context, types.UUID, types.CID) ([]types.Lifecycle, error) {
+//		return vm.selectIndexResult, vm.selectIndexErr
+//	}
+//
+//	func (vm *lifecyclerMock) SelectLifecyclesByBulk(context.Context, types.UUID, types.CID) ([]types.Lifecycle, error) {
+//		return vm.selectIndexResult, vm.selectIndexErr
+//	}
 func (vm *lifecyclerMock) SelectLifecycle(context.Context, types.UUID, types.CID) (types.Lifecycle, error) {
 	return vm.selectResult, vm.selectErr
 }
-
 func (vm *lifecyclerMock) InsertLifecycle(context.Context, types.Lifecycle, types.CID) (types.Lifecycle, error) {
 	return vm.insertResult, vm.insertErr
 }
-
 func (vm *lifecyclerMock) UpdateLifecycle(context.Context, types.Lifecycle, types.CID) (types.Lifecycle, error) {
 	return vm.updateResult, vm.updateErr
 }
-
 func (vm *lifecyclerMock) DeleteLifecycle(context.Context, types.UUID, types.CID) error {
 	return vm.deleteErr
 }

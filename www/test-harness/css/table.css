@@ -1,3 +1,8 @@
+div.row div.static {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 body>.main>.workspace>div .table {
   border-radius: 17px;
   background-color: #aaa1;
@@ -34,8 +39,8 @@ body>.main>.workspace>div .table>.rows>.row>.static.date {
   text-align: center;
 }
 
-body>.main>.workspace>div .table>.rows>.row>input,
-body>.main>.workspace>div .table>.rows>.row>select {
+body>.main>.workspace>div .table>.rows>.row input,
+body>.main>.workspace>div .table>.rows>.row select {
   background-color: inherit;
   border-style: none;
   color: inherit;

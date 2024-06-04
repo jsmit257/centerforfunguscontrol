@@ -1,5 +1,6 @@
 $(function () {
   var $substrate = $('body>.main>.workspace>.substrate')
+    .on('activate', e => { $table.trigger('reinit') })
   var $table = $substrate.find('>.table.substrate>.rows')
   var $buttonbar = $substrate.find('>.table.substrate>.buttonbar')
   var $ingredients = $substrate.find('>.table.ingredients>.rows')
@@ -16,9 +17,9 @@ $(function () {
 
   function newRow(data) {
     data ||= { type: "", vendor: {} }
-    return $('<div class="row hover" />')
-      .addClass(data.type.toLowerCase())
-      .append($('<div class=uuid />').text(data.id))
+    return $('<div>')
+      .addClass(`row hover ${data.type.toLowerCase()}`)
+      .attr('id', data.id)
       .append($('<div class="name static" />').text(data.name))
       .append($('<input class="name live" />').val(data.name))
       .append($('<div class="type static" />').html(data.type))
@@ -84,8 +85,9 @@ $(function () {
 
   function newIngredientRow(data) {
     data ||= {}
-    return $('<div class="row hover" />')
-      .append($('<div class="uuid" />').text(data.id))
+    return $('<div>')
+      .addClass('row hover')
+      .attr('id', data.id)
       .append($('<div class="ingredient static" />').text(data.name))
       .append($('<select class="ingredient live" />')
         .append(ingredients)
@@ -96,7 +98,7 @@ $(function () {
     .off('refresh')
     .on('refresh', (e, row) => {
       $.ajax({
-        url: `/substrate/${$(row).find('>.uuid').text()}`,
+        url: `/substrate/${$(row).attr('id')}`,
         method: 'GET',
         async: true,
         success: (result, sc, xhr) => {
@@ -128,6 +130,7 @@ $(function () {
       .val($table.find('.selected>select.vendor').data('vendor_uuid'))
 
     $table.trigger('edit', {
+      url: `/substrate/${$table.find('>.selected').attr('id')}`,
       data: $selected => {
         return JSON.stringify({
           "name": $selected.find('>.name.live').val(),
@@ -170,7 +173,7 @@ $(function () {
       },
       success: (data, status, xhr) => {
         var $selected = $table.find('.selected')
-        $selected.find('>.uuid').text(data.id)
+        $selected.attr('id', data.id)
         $selected.find('>.name.static').text(data.name)
         $selected
           .removeClass('grain bulk')
@@ -186,85 +189,74 @@ $(function () {
     })
   })
 
-  $buttonbar.find('>.remove').on('click', e => {
-    if ($(e.currentTarget).hasClass('active')) {
-      $table.trigger('delete', { buttonbar: $buttonbar })
-    }
+  $buttonbar.find('.remove.active').on('click', e => {
+    $table.trigger('delete', {
+      url: `/substrate/${$table.find('>.selected').attr('id')}`,
+      buttonbar: $buttonbar
+    })
   })
 
   $buttonbar.find('>.refresh').on('click', e => {
     $table.trigger('reinit')
   })
 
-  $ingredientbar.find('>.edit').on('click', e => {
-    if (!$(e.currentTarget).hasClass('active')) {
-      return
-    }
-    $ingredients.find('.selected>.ingredient.live')
-      .append(ingredients)
-      .val($ingredients.find('.selected>.uuid').text())
+  $ingredientbar
+    .on('click', '>.edit.active', e => {
+      if (!$(e.currentTarget).hasClass('active')) {
+        return
+      }
+      $ingredients.find('.selected>.ingredient.live')
+        .append(ingredients)
+        .val($ingredients.find('.selected').attr('id'))
 
-    $ingredients.trigger('edit', {
-      newRow: newIngredientRow,
-      url: `/substrate/${$table.find('.selected>.uuid').text()}/ingredients/${$ingredients.find('.selected>.uuid').text()}`,
-      data: $selected => {
-        return JSON.stringify({
-          id: $selected.find('>.ingredient.live').val(),
-          name: $selected.find('>.ingredient.live>option:selected').text(),
-        })
-      },
-      success: (data, status, xhr) => {
-        var $row = $ingredients.find('.selected')
-        var $ingredient = $row.find('.ingredient.live')
-        $row.find('>.uuid').text($ingredient.val())
-        $row.find('>.ingredient.static').text($ingredient.find('>option:selected').text())
-        $buttonbar.find('.remove')[$ingredients.children().length > 0 ? "removeClass" : "addClass"]("active")
-      },
-      error: (xhr, status, error) => { $ingredients.find('.selected').removeClass('editing') },
-      buttonbar: $ingredientbar
+      $ingredients.trigger('edit', {
+        newRow: newIngredientRow,
+        url: `/substrate/${$table.find('.selected').attr('id')}/ingredients/${$ingredients.find('.selected').attr('id')}`,
+        data: $selected => {
+          return JSON.stringify({
+            id: $selected.find('>.ingredient.live').val(),
+            name: $selected.find('>.ingredient.live>option:selected').text(),
+          })
+        },
+        success: (data, status, xhr) => {
+          var $row = $ingredients.find('.selected')
+          var $ingredient = $row.find('.ingredient.live')
+          $row.attr('id', $ingredient.val())
+          $row.find('>.ingredient.static').text($ingredient.find('>option:selected').text())
+          $buttonbar.find('.remove')[$ingredients.children().length > 0 ? "removeClass" : "addClass"]("active")
+        },
+        error: (xhr, status, error) => { $ingredients.find('.selected').removeClass('editing') },
+        buttonbar: $ingredientbar
+      })
     })
-  })
-
-  $ingredientbar.find('>.add').on('click', e => {
-    if (!$(e.currentTarget).hasClass('active')) {
-      return
-    }
-    $ingredients.trigger('add', {
-      newRow: newIngredientRow,
-      url: `/substrate/${$table.find('.selected>.uuid').text()}/ingredients`,
-      data: $selected => {
-        return JSON.stringify({
-          id: $selected.find('>.ingredient.live').val(),
-          name: $selected.find('>.ingredient.live>option:selected').text(),
-        })
-      },
-      success: (data, status, xhr) => {
-        var $row = $ingredients.find('.selected')
-        var $ingredient = $row.find('.ingredient.live')
-        $row.find('>.uuid').text($ingredient.val())
-        $row.find('>.ingredient.static').text($ingredient.find('>option:selected').text())
-        $buttonbar.find('.remove')[$ingredients.children().length > 0 ? "removeClass" : "addClass"]("active")
-      },
-      error: (xhr, status, error) => { $ingredients.trigger('remove-selected') },
-      buttonbar: $ingredientbar
+    .on('click', '>.add.active', e => {
+      $ingredients.trigger('add', {
+        newRow: newIngredientRow,
+        url: `/substrate/${$table.find('.selected').attr('id')}/ingredients`,
+        data: $selected => {
+          return JSON.stringify({
+            id: $selected.find('>.ingredient.live').val(),
+            name: $selected.find('>.ingredient.live>option:selected').text(),
+          })
+        },
+        success: (data, status, xhr) => {
+          var $row = $ingredients.find('.selected')
+          var $ingredient = $row.find('.ingredient.live')
+          $row.attr('id', $ingredient.val())
+          $row.find('>.ingredient.static').text($ingredient.find('>option:selected').text())
+          $buttonbar.find('.remove')[$ingredients.children().length > 0 ? "removeClass" : "addClass"]("active")
+        },
+        error: (xhr, status, error) => { $ingredients.trigger('remove-selected') },
+        buttonbar: $ingredientbar
+      })
     })
-  })
-
-  $ingredientbar.find('>.remove').on('click', e => {
-    if (!$(e.currentTarget).hasClass('active')) {
-      return
-    }
-    $ingredients.trigger('delete', {
-      url: `/substrate/${$table.find('.selected>.uuid').text()}/ingredients/${$ingredients.find('.selected>.uuid').text()}`,
-      buttonbar: $ingredientbar
+    .on('click', '.remove.active', e => {
+      $ingredients.trigger('delete', {
+        url: `/substrate/${$table.find('.selected').attr('id')}/ingredients/${$ingredients.find('.selected').attr('id')}`,
+        buttonbar: $ingredientbar
+      })
+      if ($ingredients.children().length === 0) {
+        $buttonbar.find('.remove').addClass('active')
+      }
     })
-    if ($ingredients.children().length === 0) {
-      $buttonbar.find('.remove').addClass('active')
-    }
-  })
-
-  $substrate.on('activate', e => {
-    $substrate.addClass('active')
-    $table.trigger('reinit')
-  })
 })

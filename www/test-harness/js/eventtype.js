@@ -16,8 +16,9 @@ $(function () {
 
   function newRow(data) {
     data ||= { stage: {} }
-    return $('<div class="row hover" />')
-      .append($('<div class=uuid />').text(data.id))
+    return $('<div>')
+      .addClass('row hover')
+      .attr('id', data.id)
       .append($('<div class="name static" />').text(data.name))
       .append($('<input class="name live" />').val(data.name))
       .append($('<div class="severity static" />').text(data.severity))
@@ -101,7 +102,7 @@ $(function () {
       },
       success: (data, status, xhr) => {
         var $selected = $table.find('.selected')
-        $selected.find('>.uuid').text(data.id)
+        $selected.attr('id', data.id)
         $selected.find('>.name.static').text($selected.find('>.name.live').val())
         $selected.find('>.severity.static').text($selected.find('>.severity.live').val())
         $selected

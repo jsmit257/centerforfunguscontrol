@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"os/signal"
 	"sync"
 	"syscall"
 
@@ -15,6 +14,7 @@ import (
 
 var traps = []os.Signal{
 	os.Interrupt,
+	// syscall.SIGPIPE,
 	syscall.SIGHUP,
 	syscall.SIGTERM,
 	syscall.SIGQUIT}
@@ -53,21 +53,14 @@ func main() {
 	r.Get("/css/images/background/{f}", g.staticContent)
 	r.Get("/js/{f}", g.staticContent)
 	r.Get("/images/{f}", g.staticContent)
-	r.Get("/photos/{f}", g.staticContent)
+	r.Get("/album/{f}", g.staticContent)
 
 	newHC(r)
 	newHuautla(cfg, r, log)
-	newServer(cfg, r, wg, log)
 
-	wg.Wait()
+	startServer(cfg, r, wg, log).Wait()
 
 	log.Info("done")
-}
 
-func trap(log *log.Entry) {
-	trapped := make(chan os.Signal, len(traps))
-
-	signal.Notify(trapped, traps...)
-
-	log.WithField("sig", <-trapped).Info("stopping app with signal")
+	os.Exit(0)
 }

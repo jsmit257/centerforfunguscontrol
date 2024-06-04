@@ -86,41 +86,78 @@ func (db *Conn) SelectGenerationIndex(ctx context.Context, cid types.CID) ([]typ
 
 func (db *Conn) SelectGeneration(ctx context.Context, id types.UUID, cid types.CID) (types.Generation, error) {
 	var err error
+	var result []types.Generation
 
 	deferred, start, l := initAccessFuncs("SelectGeneration", db.logger, id, cid)
 	defer deferred(start, err, l)
 
-	result := types.Generation{UUID: id}
-
-	if err = db.
-		QueryRowContext(ctx, psqls["generation"]["select"], id).
-		Scan(
-			&result.PlatingSubstrate.UUID,
-			&result.PlatingSubstrate.Name,
-			&result.PlatingSubstrate.Type,
-			&result.PlatingSubstrate.Vendor.UUID,
-			&result.PlatingSubstrate.Vendor.Name,
-			&result.PlatingSubstrate.Vendor.Website,
-			&result.LiquidSubstrate.UUID,
-			&result.LiquidSubstrate.Name,
-			&result.LiquidSubstrate.Type,
-			&result.LiquidSubstrate.Vendor.UUID,
-			&result.LiquidSubstrate.Vendor.Name,
-			&result.LiquidSubstrate.Vendor.Website,
-			&result.MTime,
-			&result.CTime,
-		); err != nil {
-		return result, err
+	result, err = db.SelectGenerationsByAttrs(ctx, types.ReportAttrs{"generation-id": id}, cid)
+	if err != nil {
+		return types.Generation{}, err
+	} else if len(result) == 1 {
+		return result[0], nil
+	} else {
+		err = sql.ErrNoRows
 	}
 
-	if err = db.GetAllIngredients(ctx, &result.PlatingSubstrate, cid); err != nil {
-		return result, err
-	} else if err = db.GetAllIngredients(ctx, &result.LiquidSubstrate, cid); err != nil {
-		return result, err
-	} else if err = db.GetGenerationEvents(ctx, &result, cid); err != nil {
-		return result, err
-	} else if err = db.GetSources(ctx, &result, cid); err != nil {
-		return result, err
+	return types.Generation{}, err
+}
+
+func (db *Conn) SelectGenerationsByAttrs(ctx context.Context, p types.ReportAttrs, cid types.CID) ([]types.Generation, error) {
+	var err error
+
+	deferred, start, l := initAccessFuncs("SelectGenerationsByAttrs", db.logger, "nil", cid)
+	defer deferred(start, err, l)
+
+	var rows *sql.Rows
+
+	result := make([]types.Generation, 0, 100)
+
+	rows, err = db.query.QueryContext(ctx, psqls["generation"]["select"],
+		p.Get("generation-id"),
+		p.Get("strain-id"),
+		p.Get("plating-id"),
+		p.Get("liquid-id"))
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		row := types.Generation{}
+
+		if err = rows.Scan(
+			&row.UUID,
+			&row.PlatingSubstrate.UUID,
+			&row.PlatingSubstrate.Name,
+			&row.PlatingSubstrate.Type,
+			&row.PlatingSubstrate.Vendor.UUID,
+			&row.PlatingSubstrate.Vendor.Name,
+			&row.PlatingSubstrate.Vendor.Website,
+			&row.LiquidSubstrate.UUID,
+			&row.LiquidSubstrate.Name,
+			&row.LiquidSubstrate.Type,
+			&row.LiquidSubstrate.Vendor.UUID,
+			&row.LiquidSubstrate.Vendor.Name,
+			&row.LiquidSubstrate.Vendor.Website,
+			&row.MTime,
+			&row.CTime,
+		); err != nil {
+			break
+		}
+
+		if err = db.GetAllIngredients(ctx, &row.PlatingSubstrate, cid); err != nil {
+			break
+		} else if err = db.GetAllIngredients(ctx, &row.LiquidSubstrate, cid); err != nil {
+			break
+		} else if err = db.GetGenerationEvents(ctx, &row, cid); err != nil {
+			break
+		} else if err = db.GetSources(ctx, &row, cid); err != nil {
+			break
+		}
+
+		result = append(result, row)
 	}
 
 	return result, err
@@ -164,10 +201,13 @@ func (db *Conn) UpdateGeneration(ctx context.Context, g types.Generation, cid ty
 	deferred, start, l := initAccessFuncs("UpdateGeneration", db.logger, g.UUID, cid)
 	defer deferred(start, err, l)
 
+	g.MTime = time.Now().UTC()
+
 	if result, err = db.ExecContext(ctx, psqls["generation"]["update"],
 		g.PlatingSubstrate.UUID,
 		g.LiquidSubstrate.UUID,
 		g.UUID,
+		g.MTime,
 	); err != nil {
 		return g, err
 	} else if rows, err = result.RowsAffected(); err != nil {

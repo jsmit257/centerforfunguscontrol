@@ -1,111 +1,176 @@
 $(_ => {
-  let newRow = (data = {}) => {
-    return $('<div class="row hover" />')
-      .append($('<div class=uuid />').text(data.id))
-      .append($('<div class="note static" />').text(data.id))
-      .append($('<input class="note live">').val(data.note))
-      .append($('<div class="mtime static const date" />')
-        .data('value', data.mtime)
-        .text(data.mtime.replace('T', ' ').replace(/:\d{1,2}(\..+)?Z.*/, '')))
-      .append($('<div class="ctime static const date" />')
-        .data('value', data.ctime)
-        .text(data.ctime.replace('T', ' ').replace(/:\d{1,2}(\..+)?Z.*/, '')))
-  }
+  let $rowtmpl = $('body>.template>.notes>.rows>.row.template')
 
-  $('.notes.table')
-    .on('init', $owner => {
-      let $table = $(e.currentTarget)
+  $('div.notes')
+    .on('refresh', (e, owner) => {
+      e.stopPropagation()
 
-      let $owned = $table.data('owner')
-      if ($owned) {
-        throw `this table is already owned by ${$owned}`
-      }
-
-      $table.data('owner', $owner)
-    })
-    .on('click', '>.row', e => {
-      let $selected = $(e.currentTarget)
-
-      $selected
-        .parents('.table')
-        .first()
-        .find('>.selected')
-        .removeClass('selected editing')
-
-      $selected.addClass('selected')
-    })
-    .on('refresh', e => {
-      let $table = $(e.currentTarget).empty()
-      let selected = $table.find('>.selected>.uuid').text()
+      let $n = $(e.currentTarget)
+      let $rows = $n.find('>.rows')
+      let selected = $rows.find('>.row.selected').attr('id')
 
       $.ajax({
-        url: `/notes/${$table.data('owner').find('.selected>.uuid').text()}`,
+        url: `/notes/${owner}`,
         method: 'GET',
         async: true,
-        success: (result, status, xhr, $table = $(e.currentTarget).empty()) => {
-          let $row
-          result.foreach(v => { $table.append($row = newRow(v)) })
-          if ($row.find('>.uuid').text() === selected) {
-            $row.click()
+        success: (result, status, xhr) => {
+          $n
+            .data('owner', owner)
+            .find('>.rows')
+            .trigger('send', result)
+        },
+        error: console.log,
+        complete: (xhr, status) => {
+          if ( // clumsy
+            status === 'success'
+            &&
+            $n.find('.removable').length === 0
+            &&
+            $n.parents('.photos').length === 0
+          ) {
+            $n.find('div.add-note').click()
+          } else if ($rows.trigger('select', selected).find('>.row.selected').length === 0) {
+            $rows.children().first().click()
+          }
+        }
+      })
+    })
+    .on('select', '>.rows', (e, id) => {
+      let $rows = $(e.currentTarget)
+        .find(`>.row[id=${id}]`)
+        .click()
+
+      if ($rows.find('.selected').length === 0) {
+        $rows.children().first().click()
+      }
+    })
+    .on('send', '>.rows', (e, ...data) => {
+      e.stopPropagation()
+
+      let $table = $(e.currentTarget)
+      let selected = $table.find('>.selected').attr('id')
+
+      $table.find('>.row.removable').remove()
+
+      data.forEach(v => {
+        $rowtmpl
+          .clone(true, true)
+          .insertBefore($table.children().first())
+          .toggleClass('template removable')
+          .data('row', v)
+          .trigger('send', v)
+          .find('>.note-ctl')
+          .addClass('active')
+      })
+
+      $table.trigger('select', selected)
+    })
+    .on('click', '>.rows>.row:not(.selected)', e => {
+      $(e.delegateTarget)
+        .find('>.rows>.row.selected')
+        .removeClass('selected')
+
+      $(e.currentTarget).addClass('selected')
+    })
+    .on('send', '>.rows>.row', (e, data = { mtime: 'Now', ctime: 'Now' }) => {
+      e.stopPropagation()
+
+      let $row = $(e.currentTarget)
+
+      $row.attr('id', data.id)
+      $row.find('>.note').val(data.note)
+      $row.find('>.mtime').trigger('set', data.mtime)
+      $row.find('>.ctime').trigger('set', data.ctime)
+    })
+    .on('click', '>.rows>.row>div.action', e => {
+      e.stopPropagation()
+
+      let $n = $(e.currentTarget)
+        .parents('.row')
+        .first()
+        .toggleClass('editing')
+
+      if ($n.hasClass('adding')) {
+        $n.remove()
+      } else if (!$n.find('textarea').attr('disabled', !$n.hasClass('editing')).attr('disabled')) {
+        $n.find('textarea').focus()
+      }
+    })
+    .on('click', '>.rows>.row>div.commit', e => {
+      e.stopPropagation()
+
+      let $selected = $(e.currentTarget).parents('.row').first()
+      let url = `/notes/${$(e.delegateTarget).data('owner')}`
+      let other
+
+      if ($selected.hasClass('adding')) {
+        other = {
+          method: 'POST',
+          data: JSON.stringify({ note: $selected.find('>.note').val() }),
+          error: _ => { $selected.remove() }
+        }
+      } else if ($selected.hasClass('editing')) {
+        other = {
+          method: 'PATCH',
+          data: JSON.stringify({
+            id: $selected.attr('id'),
+            note: $selected.find('>.note').val(),
+          }),
+        }
+      } else {
+        other = {
+          url: `${url}/${$selected.attr('id')}`,
+          method: 'DELETE',
+          success: (result, status, xhr) => {
+            if ($selected.next().click().length === 0) {
+              $selected.prev().click()
+            }
+            $selected.remove()
+          },
+        }
+      }
+
+      $.ajax({
+        ...{
+          url: url,
+          method: 'HEAD',
+          async: true,
+          success: (result, status, xhr) => {
+            $selected.trigger('send', result[0])
+          },
+          error: (xhr, status, err) => {
+            $selected.trigger('reset')
+            console.log(xhr, status, err)
+          },
+          complete: (xhr, status) => {
+            $selected
+              .removeClass('editing adding')
+              .find('textarea')
+              .attr('disabled', true)
           }
         },
-        error: console.log,
+        ...other
       })
     })
-    .on('add', e => {
-      let $table = $(e.currentTarget)
-      let $selected = $table.find('>.selected')
+    .on('click', '>div.add-note', e => {
+      e.stopPropagation()
 
-      $.ajax({
-        url: `/notes/${$table.data('owner').find('.selected>.uuid').text()}`,
-        method: 'POST',
-        data: JSON.stringify({
-          note: $selected.find('>.note.live').val(),
-        }),
-        async: true,
-        success: (result, status, xhr) => {
-          $selected.find('>.uuid').text(result[0].id)
-          $selected.find('>.note.static').text(result[0].note)
-          $selected.find('>.mtime.static').text(result[0].mtime)
-          $selected.find('>.ctime.static').text(result[0].ctime)
-        },
-        error: console.log,
-      })
-    })
-    .on('change', e => {
-      let $table = $(e.currentTarget)
-      let $selected = $table.find('>.selected')
+      let $row = $rowtmpl
+        .clone(true, true)
+        .toggleClass('template removable editing adding')
+        .insertBefore($(e.delegateTarget)
+          .find('>.rows')
+          .children()
+          .first())
+        .trigger('send')
 
-      $.ajax({
-        url: `/notes/${$table.data('owner').find('.selected>.uuid').text()}`,
-        method: 'PATCH',
-        data: JSON.stringify({
-          id: $selected.find('>.uuid').text(),
-          note: $selected.find('>.note.live').val(),
-        }),
-        async: true,
-        success: (result, status, xhr) => {
-          $selected.find('>.note.static').text(result[0].note)
-          $selected.find('>.mtime.static').text(result[0].mtime)
-        },
-        error: console.log,
-      })
-    })
-    .on('remove', e => {
-      let $table = $(e.currentTarget)
-      let $selected = $table.find('>.selected')
+      // when i find out who's removing active from the template there'll be hell to pay
+      $row.find('>.note-ctl').addClass('active')
 
-      $.ajax({
-        url: `/notes/${$table.data('owner').find('.selected>.uuid').text()}/${selected.find('>.uuid').text()}`,
-        method: 'DELETE',
-        async: true,
-        success: (result, status, xhr) => {
-          if ($selected.nextSibling().click().length === 0) {
-            $table.children().first().click()
-          }
-          $selected.remove()
-        },
-        error: console.log,
-      })
+      $row
+        .click()
+        .find('textarea')
+        .attr('disabled', false)
+        .focus()
     })
 })

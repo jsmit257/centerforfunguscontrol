@@ -45,3 +45,28 @@ func Test_HappyGeneration(t *testing.T) {
 		generations = append(generations, g)
 	}
 }
+
+func Test_HappyGeneratedStrain(t *testing.T) {
+
+	for i, g := range generations[0:3] {
+		url := fmt.Sprintf(
+			`http://%s:%d/strain/%s/generation/%s`,
+			cfg.HTTPHost,
+			cfg.HTTPPort,
+			strains[2-i].UUID,
+			g.UUID)
+
+		req, err := http.NewRequest(http.MethodPatch, url, nil)
+		require.Nil(t, err)
+
+		res, err := http.DefaultClient.Do(req)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusNoContent, res.StatusCode)
+
+		// b, err = io.ReadAll(res.Body)
+		// require.Nil(t, err)
+
+		// err = json.Unmarshal(b, &g)
+		// require.Nil(t, err)
+	}
+}

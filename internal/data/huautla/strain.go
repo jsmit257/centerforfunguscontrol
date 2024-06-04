@@ -1,6 +1,7 @@
 package huautla
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -87,6 +88,55 @@ func (ha *HuautlaAdaptor) DeleteStrain(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if err := ha.db.DeleteStrain(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete strain")
+	} else {
+		ms.send(w, nil, http.StatusNoContent)
+	}
+}
+
+func (ha *HuautlaAdaptor) GetGeneratedStrain(w http.ResponseWriter, r *http.Request) {
+	ms := ha.start("GetGeneratedStrains")
+	defer ms.end()
+
+	if id := chi.URLParam(r, "id"); id == "" {
+		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
+	} else if s, err := ha.db.GeneratedStrain(r.Context(), types.UUID(id), ms.cid); err == sql.ErrNoRows {
+		ms.send(w, nil, http.StatusNoContent)
+	} else if err != nil {
+		ms.error(w, err, http.StatusInternalServerError, "failed to fetch generations")
+	} else {
+		ms.send(w, s, http.StatusOK)
+	}
+}
+
+func (ha *HuautlaAdaptor) PatchGeneratedStrain(w http.ResponseWriter, r *http.Request) {
+	ms := ha.start("PatchGeneratedStrains")
+	defer ms.end()
+
+	if gid := chi.URLParam(r, "gid"); gid == "" {
+		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if gid, err := url.QueryUnescape(gid); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
+	} else {
+		ha.updateGeneratedStrain(w, r, (*types.UUID)(&gid), ms)
+	}
+}
+
+func (ha *HuautlaAdaptor) DeleteGeneratedStrain(w http.ResponseWriter, r *http.Request) {
+	ms := ha.start("DeleteGeneratedStrains")
+	defer ms.end()
+
+	ha.updateGeneratedStrain(w, r, nil, ms)
+}
+
+func (ha *HuautlaAdaptor) updateGeneratedStrain(w http.ResponseWriter, r *http.Request, gid *types.UUID, ms *methodStats) {
+	if sid := chi.URLParam(r, "sid"); sid == "" {
+		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if sid, err := url.QueryUnescape(sid); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
+	} else if err := ha.db.UpdateGeneratedStrain(r.Context(), gid, types.UUID(sid), ms.cid); err != nil {
+		ms.error(w, err, http.StatusInternalServerError, "failed to update generation")
 	} else {
 		ms.send(w, nil, http.StatusNoContent)
 	}

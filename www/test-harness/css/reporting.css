@@ -1,0 +1,117 @@
+.history>.entity {
+  width: 99%;
+}
+
+.history>.entity>.entity-name {
+  padding-bottom: 1em;
+}
+
+.history>.entity>.list {
+  font-family: monospace;
+  height: 60em;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.history .entity {
+  clear: left;
+  float: left;
+  line-height: 1.5;
+  padding-left: 1em;
+}
+
+.history>.entity>.ndx {
+  border-radius: 15px;
+  border-style: none;
+  float: left;
+  display: none;
+  width: 100%;
+}
+
+.entity.strain>.ndx>.row,
+.entity.generation>.ndx>.row,
+.history>.entity.lifecycle>.ndx>.row {
+  width: 51%;
+}
+
+.history .entity>.entity-name,
+.history .entity>.cliff-notes {
+  cursor: pointer;
+  float: left;
+}
+
+.history .entity>.entity-name {
+  width: 6.6em;
+}
+
+.history>.entity>.cliff-notes {
+  display: block !important;
+}
+
+.history .entity>.cliff-notes {
+  display: none;
+  float: left;
+  margin-left: .3em;
+  width: fit-content;
+}
+
+.history .entity.collapsed>.ndx,
+.history .entity.collapsed>.cliff-notes {
+  display: block;
+}
+
+.history .entity.collapsed>.list {
+  display: none;
+}
+
+.history .entity>.entity-name::before {
+  content: '\25bc';
+  display: block;
+  float: left;
+  margin-left: -1.2em;
+  text-align: center;
+  width: 1em;
+}
+
+.history .entity.collapsed>.entity-name::before {
+  content: '\25b6';
+}
+
+.history .entity>div.list>.scalar>.label::after,
+.history .entity.collapsed>.entity-name::after {
+  content: ':';
+}
+
+.history .entity>div.list>.scalar>.label {
+  clear: left;
+  float: left;
+  margin-right: .5em;
+  width: 7.5em;
+}
+
+.history .entity>.entity-name::first-letter,
+.history .entity>div.list>.scalar>.label::first-letter {
+  text-transform: uppercase;
+}
+
+.history .entity>div.list>.scalar>.value {
+  float: left;
+  max-width: 80%;
+}
+
+.entity>.ndx>.row {
+  float: left;
+  width: 100%;
+}
+
+.entity>.ndx>.row>div {
+  float: left;
+  width: 50%;
+}
+
+/* conflicts with div.notes/div.photos in note.css/photos.css respectively */
+.history .entity.notes,
+.history .entity.photos {
+  display: block;
+}

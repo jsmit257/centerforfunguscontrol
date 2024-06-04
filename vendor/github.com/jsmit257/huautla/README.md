@@ -22,7 +22,7 @@ To develop and test locally, you'll need at least:
 * bash-compatible shell (bourne doesn't handle arrays nicely); changing this would require other users to use your shell, so we prefer `bash`; `zsh` is ubiquitous, but `tcsh` is a bit much
 
 ### Docker
-The only build artifacts from this project are the docker images at [dockerhub](https://hub.docker.com/repository/docker/jsmit257/huautla/tags?page=1&ordering=last_updated). Proper semantic/commit-sha versioning isn't currently supported, but there will always be at least `...:lkg` (last-known good) and `...:lts` (long-term-support) versions. Last-known good is tagged when `make install-system-test` successfully seeds the test data. LKG is pushed to the remote as `jsmit257/huautla:lkg` after `make system-test` succeeds.
+The only build artifacts from this project are the docker images at [dockerhub](https://hub.docker.com/repository/docker/jsmit257/huautla/general). Proper semantic/commit-sha versioning isn't currently supported, but there will always be at least `...:lkg` (last-known good) and `...:lts` (long-term-support) versions. Last-known good is tagged when `make install-system-test` successfully seeds the test data. LKG is pushed to the remote as `jsmit257/huautla:lkg` after `make system-test` succeeds.
 
 Only the minimal seed data is captured in the image, the test data is lost when the test container exits. 
 

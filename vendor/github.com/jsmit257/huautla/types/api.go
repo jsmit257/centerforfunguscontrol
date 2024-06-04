@@ -31,11 +31,12 @@ type (
 	}
 
 	Generationer interface {
-		SelectGenerationIndex(ctx context.Context, cid CID) ([]Generation, error)
-		SelectGeneration(ctx context.Context, id UUID, cid CID) (Generation, error)
-		InsertGeneration(ctx context.Context, g Generation, cid CID) (Generation, error)
-		UpdateGeneration(ctx context.Context, g Generation, cid CID) (Generation, error)
-		DeleteGeneration(ctx context.Context, id UUID, cid CID) error
+		SelectGenerationIndex(context.Context, CID) ([]Generation, error)
+		SelectGenerationsByAttrs(context.Context, ReportAttrs, CID) ([]Generation, error)
+		SelectGeneration(context.Context, UUID, CID) (Generation, error)
+		InsertGeneration(context.Context, Generation, CID) (Generation, error)
+		UpdateGeneration(context.Context, Generation, CID) (Generation, error)
+		DeleteGeneration(context.Context, UUID, CID) error
 	}
 
 	GenerationEventer interface {
@@ -62,6 +63,7 @@ type (
 
 	Lifecycler interface {
 		SelectLifecycleIndex(ctx context.Context, cid CID) ([]Lifecycle, error)
+		SelectLifecyclesByAttrs(ctx context.Context, p ReportAttrs, cid CID) ([]Lifecycle, error)
 		SelectLifecycle(ctx context.Context, id UUID, cid CID) (Lifecycle, error)
 		InsertLifecycle(ctx context.Context, lc Lifecycle, cid CID) (Lifecycle, error)
 		UpdateLifecycle(ctx context.Context, lc Lifecycle, cid CID) (Lifecycle, error)
@@ -117,6 +119,8 @@ type (
 		InsertStrain(ctx context.Context, s Strain, cid CID) (Strain, error)
 		UpdateStrain(ctx context.Context, id UUID, s Strain, cid CID) error
 		DeleteStrain(ctx context.Context, id UUID, cid CID) error
+		GeneratedStrain(ctx context.Context, id UUID, cid CID) (Strain, error)
+		UpdateGeneratedStrain(ctx context.Context, gid *UUID, sid UUID, cid CID) error
 	}
 
 	SubstrateIngredienter interface {

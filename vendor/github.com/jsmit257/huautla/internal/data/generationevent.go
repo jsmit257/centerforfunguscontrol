@@ -41,7 +41,7 @@ func (db *Conn) ChangeGenerationEvent(ctx context.Context, g *types.Generation, 
 
 	if g.Events, err = db.changeEvent(ctx, g.Events, &e, cid); err != nil {
 		return e, err
-	} else if _, err = db.UpdateGenerationMTime(ctx, g, e.MTime, cid); err != nil {
+	} else if _, err = db.UpdateGenerationMTime(ctx, g, g.Events[0].MTime, cid); err != nil {
 		return e, err
 	}
 

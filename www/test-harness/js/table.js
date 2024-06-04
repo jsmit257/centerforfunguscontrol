@@ -1,5 +1,5 @@
 $(function () {
-  $('body>.main>.workspace>div .table>.rows')
+  $('body>.main>.workspace>div .table>.rows, body>.template>.table>.rows')
     .on('keyup', e => {
       let btn = {
         13: 'ok',
@@ -85,6 +85,15 @@ $(function () {
         },
         error: args.error || console.log
       })
+    })
+    .on('send', '>.row', (e, data = { mtime: 'Now', ctime: 'Now' }) => {
+      let $row = $(e.currentTarget)
+
+      // back where we started with the uuid table; set additional attribute
+      // handlers in subsequent 'send' events
+      $row.attr('id', data.id)
+      $row.find('>.mtime').trigger('set', data.mtime)
+      $row.find('>.ctime').trigger('set', data.ctime)
     })
     .on('add', (e, args) => {
       var $table = $(e.currentTarget)
@@ -174,19 +183,10 @@ $(function () {
       })
     })
     .on('sort', (e, key, order) => {
-      var rows = []
-
       $(e.currentTarget)
-        .children()
-        .get()
-        .forEach(v => { rows.push($(v)) })
-
-      rows
-        .sort(($l, $r) => {
-          return (order === 'sort-desc' ? -1 : 1)
-            * $l.find(`.static.${key}`).text()
-              .localeCompare($r.find(`.static.${key}`).text())
-        })
-        .forEach(l => { $(e.currentTarget).append(l) })
+        .append(...$(e.currentTarget)
+          .find(`.static.${key}`)
+          .sort((a, b) => (order === 'sort-desc' ? -1 : 1) * a.innerText.localeCompare(b.innerText))
+          .map((_, x) => $(x).parent()))
     })
 })

@@ -8,7 +8,7 @@ import (
 	"github.com/jsmit257/huautla/types"
 )
 
-func (db *Conn) updateMTime(ctx context.Context, table string, modified time.Time, id types.UUID, cid types.CID) (time.Time, error) {
+func (db *Conn) updateMTime(ctx context.Context, table string, modified time.Time, id types.UUID, _ types.CID) (time.Time, error) {
 	var rows int64
 
 	if result, err := db.ExecContext(

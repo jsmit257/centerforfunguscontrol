@@ -28,7 +28,12 @@ type generationerMock struct {
 	upd    types.Generation
 	updErr error
 
+	str    types.Strain
+	strErr error
+
 	rmErr error
+
+	patchErr error
 }
 
 func Test_GetGenerationIndex(t *testing.T) {
@@ -72,8 +77,70 @@ func Test_GetGenerationIndex(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader([]byte("")))
+				nil)
 			ha.GetGenerationIndex(w, r)
+			require.Equal(t, v.sc, w.Code)
+			if w.Code == http.StatusOK {
+				checkResult(t, w.Body, &[]types.Generation{}, &v.result)
+			}
+		})
+	}
+}
+
+func Test_GetGenerationsByAttrs(t *testing.T) {
+	t.Parallel()
+
+	set := map[string]struct {
+		params string
+		result []types.Generation
+		err    error
+		sc     int
+	}{
+		"happy_path": {
+			params: "strain-id=0",
+			result: []types.Generation{},
+			sc:     http.StatusOK,
+		},
+		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"url_decode_error": {
+			params: "%zzz",
+			sc:     http.StatusBadRequest,
+		},
+		"db_error": {
+			params: "strain-id=0",
+			err:    fmt.Errorf("db error"),
+			sc:     http.StatusInternalServerError,
+		},
+	}
+
+	for k, v := range set {
+		k, v := k, v
+		ha := &HuautlaAdaptor{
+			db: &huautlaMock{
+				Generationer: &generationerMock{
+					all:    v.result,
+					allErr: v.err,
+				},
+			},
+			log:   log.WithFields(log.Fields{"test": "Test_GetGenerationsByAttrs", "case": k}),
+			mtrcs: nil,
+		}
+
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					context.Background(),
+					chi.RouteCtxKey,
+					chi.NewRouteContext()),
+				http.MethodGet,
+				"/reports/generations?"+v.params,
+				nil)
+			ha.GetGenerationsByAttrs(w, r)
 			require.Equal(t, v.sc, w.Code)
 			if w.Code == http.StatusOK {
 				checkResult(t, w.Body, &[]types.Generation{}, &v.result)
@@ -136,7 +203,7 @@ func Test_GetGeneration(t *testing.T) {
 					rctx),
 				http.MethodGet,
 				"url",
-				bytes.NewReader([]byte("")))
+				nil)
 
 			ha.GetGeneration(w, r)
 
@@ -261,7 +328,7 @@ func Test_PatchGeneration(t *testing.T) {
 					context.Background(),
 					chi.RouteCtxKey,
 					rctx),
-				http.MethodDelete,
+				http.MethodPatch,
 				"url",
 				bytes.NewReader(serializeGeneration(v.stage)))
 
@@ -321,7 +388,7 @@ func Test_DeleteGeneration(t *testing.T) {
 					rctx),
 				http.MethodDelete,
 				"url",
-				bytes.NewReader([]byte("")))
+				nil)
 
 			ha.DeleteGeneration(w, r)
 
@@ -341,6 +408,9 @@ func serializeGeneration(l *types.Generation) []byte {
 func (gm *generationerMock) SelectGenerationIndex(ctx context.Context, cid types.CID) ([]types.Generation, error) {
 	return gm.all, gm.allErr
 }
+func (gm *generationerMock) SelectGenerationsByAttrs(context.Context, types.ReportAttrs, types.CID) ([]types.Generation, error) {
+	return gm.all, gm.allErr
+}
 func (gm *generationerMock) SelectGeneration(ctx context.Context, id types.UUID, cid types.CID) (types.Generation, error) {
 	return gm.sel, gm.selErr
 }
@@ -352,4 +422,10 @@ func (gm *generationerMock) UpdateGeneration(ctx context.Context, g types.Genera
 }
 func (gm *generationerMock) DeleteGeneration(ctx context.Context, id types.UUID, cid types.CID) error {
 	return gm.rmErr
+}
+func (gm *generationerMock) GeneratedStrain(ctx context.Context, id types.UUID, cid types.CID) (types.Strain, error) {
+	return gm.str, gm.strErr
+}
+func (gm *generationerMock) UpdateGeneratedStrain(ctx context.Context, gid *types.UUID, sid types.UUID, cid types.CID) error {
+	return gm.patchErr
 }

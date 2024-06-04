@@ -29,6 +29,66 @@ type noterMock struct {
 	rmErr error
 }
 
+func Test_GetNotes(t *testing.T) {
+	t.Parallel()
+
+	set := map[string]struct {
+		id     types.UUID
+		getErr error
+		sc     int
+	}{
+		"happy_path": {
+			id: "happy path",
+			sc: http.StatusOK,
+		},
+		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
+		"get_error": {
+			id:     "get error",
+			getErr: fmt.Errorf("some error"),
+			sc:     http.StatusInternalServerError,
+		},
+	}
+
+	for k, v := range set {
+		k, v := k, v
+		ha := &HuautlaAdaptor{
+			db: &huautlaMock{
+				Noter: &noterMock{
+					getErr: v.getErr,
+				},
+			},
+			log:   log.WithFields(log.Fields{"test": "Test_GetNotes", "case": k}),
+			mtrcs: nil,
+		}
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}}
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					context.Background(),
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodPost,
+				"url",
+				bytes.NewReader(nil))
+
+			ha.GetNotes(w, r)
+
+			require.Equal(t, v.sc, w.Code)
+		})
+	}
+}
+
 func Test_PostNote(t *testing.T) {
 	t.Parallel()
 

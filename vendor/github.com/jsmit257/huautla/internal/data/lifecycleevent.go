@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/jsmit257/huautla/types"
@@ -27,8 +26,8 @@ func (db *Conn) AddLifecycleEvent(ctx context.Context, lc *types.Lifecycle, e ty
 
 	if lc.Events, err = db.addEvent(ctx, lc.UUID, lc.Events, &e, cid); err != nil {
 		return err
-	} else if _, err = db.UpdateLifecycleMTime(ctx, lc, e.MTime, cid); err != nil {
-		return fmt.Errorf("couldn't update lifecycle.mtime")
+	} else if _, err = db.updateMTime(ctx, "lifecycles", lc.Events[0].MTime, lc.UUID, cid); err != nil {
+		return err
 	}
 	return err
 }
@@ -41,7 +40,7 @@ func (db *Conn) ChangeLifecycleEvent(ctx context.Context, lc *types.Lifecycle, e
 
 	if lc.Events, err = db.changeEvent(ctx, lc.Events, &e, cid); err != nil {
 		return e, err
-	} else if _, err = db.UpdateLifecycleMTime(ctx, lc, e.MTime, cid); err != nil {
+	} else if _, err = db.updateMTime(ctx, "lifecycles", lc.Events[0].MTime, lc.UUID, cid); err != nil {
 		return e, err
 	}
 
@@ -56,7 +55,7 @@ func (db *Conn) RemoveLifecycleEvent(ctx context.Context, lc *types.Lifecycle, i
 
 	if lc.Events, err = db.removeEvent(ctx, lc.Events, id, cid); err != nil {
 		return err
-	} else if _, err = db.UpdateLifecycleMTime(ctx, lc, time.Now().UTC(), cid); err != nil {
+	} else if _, err = db.updateMTime(ctx, "lifecycles", time.Now().UTC(), lc.UUID, cid); err != nil {
 		return err
 	}
 

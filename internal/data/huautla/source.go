@@ -77,7 +77,7 @@ func (ha *HuautlaAdaptor) PatchSource(w http.ResponseWriter, r *http.Request) {
 	} else if g, err := ha.db.SelectGeneration(r.Context(), types.UUID(gID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch generation")
 	} else if err := ha.db.ChangeSource(r.Context(), &g, s, ms.cid); err != nil {
-		ms.error(w, err, http.StatusInternalServerError, "failed to chnge source")
+		ms.error(w, err, http.StatusInternalServerError, "failed to change source")
 	} else {
 		ms.send(w, g, http.StatusOK)
 	}

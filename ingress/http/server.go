@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
 	"time"
@@ -16,37 +17,39 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func newServer(cfg *config.Config, r *chi.Mux, wg *sync.WaitGroup, log *log.Entry) {
+func startServer(cfg *config.Config, r *chi.Mux, wg *sync.WaitGroup, log *log.Entry) *sync.WaitGroup {
+	wg.Add(1)
+	defer wg.Done()
+
 	srv := &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", cfg.HTTPHost, cfg.HTTPPort),
 		Handler: r,
 	}
 
-	wg.Add(1)
-
-	go func(srv *http.Server, wg *sync.WaitGroup) {
-		defer wg.Done()
+	go func(srv *http.Server) {
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.
-				// WithField("cfg", cfg).
-				WithError(err).
-				Fatal("http server didn't start properly")
-			panic(err)
+			log.WithError(err).Fatal("http server didn't start properly")
 		}
-		log.Debug("http server shutdown complete")
-	}(srv, wg)
+	}(srv)
 
-	trap(log)
+	log.Info("server started, waiting for traps")
+
+	trapped := make(chan os.Signal, len(traps))
+
+	signal.Notify(trapped, traps...)
+
+	log.WithField("sig", <-trapped).Info("stopping app with signal")
 
 	timeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(timeout); err != nil {
-		log.
-			// WithField("cfg", cfg).
-			WithError(err).
-			Error("error stopping server")
+		log.WithError(err).Error("error stopping server")
 	}
+
+	log.Debug("http server shutdown complete")
+
+	return wg
 }
 
 func (g *global) staticContent(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +60,8 @@ func (g *global) staticContent(w http.ResponseWriter, r *http.Request) {
 	f := chi.URLParam(r, "f")
 	if f == "" {
 		f = "./www/test-harness/index.html"
+	} else if strings.HasPrefix(r.RequestURI, "/album/") {
+		f = "." + r.RequestURI
 	} else {
 		f = "./www/test-harness" + r.RequestURI
 	}
