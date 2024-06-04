@@ -16,22 +16,16 @@ var psqls = sqlMap{
              et.severity as eventtype_severity,
              s.uuid as stage_uuid,
              s.name as stage_name,
-             n.uuid as note_uuid,
-             n.note,
-             n.mtime as note_mtime,
-             n.ctime as note_ctime,
-             coalesce((select 1 from event_photos ep where ep.event_uuid = e.uuid limit 1), 0) as has_photos
+             coalesce((select 1 from photos ep where ep.photoable_uuid = e.uuid limit 1), 0) as has_photos,
+             coalesce((select 1 from notes en where en.notable_uuid = e.uuid limit 1), 0) as has_notes
        from  events e
        join  event_types et
          on  e.eventtype_uuid = et.uuid
        join  stages s
          on  et.stage_uuid = s.uuid
-       left
-       join  notes n
-         on  e.uuid = n.notable_uuid
       where  e.observable_uuid = $1
       order
-         by  e.mtime desc, e.uuid, n.mtime desc`,
+         by  e.mtime desc`,
 		"all-by-eventtype": `
       select  e.uuid,
               e.temperature,
@@ -43,19 +37,13 @@ var psqls = sqlMap{
               et.severity as eventtype_severity,
               s.uuid as stage_uuid,
               s.name as stage_name,
-              n.uuid as note_uuid,
-              n.note,
-              n.mtime as note_mtime,
-              n.ctime as note_ctime,
-              coalesce((select 1 from event_photos ep where ep.event_uuid = e.uuid limit 1), 0) as has_photos
+              coalesce((select 1 from photos ep where ep.photoable_uuid = e.uuid limit 1), 0) as has_photos,
+              coalesce((select 1 from notes en where en.notable_uuid = e.uuid limit 1), 0) as has_notes
         from  events e
         join  event_types et
           on  e.eventtype_uuid = et.uuid
         join  stages s
           on  et.stage_uuid = s.uuid
-        left
-        join  notes n
-          on  e.uuid = n.notable_uuid
        where  et.uuid = $1`,
 		"select": `
     select e.temperature,
@@ -91,31 +79,25 @@ var psqls = sqlMap{
 		"remove": `delete from events where uuid = $1`,
 	},
 
-	"eventphoto": {
+	"photo": {
 		"get": `
       select  p.uuid,
               p.filename,
-              p.ctime,
-              n.uuid as note_uuid,
-              n.note,
-              n.mtime as note_mtime,
-              n.ctime as note_ctime
-        from  event_photos p
-        left
-        join  notes n
-          on  p.uuid = n.notable_uuid
-       where  p.event_uuid = $1
+              p.mtime,
+              p.ctime
+        from  photos p
+       where  p.photoable_uuid = $1
        order
-          by  p.mtime desc, p.uuid, n.mtime desc`,
+          by  p.mtime desc`,
 		"add": `
-      insert into event_photos(uuid, filename, event_uuid, mtime, ctime)
-      values ($1, $2, $3, $4, $4)`,
+      insert into photos(uuid, filename, photoable_uuid, mtime, ctime)
+      values ($1, $2, $3, $4, $5)`,
 		"change": `
-      update  event_photos
+      update  photos
          set  filename = $1,
-              mtime = current_timestamp
-       where  uuid = $2`,
-		"remove": `delete from event_photos where uuid = $1`,
+              mtime = $2
+       where  uuid = $3`,
+		"remove": `delete from photos where uuid = $1`,
 	},
 
 	"eventtype": {
@@ -152,7 +134,8 @@ var psqls = sqlMap{
       update  event_types 
          set  name = $1,
               severity = $2,
-              stage_uuid = $3
+              stage_uuid = $3,
+              mtime = current_timestamp
        where  uuid = $4`,
 		"delete": `delete from event_types where uuid = $1`,
 	},
@@ -411,7 +394,8 @@ var psqls = sqlMap{
 	"source": {
 		"get": `
       select  s.uuid,
-              s.type,
+              s.type, 
+              s.progenitor_uuid,
               lc.uuid as lifecycle_uuid,
               st.uuid as strain_uuid,
               st.name as strain_name,
@@ -448,6 +432,19 @@ var psqls = sqlMap{
         join  events e
           on  lc.uuid = e.observable_uuid
        where  e.uuid = $1`,
+	},
+
+	"source-event": {
+		"select": `
+      select  uuid,
+              ...,
+        from  events e 
+        join  eventtypes et
+          on  e.eventtype_uuid = et.uuid
+        join  progenitors p
+          on  e.progenitor_uuid = p.uuid
+      where  et.uuid in ('Spore print')
+        and  p.uuid = ?`,
 	},
 
 	"stage": {
@@ -503,9 +500,11 @@ var psqls = sqlMap{
 	"strainattribute": {
 		"get-unique-names": `select distinct name from strain_attributes order by name`,
 		"all": `
-    select uuid, name, value
-      from strain_attributes sa
-     where strain_uuid = $1`,
+      select uuid, name, value
+        from strain_attributes sa
+       where strain_uuid = $1
+       order
+          by name`,
 		"add": `
     insert
       into strain_attributes (uuid, name, value, strain_uuid)
@@ -513,12 +512,10 @@ var psqls = sqlMap{
       from strains s
      where s.uuid = $4`,
 		"change": `
-    update strain_attributes sa
-       set value = $1
-      from strains s
-     where sa.name = $2
-       and s.uuid = $3
-       and sa.strain_uuid = s.uuid`,
+    update strain_attributes
+       set value = $1,
+           name = $2
+     where uuid = $3`,
 		"remove": `delete from strain_attributes where uuid = $1`,
 	},
 

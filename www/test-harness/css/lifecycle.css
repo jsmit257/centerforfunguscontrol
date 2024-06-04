@@ -1,33 +1,48 @@
-body>.main>.workspace>.lifecycle>.ndx {
-  float: right;
-  width: 34%;
+body>.main>.workspace>.lifecycle>.table.lifecycle.noting>.rows.lc {
+  display: none;
 }
 
-body>.main>.workspace>.lifecycle>.table.lifecycle>.rows,
-body>.main>.workspace>.lifecycle>.table.ndx>.rows {
+body>.main>.workspace>.lifecycle>.table.lifecycle>.notes {
+  clear: none;
+  float: right;
+  height: 17em;
+  margin-left: -5px;
+  width: 69%;
+}
+
+body>.main>.workspace>.lifecycle>.table.lifecycle>.rows {
   height: 18em;
   overflow-x: hidden;
   overflow-y: auto;
 }
 
-body>.main>.workspace>.lifecycle>.ndx>.rows>.row.new>.created_at::before {
+body>.main>.workspace>.lifecycle>.table.lifecycle>.rows.lc {
+  float: right;
+  margin-left: -5px;
+  width: 69%;
+}
+
+body>.main>.workspace>.lifecycle>.table.lifecycle>.rows.ndx {
+  border-bottom-right-radius: 10px;
+  border-color: ghostwhite;
+  border-right-style: outset;
+  border-right-width: 3px;
+  border-top-right-radius: 10px;
+  float: left;
+  margin-right: 1%;
+  width: 30%;
+}
+
+body>.main>.workspace>.lifecycle>.rows.ndx>.row.new>.ctime::before {
   content: '*'
 }
 
-/* XXX: promote this to index.css in a safe way */
-body>.main>.workspace>.lifecycle>.table>.columns>.column.full {
-  font-size: 110%;
-  opacity: .5;
-  width: 100%;
-}
-
-body>.main>.workspace>.lifecycle>.ndx>.rows>.row>div,
-body>.main>.workspace>.lifecycle>.ndx>.columns>.header {
+body>.main>.workspace>.lifecycle>.table.lifecycle>.rows.ndx>.row>div {
   width: 50%;
 }
 
 body>.main>.workspace>.lifecycle>.table.lifecycle {
-  width: 65%;
+  width: 100%;
 }
 
 
@@ -40,34 +55,6 @@ body>.main>.workspace>.lifecycle>.table.lifecycle>.rows.add>.row.no-add {
   display: none;
 }
 
-body>.main>.workspace>.lifecycle>.table.events {
-  float: right;
-  margin-top: 1em;
-  width: 100%;
-}
-
-body>.main>.workspace>.lifecycle>.table.events>.columns>div,
-body>.main>.workspace>.lifecycle>.table.events>.rows>.row>div,
-body>.main>.workspace>.lifecycle>.table.events>.rows>.row>input,
-body>.main>.workspace>.lifecycle>.table.events>.rows>.row>select {
-  padding-left: 1%;
-  text-align: center;
-  width: 14%;
-}
-
-body>.main>.workspace>.lifecycle>.table.events>.columns>.column.full {
-  padding-bottom: .3em;
-}
-
-body>.main>.workspace>.lifecycle>.table.events>.columns>div.temperature,
-body>.main>.workspace>.lifecycle>.table.events>.columns>div.humidity,
-body>.main>.workspace>.lifecycle>.table.events>.rows>.row>.temperature,
-body>.main>.workspace>.lifecycle>.table.events>.rows>.row>.humidity {
-  width: 10%;
-}
-
-body>.main>.workspace>.lifecycle>.table.events>.columns>div.eventtype,
-body>.main>.workspace>.lifecycle>.table.events>.rows>.row>.eventtype {
-  overflow: hidden;
-  width: 45%;
+body>.main>.workspace>.lifecycle>.table.events>.columns>.column.full::before {
+  content: "Lifecycle ";
 }

@@ -86,6 +86,32 @@ $(function () {
         error: args.error || console.log
       })
     })
+    .on('send', (e, ...data) => {
+      let $table = $(e.currentTarget)
+      let selected = $table.find('>.selected').attr('id')
+
+      $table.find('>.row.removable').remove()
+
+      data.forEach(d => {
+        $rowtmpl
+          .clone(true, true)
+          .insertBefore($table.children().first())
+          .toggleClass('template removable')
+          .data('row', d)
+          .trigger('send', d)
+      })
+
+      $table.trigger('select', selected)
+    })
+    .on('send', '>.row', (e, data = { mtime: 'Now', ctime: 'Now' }) => {
+      let $row = $(e.currentTarget)
+
+      // back where we started with the uuid table; set additional attribute
+      // handlers in subsequent 'send' events
+      $row.attr('id', data.id)
+      $row.find('>.mtime').trigger('set', data.mtime)
+      $row.find('>.ctime').trigger('set', data.ctime)
+    })
     .on('add', (e, args) => {
       var $table = $(e.currentTarget)
 

@@ -33,7 +33,6 @@ func (db *Conn) SelectLifecycleIndex(ctx context.Context, cid types.CID) ([]type
 	}
 
 	return result, err
-
 }
 
 func (db *Conn) SelectLifecycle(ctx context.Context, id types.UUID, cid types.CID) (types.Lifecycle, error) {
@@ -161,7 +160,7 @@ func (db *Conn) UpdateLifecycle(ctx context.Context, lc types.Lifecycle, cid typ
 	} else if rows, err = result.RowsAffected(); err != nil {
 		return lc, err
 	} else if rows != 1 {
-		err = fmt.Errorf("lifecycle was not updated")
+		err = fmt.Errorf("lifecycle was not updated: %#v", lc)
 	}
 
 	return lc, err

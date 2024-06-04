@@ -53,7 +53,7 @@ func (ha *HuautlaAdaptor) PatchLifecycleEvent(w http.ResponseWriter, r *http.Req
 	} else if l, err := ha.db.SelectLifecycle(r.Context(), types.UUID(lcID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycle")
 	} else if _, err := ha.db.ChangeLifecycleEvent(r.Context(), &l, e, ms.cid); err != nil {
-		ms.error(w, err, http.StatusInternalServerError, "failed to chnge event")
+		ms.error(w, err, http.StatusInternalServerError, "failed to change event")
 	} else {
 		ms.send(w, l, http.StatusOK)
 	}
@@ -74,7 +74,7 @@ func (ha *HuautlaAdaptor) DeleteLifecycleEvent(w http.ResponseWriter, r *http.Re
 	} else if l, err := ha.db.SelectLifecycle(r.Context(), types.UUID(lcID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycle")
 	} else if err := ha.db.RemoveLifecycleEvent(r.Context(), &l, types.UUID(evID), ms.cid); err != nil {
-		ms.error(w, err, http.StatusInternalServerError, "failed to remove lifecycle")
+		ms.error(w, err, http.StatusInternalServerError, "failed to remove event")
 	} else {
 		ms.send(w, l, http.StatusOK)
 	}
@@ -122,7 +122,7 @@ func (ha *HuautlaAdaptor) PatchGenerationEvent(w http.ResponseWriter, r *http.Re
 	} else if g, err := ha.db.SelectGeneration(r.Context(), types.UUID(gID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycle")
 	} else if _, err := ha.db.ChangeGenerationEvent(r.Context(), &g, e, ms.cid); err != nil {
-		ms.error(w, err, http.StatusInternalServerError, "failed to chnge event")
+		ms.error(w, err, http.StatusInternalServerError, "failed to change event")
 	} else {
 		ms.send(w, g, http.StatusOK)
 	}

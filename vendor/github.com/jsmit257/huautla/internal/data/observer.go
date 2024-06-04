@@ -28,7 +28,6 @@ func (db *Conn) selectEventsList(ctx context.Context, query string, id types.UUI
 	result := make([]types.Event, 0, 1000)
 	rows, err = db.query.QueryContext(ctx, query, id)
 	if err != nil {
-		db.logger.WithField("query", query).Error("this is what the devil does")
 		return result, err
 	}
 
@@ -36,10 +35,7 @@ func (db *Conn) selectEventsList(ctx context.Context, query string, id types.UUI
 
 	for rows.Next() {
 		row := types.Event{}
-		var note_id *types.UUID
-		var note *string
-		var mtime, ctime *time.Time
-		var hasPhotos bool
+		var hasPhotos, hasNotes bool
 
 		if err = rows.Scan(
 			&row.UUID,
@@ -52,33 +48,18 @@ func (db *Conn) selectEventsList(ctx context.Context, query string, id types.UUI
 			&row.EventType.Severity,
 			&row.EventType.Stage.UUID,
 			&row.EventType.Stage.Name,
-			&note_id,
-			&note,
-			&mtime,
-			&ctime,
 			&hasPhotos,
+			&hasNotes,
 		); err != nil {
 			return result, err
-		} else if note_id != nil {
-			row.Notes = []types.Note{{
-				UUID:  *note_id,
-				Note:  *note,
-				MTime: *mtime,
-				CTime: *ctime,
-			}}
 		}
 
-		l := len(result)
-		if l == 0 || result[l-1].UUID != row.UUID {
-			if hasPhotos {
-				if row.Photos, err = db.GetPhotos(ctx, row.UUID, cid); err != nil {
-					return result, err
-				}
+		if hasPhotos {
+			if row.Photos, err = db.GetPhotos(ctx, row.UUID, cid); err != nil {
+				return result, err
 			}
-			result = append(result, row)
-		} else {
-			result[l-1].Notes = append(row.Notes, result[l-1].Notes...)
 		}
+		result = append(result, row)
 
 	}
 
@@ -178,7 +159,7 @@ func (db *Conn) changeEvent(ctx context.Context, events []types.Event, e *types.
 	return append(append([]types.Event{*e}, events[:i]...), events[i+1:]...), nil
 }
 
-func (db *Conn) removeEvent(ctx context.Context, events []types.Event, id types.UUID, cid types.CID) ([]types.Event, error) {
+func (db *Conn) removeEvent(ctx context.Context, events []types.Event, id types.UUID, _ types.CID) ([]types.Event, error) {
 	if result, err := db.ExecContext(ctx, psqls["event"]["remove"], id); err != nil {
 		return events, err
 	} else if rows, err := result.RowsAffected(); err != nil {

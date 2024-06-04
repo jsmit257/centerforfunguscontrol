@@ -24,6 +24,7 @@ func (db *Conn) GetSources(ctx context.Context, g *types.Generation, cid types.C
 	defer rows.Close()
 
 	var lcID *types.UUID
+	var progenitor types.UUID
 
 	for rows.Next() {
 		row := types.Source{}
@@ -31,6 +32,7 @@ func (db *Conn) GetSources(ctx context.Context, g *types.Generation, cid types.C
 		if err = rows.Scan(
 			&row.UUID,
 			&row.Type,
+			&progenitor,
 			&lcID,
 			&row.Strain.UUID,
 			&row.Strain.Name,
@@ -44,7 +46,21 @@ func (db *Conn) GetSources(ctx context.Context, g *types.Generation, cid types.C
 		}
 
 		if lcID != nil {
-			row.Lifecycle = &types.Lifecycle{UUID: *lcID}
+			// row.Lifecycle = &types.Lifecycle{UUID: *lcID}
+			// FIXME: the following should work, retrofitting unit tests will be unpleasant
+			var lc types.Lifecycle
+			if lc, err = db.SelectLifecycle(ctx, *lcID, cid); err != nil {
+				return err
+			} else {
+				row.Lifecycle = &lc
+			}
+			db.logger.WithField("lifecycle", row.Lifecycle).Warn("is it a pointer thing?")
+			for _, e := range row.Lifecycle.Events {
+				if e.UUID == progenitor {
+					row.Lifecycle.Events = []types.Event{e}
+					break
+				}
+			}
 		}
 
 		g.Sources = append(g.Sources, row)
@@ -80,7 +96,7 @@ func (db *Conn) AddEventSource(ctx context.Context, g *types.Generation, e types
 
 	if s.Strain.UUID, err = db.getEventStrainID(ctx, e.UUID, cid); err != nil {
 		return fmt.Errorf("couldn't get strain for AddEventSource (%#v)", e)
-	} else if e.EventType, err = db.SelectEventType(ctx, e.EventType.UUID, cid); err != nil {
+	} else if e, err = db.SelectEvent(ctx, e.UUID, cid); err != nil {
 		return fmt.Errorf("couldn't get eventtype for AddEventSource")
 	} else if e.EventType.Name == "Clone" {
 		s.Type = "Clone"

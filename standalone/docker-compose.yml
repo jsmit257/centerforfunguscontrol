@@ -136,7 +136,7 @@ services:
       - 8082:8080 # if you change the second port, also change environment:HTTP_PORT below
     volumes:
       - ./background:/www/test-harness/css/images/background
-      - ./photos:/photos
+      - ./album:/album
     environment:
       HUAUTLA_HOST: huautla-standalone
       HUAUTLA_PORT: 5432
@@ -145,3 +145,4 @@ services:
       HUAUTLA_SSL: disable
       HTTP_HOST: cffc-standalone
       HTTP_PORT: 8080 # this should match the second port in the corresponding ports: list above
+      GOCOVERDIR: /tmp

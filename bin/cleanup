@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# make a temp file of album filenames; be sure to clean it up
+tmpfile="/tmp/abc"
+
+psql -hlocalhost -upostgres -dhuautla -c"select filename from photos;" -qt >$tmpfile
+
+pushd album
+
+for f in *; do
+	echo $f | sed '/[[:xdigit:]]\{8\}-[[:xdigit:]]\{4\}-[[:xdigit:]]\{4\}-[[:xdigit:]]\{4\}-[[:xdigit:]]\{12\}/ q 0; q 1' >/dev/null 2>&1 || continue
+	
+	grep "$f" "$tmpfile" 2>&1 && continue
+
+	echo rm "$f"
+done
+
+popd
+
+rm "$tmpfile"
+

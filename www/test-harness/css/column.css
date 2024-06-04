@@ -1,3 +1,10 @@
+body>.main>.workspace .table>.columns>.column.full {
+  font-size: 110%;
+  opacity: .5;
+  padding-bottom: .3em;
+  width: 100%;
+}
+
 body>.main>.workspace>div .table>.columns {
   background-image: linear-gradient(180deg, #fff3, transparent);
   border-radius: 18px 18px 0 0;
@@ -17,8 +24,8 @@ body>.main>.workspace>div .table>.columns>div[sort-key] {
 }
 
 body>.main>.workspace>div .table>.columns>div[sort-key]>.sort-icon {
-  background-image: linear-gradient(45deg, black, transparent), url(./images/button-sprites.png);
-  background-position: -165px -450px;
+  background-image: url(./images/button-sprites.png);
+  background-position: 0;
   background-repeat: no-repeat;
   float: left;
   margin-right: -12px;
@@ -26,9 +33,9 @@ body>.main>.workspace>div .table>.columns>div[sort-key]>.sort-icon {
 }
 
 body>.main>.workspace>div .table>.columns>div[sort-order=sort-asc]>.sort-icon {
-  background-position: -437px -158px;
+  background-position: -487px -228px;
 }
 
 body>.main>.workspace>div .table>.columns>div[sort-order=sort-desc]>.sort-icon {
-  background-position: -421px -159px;
+  background-position: -557px -228px;
 }

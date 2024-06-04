@@ -1,0 +1,154 @@
+body>.main>.workspace>.generation>.table.generation>.notes,
+body>.main>.workspace>.generation>.table.generation>.rows {
+  height: 9em;
+}
+
+body>.main>.workspace>.generation>.table.generation>.columns>.column.full {
+  cursor: grab;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"] {
+  overflow-x: hidden;
+}
+
+body>.main>.workspace>.generation>.table.generation.noting>.rows[name="editor"] {
+  display: none;
+}
+
+body>.main>.workspace>.generation>.table.generation.selecting>.rows[name="generation"]>.row>.lineage {
+  text-align: center;
+  width: 100%;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"].editing>.row.sources {
+  display: none;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source {
+  width: 100%;
+  display: none;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source>div,
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source>div>div {
+  float: left;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>div.row {
+  padding-left: .5em;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>div.row>select {
+  width: 33%;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"] select {
+  margin-right: .5em;
+  padding-right: 2px;
+  padding-top: 3.1px;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source[source-origin="event"]>.type,
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source[source-origin="strain"]>select[name="parent"],
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source[source-origin="strain"]>div.progenitor {
+  display: none;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>div.row>div.label,
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source>div.label {
+  width: 7em;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source>div.caption {
+  float: left;
+  padding-right: .2em;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source>select {
+  float: left;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source>.src-ctl {
+  background-image: url(images/button-sprites.png);
+  background-repeat: no-repeat;
+  border-radius: .75em;
+  border-style: none;
+  cursor: pointer;
+  float: right;
+  height: 1.3em;
+  margin-right: 1em;
+  width: 1.3em;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source>.action {
+  background-color: #32cd3277;
+  background-position: -681px -481px;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source>.commit {
+  background-color: #dc143c77;
+  background-position: -446px -160px;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source.editing>.action {
+  background-color: #dc143c77;
+  background-position: -726px -194px;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source.editing>.commit {
+  background-color: #32cd3277;
+  background-position: -761px -617px;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"].editing>.mtime>.static.date,
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"].editing>.ctime>.static.date,
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"].adding>.mtime>.static.date,
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"].adding>.ctime>.static.date {
+  color: grey;
+  cursor: not-allowed;
+  display: initial !important;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"] select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>.source.editing>select,
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"].adding select,
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"].editing select {
+  appearance: initial;
+  -webkit-appearance: auto;
+  -webkit-appearance: auto;
+}
+
+body>.main>.workspace>.generation>.table.events>.columns>.column.full::before {
+  content: "Generation ";
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source.removable {
+  display: block;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>.add-source {
+  font-size: larger;
+  font-weight: bold;
+  line-height: 1.5em;
+  text-align: center;
+  width: 100%;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources[source-type="spore"]>div:nth-child(4),
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources[source-type="clone"]>.add-source {
+  display: none;
+}
+
+body>.main>.workspace>.generation>.table.generation>.rows[name="generation"],
+body>.main>.workspace>.generation>.table.generation.selecting>.rows[name="editor"] {
+  display: none;
+}
+
+body>.main>.workspace>.generation>.table.generation.selecting>.rows[name="generation"] {
+  display: block;
+}

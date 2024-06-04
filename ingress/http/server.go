@@ -57,6 +57,8 @@ func (g *global) staticContent(w http.ResponseWriter, r *http.Request) {
 	f := chi.URLParam(r, "f")
 	if f == "" {
 		f = "./www/test-harness/index.html"
+	} else if strings.HasPrefix(r.RequestURI, "/album/") {
+		f = "." + r.RequestURI
 	} else {
 		f = "./www/test-harness" + r.RequestURI
 	}

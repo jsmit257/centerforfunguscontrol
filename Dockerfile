@@ -7,6 +7,7 @@ ENV GOOS=linux
 RUN go build -o /huautla -a -installsuffix cgo -cover ./ingress/http/...
 
 FROM alpine:edge as deploy
+ENV GOCOVERDIR=/tmp
 RUN apk update
 RUN apk add jq curl
 COPY --from=build /huautla /huautla

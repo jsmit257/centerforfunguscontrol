@@ -1,31 +1,11 @@
 $(function () {
-  var $strain = $('body>.main>.workspace>.strain')
-  var $table = $strain.find('>.table.strain>.rows')
-  var $buttonbar = $strain.find('>.table.strain>.buttonbar')
-  var $attributes = $strain.find('>.table.strainattribute>.rows')
-  var $attributebar = $strain.find('>.table.strainattribute>.buttonbar')
+  let $strain = $('body>.main>.workspace>.strain')
+    .on('activate', e => {
+      $strain.addClass('active')
+      $table.trigger('reinit')
+    })
 
-  var vendors = []
-
-  function newRow(data) {
-    data ||= { vendor: {} }
-    return $('<div class="row hover" />')
-      .append($('<div class=uuid />').text(data.id))
-      .append($('<div class="name static" />').text(data.name))
-      .append($('<input class="name live" />').val(data.name))
-      .append($('<div class="species static" />').html(data.species || "&nbsp"))
-      .append($('<input class="species live" />').val(data.species))
-      .append($('<div class="vendor static" />').text(data.vendor.name))
-      .append($('<select class="vendor live" />')
-        .append(vendors)
-        .data('vendor_uuid', data.vendor.id)
-        .val(data.vendor.id))
-      .append($('<div class="ctime static const date" />')
-        .data('value', data.ctime)
-        .text((data.ctime || "Now").replace('T', ' ').replace(/:\d{2}(\.\d+)?Z/, '')))
-  }
-
-  $table
+  let $table = $strain.find('>.table.strain>.rows')
     .on('reinit', e => {
       vendors = []
       $.ajax({
@@ -34,7 +14,9 @@ $(function () {
         async: true,
         success: (result, status, xhr) => {
           result.forEach(r => {
-            vendors.push($(`<option value="${r.id}">${r.name}</option>`))
+            vendors.push($('<option>')
+              .val(r.id)
+              .text(r.name))
           })
         },
         error: console.log,
@@ -55,7 +37,7 @@ $(function () {
         method: 'GET',
         async: true,
         success: (result, status, xhr) => {
-          var $attrlist = $strain.find('datalist[id=known-strain-names]').empty()
+          let $attrlist = $strain.find('datalist[id=known-strain-names]').empty()
           result.forEach(r => { $attrlist.append($(`<option />`).val(r)) })
         },
         error: console.log,
@@ -64,21 +46,90 @@ $(function () {
       $attributes.trigger('refresh', $(e.currentTarget))
     })
 
-  function newAttributeRow(data) {
-    data ||= {}
-    return $('<div class="row hover" />')
-      .append($('<div class=uuid />').text(data.id))
-      .append($('<div class="name static" />').text(data.name))
-      .append($('<input list="known-strain-names" class="name live" />').val(data.name))
-      .append($('<div class="value static" />').text(data.value))
-      .append($('<input class="value live" />').val(data.value))
-  }
+  let $buttonbar = $strain.find('>.table.strain>.buttonbar')
+    .on('click', '>.edit', e => {
+      if (!$(e.currentTarget).hasClass('active')) {
+        return
+      }
 
-  $attributes
-    .off('refresh')
-    .on('refresh', (e, row) => {
+      let $row = $table.find('.selected')
+      let $vendor = $row.find('>select.vendor').append(vendors)
+
+      $vendor.val($vendor.data('vendor_uuid'))
+
+      $table.trigger('edit', {
+        url: `/strain/${$row.attr('id')}`,
+        data: $selected => {
+          return JSON.stringify({
+            "name": $selected.find('>.name.live').val(),
+            "species": $selected.find('>.species.live').val().trim(),
+            "vendor": {
+              "id": $selected.find('>.vendor.live').val()
+            }
+          })
+        },
+        success: (data, status, xhr) => {
+          let $selected = $table.find('.selected')
+          $selected.find('>.name.static').text($selected.find('>.name.live').val())
+          $selected.find('>.species.static').html($selected.find('>.species.live').val() || "&nbsp")
+          $selected
+            .find('>.vendor.static')
+            .text($selected.find('>.vendor.live>option:selected').text())
+        },
+        buttonbar: $(e.delegateTarget)
+      })
+    })
+    .on('click', '>.add', e => {
+      if (!$(e.currentTarget).hasClass('active')) {
+        return
+      }
+
+      $attributes
+        .data('attributes', $attributes.find('.row'))
+        .empty()
+
+
+      $table.trigger('add', {
+        newRow: newRow,
+        data: $selected => {
+          return JSON.stringify({
+            "name": $selected.find('>.name.live').val(),
+            "species": $selected.find('>.species.live').val().trim(),
+            "vendor": {
+              "id": $selected.find('>.vendor.live').val()
+            }
+          })
+        },
+        success: (data, status, xhr) => {
+          let $selected = $table.find('.selected')
+          $selected.attr('id', data.id)
+          $selected.find('>.name.static').text($selected.find('>.name.live').val())
+          $selected.find('>.species.static').html($selected.find('>.species.live').val() || "&nbsp")
+          $selected.find('>.ctime.static').text(data.ctime.replace('T', ' ').replace(/(\..+)?Z.*/, ''))
+          $selected
+            .find('>.vendor.static')
+            .text($selected.find('>.vendor.live>option:selected').text())
+        },
+        error: (xhr, status, error) => {
+          $table.trigger('remove-selected')
+          $attributes.append($attributes.data('attributes'))
+        },
+        buttonbar: $(e.delegateTarget)
+      })
+    })
+    .on('click', '>.remove', e => {
+      if ($(e.currentTarget).hasClass('active')) {
+        $table.trigger('delete', { buttonbar: $(e.delegateTarget) })
+      }
+    })
+    .on('click', '>.refresh', e => {
+      $table.trigger('reinit')
+    })
+
+  let $attributes = $strain.find('>.table.strainattribute>.rows')
+    .off('refresh').on('refresh', (e, row) => {
       $.ajax({
-        url: `/strain/${$(row).find('>.uuid').text()}`,
+        url: `/strain/${$(row).attr('id')}`,
         method: 'GET',
         async: true,
         success: (result, sc, xhr) => {
@@ -93,151 +144,118 @@ $(function () {
       })
     })
 
-  $buttonbar.find('>.edit').on('click', e => {
-    if (!$(e.currentTarget).hasClass('active')) {
-      return
-    }
-
-    $table.find('.selected>select.vendor')
-      .append(vendors)
-      .val($table.find('.selected>select.vendor').data('vendor_uuid'))
-
-    $table.trigger('edit', {
-      data: $selected => {
-        return JSON.stringify({
-          "name": $selected.find('>.name.live').val(),
-          "species": $selected.find('>.species.live').val().trim(),
-          "vendor": {
-            "id": $selected.find('>.vendor.live').val()
-          }
-        })
-      },
-      success: (data, status, xhr) => {
-        var $selected = $table.find('.selected')
-        $selected.find('>.name.static').text($selected.find('>.name.live').val())
-        $selected.find('>.species.static').html($selected.find('>.species.live').val() || "&nbsp")
-        $selected
-          .find('>.vendor.static')
-          .text($selected.find('>.vendor.live>option:selected').text())
-      },
-      buttonbar: $buttonbar
+  let $attributebar = $strain.find('>.table.strainattribute>.buttonbar')
+    .on('click', '>.edit', e => {
+      if (!$(e.currentTarget).hasClass('active')) {
+        return
+      }
+      $attributes.trigger('edit', {
+        url: `/strain/${$table.find('.selected').attr('id')}/attribute`,
+        data: $selected => {
+          return JSON.stringify({
+            id: $selected.attr('id'),
+            name: $selected.find('>.name.live').val(),
+            value: $selected.find('>.value.live').val()
+          })
+        },
+        success: (data, status, xhr) => {
+          let $row = $attributes.find('.selected')
+          $row.find('>.name.static').text($row.find('>.name.live').val())
+          $row.find('>.value.static').text($row.find('>.value.live').val())
+        },
+        buttonbar: $(e.delegateTarget)
+      })
     })
-  })
-
-  $buttonbar.find('>.add').on('click', e => {
-    if (!$(e.currentTarget).hasClass('active')) {
-      return
-    }
-
-    $attributes
-      .data('attributes', $attributes.find('.row'))
-      .empty()
-
-
-    $table.trigger('add', {
-      newRow: newRow,
-      data: $selected => {
-        return JSON.stringify({
-          "name": $selected.find('>.name.live').val(),
-          "species": $selected.find('>.species.live').val().trim(),
-          "vendor": {
-            "id": $selected.find('>.vendor.live').val()
-          }
-        })
-      },
-      success: (data, status, xhr) => {
-        var $selected = $table.find('.selected')
-        $selected.find('>.uuid').text(data.id)
-        $selected.find('>.name.static').text($selected.find('>.name.live').val())
-        $selected.find('>.species.static').html($selected.find('>.species.live').val() || "&nbsp")
-        $selected.find('>.ctime.static').text(data.ctime.replace('T', ' ').replace(/(\..+)?Z.*/, ''))
-        $selected
-          .find('>.vendor.static')
-          .text($selected.find('>.vendor.live>option:selected').text())
-      },
-      error: (xhr, status, error) => {
-        $table.trigger('remove-selected')
-        $attributes.append($attributes.data('attributes'))
-      },
-      buttonbar: $buttonbar
+    .on('click', '>.add', e => {
+      if (!$(e.currentTarget).hasClass('active')) {
+        return
+      }
+      $attributes.trigger('add', {
+        newRow: newAttributeRow,
+        url: `/strain/${$table.find('.selected').attr('id')}/attribute`,
+        data: $selected => {
+          return JSON.stringify({
+            name: $selected.find('>.name.live').val(),
+            value: $selected.find('>.value.live').val()
+          })
+        },
+        success: (data, status, xhr) => {
+          let $row = $attributes.find('.selected')
+          $row.attr('id', data.id)
+          $row.find('>.name.static').text(data.name)
+          $row.find('>.value.static').text(data.value)
+          $buttonbar.find('.remove')[$attributes.children().length > 0 ? "removeClass" : "addClass"]("active")
+        },
+        error: (xhr, status, error) => { $attributes.trigger('remove-selected') },
+        buttonbar: $(e.delegateTarget)
+      })
     })
-  })
-
-  $buttonbar.find('>.remove').on('click', e => {
-    if ($(e.currentTarget).hasClass('active')) {
-      $table.trigger('delete', { buttonbar: $buttonbar })
-    }
-  })
-
-  $buttonbar.find('>.refresh').on('click', e => {
-    $table.trigger('reinit')
-  })
-
-  $attributebar.find('>.edit').on('click', e => {
-    if (!$(e.currentTarget).hasClass('active')) {
-      return
-    }
-    $attributes.trigger('edit', {
-      url: `/strain/${$table.find('.selected>.uuid').text()}/attribute`,
-      data: $selected => {
-        return JSON.stringify({
-          name: $selected.find('>.name.live').val(),
-          value: $selected.find('>.value.live').val()
-        })
-      },
-      success: (data, status, xhr) => {
-        var $row = $attributes.find('.selected')
-        $row.find('>.name.static').text($row.find('>.name.live').val())
-        $row.find('>.value.static').text($row.find('>.value.live').val())
-      },
-      buttonbar: $attributebar
+    .on('click', '>.remove', e => {
+      if (!$(e.currentTarget).hasClass('active')) {
+        return
+      }
+      $attributes.trigger('delete', {
+        url: `/strain/${$table.find('.selected').attr('id')}/attribute/${$attributes.find('.selected').attr('id')}`,
+        buttonbar: $(e.delegateTarget)
+      })
+      if ($attributes.children().length === 0) {
+        $buttonbar.find('.remove').addClass('active')
+      }
     })
-  })
-
-  $attributebar.find('>.add').on('click', e => {
-    if (!$(e.currentTarget).hasClass('active')) {
-      return
-    }
-    $attributes.trigger('add', {
-      newRow: newAttributeRow,
-      url: `/strain/${$table.find('.selected>.uuid').text()}/attribute`,
-      data: $selected => {
-        return JSON.stringify({
-          name: $selected.find('>.name.live').val(),
-          value: $selected.find('>.value.live').val()
-        })
-      },
-      success: (data, status, xhr) => {
-        var $row = $attributes.find('.selected')
-        $row.find('>.uuid').text(data.id)
-        $row.find('>.name.static').text(data.name)
-        $row.find('>.value.static').text(data.value)
-        $buttonbar.find('.remove')[$attributes.children().length > 0 ? "removeClass" : "addClass"]("active")
-      },
-      error: (xhr, status, error) => { $attributes.trigger('remove-selected') },
-      buttonbar: $attributebar
+    .on('click', '>.refresh', e => {
+      $table.trigger('reinit')
     })
+
+  let vendors = []
+
+  let $genphotos = $('body>.main>.workspace>.template>.photos')
+    .clone(true, true)
+    .insertAfter($('body>.main>.workspace>.strain>.table.strain>.rows'))
+
+  $buttonbar.trigger('subscribe', {
+    clazz: 'photos',
+    clicker: e => {
+      e.stopPropagation()
+      if ($strain
+        .find('>.table.strain')
+        .toggleClass('photoing')
+        .hasClass('photoing')
+      ) {
+        $genphotos
+          .trigger('refresh', $table.find('>.selected').attr('id'))
+          .addClass('gallery')
+          .removeClass('singleton')
+      }
+    },
   })
 
-  $attributebar.find('>.remove').on('click', e => {
-    if (!$(e.currentTarget).hasClass('active')) {
-      return
-    }
-    $attributes.trigger('delete', {
-      url: `/strain/${$table.find('.selected>.uuid').text()}/attribute/${$attributes.find('.selected>.uuid').text()}`,
-      buttonbar: $attributebar
-    })
-    if ($attributes.children().length === 0) {
-      $buttonbar.find('.remove').addClass('active')
-    }
-  })
+  function newRow(data) {
+    data ||= { vendor: {} }
+    return $('<div>')
+      .addClass('row hover')
+      .attr('id', data.id)
+      .append($('<div class="name static" />').text(data.name))
+      .append($('<input class="name live" />').val(data.name))
+      .append($('<div class="species static" />').html(data.species || "&nbsp"))
+      .append($('<input class="species live" />').val(data.species))
+      .append($('<div class="vendor static" />').text(data.vendor.name))
+      .append($('<select class="vendor live" />')
+        .append(vendors)
+        .data('vendor_uuid', data.vendor.id)
+        .val(data.vendor.id))
+      .append($('<div class="ctime static const date" />')
+        .data('value', data.ctime)
+        .text((data.ctime || "Now").replace('T', ' ').replace(/:\d{2}(\.\d+)?Z/, '')))
+  }
 
-  $attributebar.find('>.refresh').on('click', e => {
-    $table.trigger('reinit')
-  })
-
-  $strain.on('activate', e => {
-    $strain.addClass('active')
-    $table.trigger('reinit')
-  })
+  function newAttributeRow(data) {
+    data ||= {}
+    return $('<div>')
+      .addClass('row hover')
+      .attr('id', data.id)
+      .append($('<div class="name static" />').text(data.name))
+      .append($('<input list="known-strain-names" class="name live" />').val(data.name))
+      .append($('<div class="value static" />').text(data.value))
+      .append($('<input class="value live" />').val(data.value))
+  }
 })

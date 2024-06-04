@@ -99,21 +99,21 @@ func (db *Conn) ChangeAttribute(ctx context.Context, s *types.Strain, a types.St
 	deferred, start, l := initAccessFuncs("ChangeAttribute", db.logger, s.UUID, cid)
 	defer deferred(start, err, l)
 
-	result, err := db.ExecContext(ctx, psqls["strainattribute"]["change"], a.Value, a.Name, s.UUID)
+	result, err := db.ExecContext(ctx, psqls["strainattribute"]["change"], a.Value, a.Name, a.UUID)
 
 	if err != nil {
 		return err
 	} else if rows, err := result.RowsAffected(); err != nil {
 		return err
-	} else if rows != 1 { // most likely cause is a bad vendor.uuid
+	} else if rows != 1 {
 		return fmt.Errorf("attribute was not changed")
 	}
 
 	i, j := 0, len(s.Attributes)
-	for i < j && s.Attributes[i].Name != a.Name {
+	for i < j && s.Attributes[i].UUID != a.UUID {
 		i++
 	}
-	s.Attributes[i].Value = a.Value
+	s.Attributes[i] = a
 
 	return nil
 }

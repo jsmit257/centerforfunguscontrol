@@ -30,6 +30,7 @@ type (
 		UUID     `json:"id"`
 		Filename string    `json:"image"`
 		Notes    []Note    `json:"notes"`
+		MTime    time.Time `json:"mtime,omitempty"`
 		CTime    time.Time `json:"ctime"`
 	}
 

@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/jsmit257/huautla/types"
@@ -13,7 +15,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var strains = []types.Strain{}
+var (
+	strains     []types.Strain
+	sampledata  bytes.Buffer
+	contentType string
+)
+
+func init() {
+	const samplefile = "../../www/test-harness/images/sample.png"
+
+	w := multipart.NewWriter(&sampledata)
+
+	if sample, err := os.Open(samplefile); err != nil {
+		panic(err)
+	} else if sample == nil {
+		panic(fmt.Errorf("sample image data is nil"))
+	} else if fw, err := w.CreateFormFile("file", samplefile); err != nil {
+		panic(err)
+	} else if _, err = io.Copy(fw, sample); err != nil {
+		panic(err)
+	}
+
+	w.Close()
+
+	contentType = w.FormDataContentType()
+}
 
 func Test_HappyStrain(t *testing.T) {
 	url := fmt.Sprintf(`http://%s:%d/strain`, cfg.HTTPHost, cfg.HTTPPort)
@@ -45,5 +71,31 @@ func Test_HappyStrain(t *testing.T) {
 		require.Nil(t, err)
 
 		strains = append(strains, s)
+	}
+}
+
+func Test_HappyStrainPhoto(t *testing.T) {
+	url := fmt.Sprintf(`http://%s:%d/photos`, cfg.HTTPHost, cfg.HTTPPort)
+
+	for _, s := range strains {
+		req, err := http.NewRequest(
+			http.MethodPost,
+			fmt.Sprintf("%s/%s", url, s.UUID),
+			bytes.NewReader(sampledata.Bytes()))
+		require.Nil(t, err)
+
+		req.Header.Set("Content-Type", contentType)
+
+		res, err := http.DefaultClient.Do(req)
+		require.Nil(t, err)
+		require.Equal(t, http.StatusOK, res.StatusCode, "strain: %v", s)
+
+		var b []byte
+		b, err = io.ReadAll(res.Body)
+		require.Nil(t, err)
+
+		var p []types.Photo
+		err = json.Unmarshal(b, &p)
+		require.Nil(t, err)
 	}
 }
