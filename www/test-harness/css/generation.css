@@ -75,6 +75,14 @@ body>.main>.workspace>.generation>.table.generation>.rows[name="editor"] select 
   padding-top: 3.1px;
 }
 
+/*
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source[source-origin="event"]>.type,
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source[source-origin="strain"]>select[name="parent"],
+body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source[source-origin="strain"]>div.progenitor {
+  display: none;
+}
+*/
+
 body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>div.row>div.label,
 body>.main>.workspace>.generation>.table.generation>.rows[name="editor"]>.row.sources>div.source>div.label {
   width: 7em;

@@ -65,7 +65,8 @@ img.button.add.active:hover {
   background-color: #00bfffcc;
 }
 
-div.editing .button.action,
+/*div.editing .button.action, */
+.row.editing .button.action,
 img.button.cancel {
   background-color: #dc143c77;
   background-position: -726px -194px;
@@ -75,9 +76,12 @@ img.button.cancel.active:hover {
   background-color: #dc143ccc;
 }
 
+/*
 div.editing .button.commit,
-img.button.ok {
+img.button.ok {*/
   /*&check;*/
+.row.editing .button.commit,
+img.button.ok {
   background-color: #32cd3277;
   background-position: -761px -617px;
 }

@@ -79,6 +79,27 @@ var psqls = sqlMap{
 		"remove": `delete from events where uuid = $1`,
 	},
 
+	"photo": {
+		"get": `
+      select  p.uuid,
+              p.filename,
+              p.mtime,
+              p.ctime
+        from  photos p
+       where  p.photoable_uuid = $1
+       order
+          by  p.mtime desc`,
+		"add": `
+      insert into photos(uuid, filename, photoable_uuid, mtime, ctime)
+      values ($1, $2, $3, $4, $5)`,
+		"change": `
+      update  photos
+         set  filename = $1,
+              mtime = $2
+       where  uuid = $3`,
+		"remove": `delete from photos where uuid = $1`,
+	},
+
 	"eventtype": {
 		"select-all": `
       select  e.uuid,
