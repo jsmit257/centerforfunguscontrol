@@ -245,6 +245,20 @@ body>.main>.workspace .table.noting.photoing>.notes {
   background-color: #444;
 }
 
+option[dtime],
+div[dtime] {
+  color: #f0f8ff66;
+}
+
+option[dtime] {
+  display: none;
+}
+
+.type.static::first-letter,
+/* select.types::first-letter, */
+select.types>option::first-letter {
+  text-transform: uppercase;
+}
 
 /* scrollbars */
 ::-webkit-scrollbar {

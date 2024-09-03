@@ -7,10 +7,10 @@ $(function () {
   var $ingredientbar = $substrate.find('>.table.ingredients>.buttonbar')
 
   var types = [
-    '<option value="Agar">Agar</option>',
-    '<option value="Liquid">Liquid</option>',
-    '<option value="Grain">Grain</option>',
-    '<option value="Bulk">Bulk</option>',
+    '<option value="plating">Plating</option>',
+    '<option value="liquid">Liquid</option>',
+    '<option value="grain">Grain</option>',
+    '<option value="bulk">Bulk</option>',
   ]
   var vendors = []
   var ingredients = []
@@ -23,7 +23,8 @@ $(function () {
       .append($('<div class="name static" />').text(data.name))
       .append($('<input class="name live" />').val(data.name))
       .append($('<div class="type static" />').html(data.type))
-      .append($('<select class="type live" />').val(data.type)
+      .append($('<select class="types live" />')
+        .val(data.type)
         .append(types))
       .append($('<div class="vendor static" />').text(data.vendor.name))
       .append($('<select class="vendor live" />')
@@ -35,11 +36,11 @@ $(function () {
   $('.table.substrate>.columns>.column.type>select')
     .on('change', e => {
       $('.table.substrate')
-        .removeClass('agar liquid grain bulk all')
-        .addClass($(e.currentTarget).val().toLowerCase())
+        .removeClass('plating liquid grain bulk all')
+        .addClass($(e.currentTarget).val())
 
-      if ($table.find(`.selected.${$(e.currentTarget).val().toLowerCase()}`).length === 0) {
-        $table.find(`.row.${$(e.currentTarget).val().toLowerCase()}`).first().click()
+      if ($table.find(`.selected.${$(e.currentTarget).val()}`).length === 0) {
+        $table.find(`.row.${$(e.currentTarget).val()}`).first().click()
       }
     })
     .trigger('change')
@@ -259,4 +260,5 @@ $(function () {
         $buttonbar.find('.remove').addClass('active')
       }
     })
+    .find('.refresh').remove()
 })

@@ -18,16 +18,16 @@ func Test_HappySubstrate(t *testing.T) {
 	url := fmt.Sprintf(`http://%s:%d/substrate`, cfg.HTTPHost, cfg.HTTPPort)
 
 	for _, s := range []types.Substrate{
-		{Name: "5-grain", Type: "Grain", Vendor: vendors[0]},
-		{Name: "Rye", Type: "Grain", Vendor: vendors[1]},
-		{Name: "Millet", Type: "Grain", Vendor: vendors[2]},
-		{Name: "Popcorn", Type: "Grain", Vendor: vendors[1]},
-		{Name: "Hemp", Type: "Grain", Vendor: vendors[3]},
-		{Name: "Birdseed", Type: "Grain", Vendor: vendors[0]},
-		{Name: "Agar", Type: "Agar", Vendor: vendors[2]},
-		{Name: "Liquid culture", Type: "Liquid", Vendor: vendors[1]},
-		{Name: "Liquid culture", Type: "Liquid", Vendor: vendors[3]},
-		{Name: "Horse cookies", Type: "Bulk", Vendor: vendors[0]},
+		{Name: "5-grain", Type: types.GrainType, Vendor: vendors[0]},
+		{Name: "Rye", Type: types.GrainType, Vendor: vendors[1]},
+		{Name: "Millet", Type: types.GrainType, Vendor: vendors[2]},
+		{Name: "Popcorn", Type: types.GrainType, Vendor: vendors[1]},
+		{Name: "Hemp", Type: types.GrainType, Vendor: vendors[3]},
+		{Name: "Birdseed", Type: types.GrainType, Vendor: vendors[0]},
+		{Name: "Agar", Type: types.PlatingType, Vendor: vendors[2]},
+		{Name: "Liquid culture", Type: types.LiquidType, Vendor: vendors[1]},
+		{Name: "Liquid culture", Type: types.LiquidType, Vendor: vendors[3]},
+		{Name: "Horse cookies", Type: types.BulkType, Vendor: vendors[0]},
 	} {
 		b, err := json.Marshal(s)
 		require.Nil(t, err)

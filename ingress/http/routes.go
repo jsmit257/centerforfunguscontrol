@@ -92,7 +92,7 @@ func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
 	r.Delete("/generation/{id}", ha.DeleteGeneration)
 
 	r.Post("/generation/{id}/events", ha.PostGenerationEvent)
-	r.Patch("/generation/{g_id}/events", ha.PatchGenerationEvent)
+	r.Patch("/generation/{id}/events", ha.PatchGenerationEvent)
 	r.Delete("/generation/{g_id}/events/{ev_id}", ha.DeleteGenerationEvent)
 
 	r.Post("/generation/{id}/sources/strain", ha.PostStrainSource)

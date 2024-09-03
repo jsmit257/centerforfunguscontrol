@@ -15,7 +15,7 @@ body>.main>.workspace>.substrate>.table.substrate>.rows>.row {
 }
 
 body>.main>.workspace>.substrate>.table.substrate.all>.rows>.row,
-body>.main>.workspace>.substrate>.table.substrate.agar>.rows>.row.agar,
+body>.main>.workspace>.substrate>.table.substrate.plating>.rows>.row.plating,
 body>.main>.workspace>.substrate>.table.substrate.liquid>.rows>.row.liquid,
 body>.main>.workspace>.substrate>.table.substrate.bulk>.rows>.row.bulk,
 body>.main>.workspace>.substrate>.table.substrate.grain>.rows>.row.grain {

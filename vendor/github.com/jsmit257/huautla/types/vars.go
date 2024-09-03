@@ -1,8 +1,8 @@
 package types
 
 const (
-	PlatingType SubstrateType = "Agar"
-	LiquidType  SubstrateType = "Liquid"
-	GrainType   SubstrateType = "Grain"
-	BulkType    SubstrateType = "Bulk"
+	PlatingType SubstrateType = "plating"
+	LiquidType  SubstrateType = "liquid"
+	GrainType   SubstrateType = "grain"
+	BulkType    SubstrateType = "bulk"
 )

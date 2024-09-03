@@ -113,6 +113,11 @@ func (db *Conn) SelectGenerationsByAttrs(ctx context.Context, p types.ReportAttr
 
 	result := make([]types.Generation, 0, 100)
 
+	if !p.Contains("generation-id", "strain-id", "plating-id", "liquid-id") {
+		err = fmt.Errorf("request doesn't contain at least 1 required field")
+		return result, err
+	}
+
 	rows, err = db.query.QueryContext(ctx, psqls["generation"]["select"],
 		p.Get("generation-id"),
 		p.Get("strain-id"),

@@ -69,6 +69,11 @@ func (db *Conn) SelectLifecyclesByAttrs(ctx context.Context, p types.ReportAttrs
 
 	var generationID *types.UUID
 
+	if !p.Contains("lifecycle-id", "strain-id", "grain-id", "bulk-id") {
+		err = fmt.Errorf("request doesn't contain at least 1 required field")
+		return result, err
+	}
+
 	rows, err = db.QueryContext(ctx, psqls["lifecycle"]["select"],
 		p.Get("lifecycle-id"),
 		p.Get("strain-id"),

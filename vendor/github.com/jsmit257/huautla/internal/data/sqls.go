@@ -228,8 +228,8 @@ var psqls = sqlMap{
               $4
         from  substrates ps,
               substrates ls
-       where  ps.type = 'Agar'
-         and  ls.type = 'Liquid'
+       where  ps.type = 'plating'
+         and  ls.type = 'liquid'
          and  ps.uuid = $2
          and  ls.uuid = $3`,
 		"update": `
@@ -239,8 +239,8 @@ var psqls = sqlMap{
               mtime = $4
         from  substrates ps,
               substrates ls
-       where  ps.type = 'Agar'
-         and  ls.type = 'Liquid'
+       where  ps.type = 'plating'
+         and  ls.type = 'liquid'
          and  ps.uuid = $1
          and  ls.uuid = $2
          and  g.uuid = $3`,
@@ -347,9 +347,9 @@ var psqls = sqlMap{
              substrates bs
       where  s.uuid = $11
         and  gs.uuid = $12
-        and  gs.type = 'Grain'
+        and  gs.type = 'grain'
         and  bs.uuid = $13
-        and  bs.type = 'Bulk'`,
+        and  bs.type = 'bulk'`,
 		"update": `
       update lifecycles
         set location = $1,
@@ -368,9 +368,9 @@ var psqls = sqlMap{
             substrates bs
       where s.uuid = $9
         and gs.uuid = $10
-        and gs.type = 'Grain'
+        and gs.type = 'grain'
         and bs.uuid = $11
-        and bs.type = 'Bulk'
+        and bs.type = 'bulk'
         and lifecycles.uuid = $12`,
 		"delete": `delete from lifecycles where uuid = $1`,
 	},
@@ -526,7 +526,7 @@ var psqls = sqlMap{
               name = $2,
               vendor_uuid = $3
        where  uuid = $4`,
-		"delete": `update strains set dtime = current_timestamp where uuid = $1`,
+		"delete": `update strains set mtime = current_timestamp, dtime = current_timestamp where uuid = $1`,
 		// "delete": `delete from strains where uuid = $1`,
 		"generated-strain": `
       select  s.uuid,

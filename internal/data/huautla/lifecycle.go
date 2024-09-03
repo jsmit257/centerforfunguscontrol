@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/jsmit257/huautla/types"
 )
 
@@ -24,38 +23,16 @@ func (ha *HuautlaAdaptor) GetLifecycleIndex(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func getUUIDByName(name string, w http.ResponseWriter, r *http.Request, ms *methodStats) (uuid types.UUID, err error) {
-	if id := chi.URLParam(r, name); id == "" {
-		err = fmt.Errorf("missing required id parameter")
-	} else if id, err = url.QueryUnescape(id); err != nil {
-		err = fmt.Errorf("malformed id parameter")
-	} else {
-		uuid = types.UUID(id)
-	}
-	return uuid, err
-}
-
 func (ha *HuautlaAdaptor) GetLifecyclesByAttrs(w http.ResponseWriter, r *http.Request) {
 	ms := ha.start("GetLifecyclesByAttrs")
 	defer ms.end()
 
-	q, err := url.ParseQuery(r.URL.RawQuery)
-	if err != nil {
+	if q, err := url.ParseQuery(r.URL.RawQuery); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "query string is malformed")
-		return
-	}
-
-	p := types.ReportAttrs{}
-	for k, v := range q {
-		if v[0] == "" {
-			ms.l.Errorf("query value is empty for: %s", k)
-		} else {
-			p[k] = types.UUID(v[0])
-		}
-	}
-
-	if len(p) == 0 {
-		ms.error(w, fmt.Errorf("on report parameters supplied"), http.StatusBadRequest, "on report parameters supplied")
+	} else if p, err := types.NewReportAttrs(q); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "couldn't parse report params")
+	} else if !p.Contains("lifecycle-id", "strain-id", "grain-id", "bulk-id") {
+		ms.error(w, fmt.Errorf("no report parameters supplied"), http.StatusBadRequest, "no report parameters supplied")
 	} else if lifecycles, err := ha.db.SelectLifecyclesByAttrs(r.Context(), p, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycles")
 	} else {

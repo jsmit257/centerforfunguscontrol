@@ -314,9 +314,9 @@ $(_ => {
         method: 'GET',
         async: false,
         success: (result, status, xhr) => {
-          var substrates = { bulk: [], grain: [], liquid: [], agar: [] }
+          var substrates = { bulk: [], grain: [], liquid: [], plating: [] }
           result.forEach(r => {
-            substrates[r.type.toLowerCase()]
+            substrates[r.type]
               .push($(`<option value="${r.id}">${r.name} | Vendor: ${r.vendor.name}</option>`)
                 .data('substrate', r))
           })

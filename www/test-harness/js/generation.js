@@ -80,9 +80,9 @@ $(function () {
         method: 'GET',
         async: true,
         success: (result, status, xhr) => {
-          var substrates = { bulk: [], grain: [], liquid: [], agar: [] }
+          var substrates = { bulk: [], grain: [], liquid: [], plating: [] }
           result.forEach(r => {
-            substrates[r.type.toLowerCase()]
+            substrates[r.type]
               .push($('<option>')
                 .val(r.id)
                 .text(`${r.name} | Vendor: ${r.vendor.name}`)
@@ -91,7 +91,7 @@ $(function () {
           $gentable
             .find('>.row.plating>select.value')
             .empty()
-            .append(substrates.agar)
+            .append(substrates.plating)
 
           $gentable
             .find('.row.liquid>select.value')
@@ -106,10 +106,10 @@ $(function () {
       $ndx.trigger('refresh', { newRow: newNdxRow, buttonbar: $tablebar })
 
       setTimeout(_ => {
-        $ndx.find(`>.row[id="${selected}"]:not(.selected)`).click()
+        $ndx.find(`>.row#${selected}:not(.selected)`).click()
       }, 50)
     })
-    .on('select', (e, gid) => { $ndx.find(`.row[id=${gid}]`).click() })
+    .on('select', (e, gid) => { $ndx.find(`.row#${gid}`).click() })
 
 
   let $gentable = $generation.find('>.table.generation>.rows[name="editor"]')

@@ -63,6 +63,7 @@
       <div class="menuitem hover reporting" entity-name="strain" name="history.str">strain</div>
       <div class="menuitem hover reporting" entity-name="substrate" name="history.sub">substrate</div>
       <div class="menuitem hover reporting" entity-name="eventtype" name="history.ev">eventtype</div>
+      <div class="menuitem hover reporting" entity-name="vendor" name="history.ven">vendor</div>
       <div class="menu-scroll" menu-row="main">
         <div class="asc" dir="-1">&uArr;</div>
         <div class="desc" dir="1">&dArr;</div>
@@ -200,11 +201,11 @@
             <div class="column type">
               <span>Type</span>
               <select class="types">
-                <option value="Agar">Agar</option>
-                <option value="Liquid">Liquid</option>
-                <option value="Grain">Grain</option>
-                <option value="Bulk">Bulk</option>
-                <option value="All" selected="selected">All</option>
+                <option value="plating">Plating</option>
+                <option value="liquid">Liquid</option>
+                <option value="grain">Grain</option>
+                <option value="bulk">Bulk</option>
+                <option value="all" selected="selected">All</option>
               </select>
             </div>
             <div class="column vendor" sort-key="vendor">Vendor</div>
@@ -306,7 +307,7 @@
           <div class="buttonbar"></div>
         </div>
       </div>
-      <div class="history lc gen str sub ev">
+      <div class="history lc gen str sub ev ven">
         <div class="entity collapsed">
           <div class="entity-name"> </div>
           <div class="cliff-notes">(choose)</div>
@@ -371,11 +372,11 @@
     <div class="table events">
       <div class="columns">
         <div class="column full">Events</div>
-        <div class="column eventtype" sort-key="eventtype">Type/Stage</div>
-        <div class="column temperature">Temperature</div>
+        <div class="column eventtype" sort-key="eventtype">Event</div>
+        <div class="column temperature">Temp.</div>
         <div class="column humidity">Humidity</div>
-        <div class="column mtime" sort-key="mtime">Modified At</div>
-        <div class="column ctime" sort-key="ctime">Created At</div>
+        <div class="column mtime" sort-key="mtime">Modified</div>
+        <div class="column ctime" sort-key="ctime">Created</div>
       </div>
       <div class="rows" name="event">
         <div class="row hover template">

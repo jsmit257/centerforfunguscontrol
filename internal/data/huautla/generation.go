@@ -26,23 +26,12 @@ func (ha *HuautlaAdaptor) GetGenerationsByAttrs(w http.ResponseWriter, r *http.R
 	ms := ha.start("GetGenerationsByAttrs")
 	defer ms.end()
 
-	q, err := url.ParseQuery(r.URL.RawQuery)
-	if err != nil {
+	if q, err := url.ParseQuery(r.URL.RawQuery); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "query string is malformed")
-		return
-	}
-
-	p := types.ReportAttrs{}
-	for k, v := range q {
-		if v[0] == "" {
-			ms.l.Errorf("query value is empty for: %s", k)
-		} else {
-			p[k] = types.UUID(v[0])
-		}
-	}
-
-	if len(p) == 0 {
-		ms.error(w, fmt.Errorf("on report parameters supplied"), http.StatusBadRequest, "on report parameters supplied")
+	} else if p, err := types.NewReportAttrs(q); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "couldn't parse report params")
+	} else if !p.Contains("generation-id", "strain-id", "plating-id", "liquid-id") {
+		ms.error(w, fmt.Errorf("no report parameters supplied"), http.StatusBadRequest, "no report parameters supplied")
 	} else if g, err := ha.db.SelectGenerationsByAttrs(r.Context(), p, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch generations")
 	} else {

@@ -37,7 +37,7 @@ $(_ => {
     })
     .on('select', '>.rows', (e, id) => {
       let $rows = $(e.currentTarget)
-        .find(`>.row[id=${id}]`)
+        .find(`>.row#${id}`)
         .click()
 
       if ($rows.find('.selected').length === 0) {

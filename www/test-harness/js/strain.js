@@ -8,7 +8,7 @@ $(function () {
       $table.trigger('reinit')
 
       setTimeout(_ => {
-        $table.find(`>.row[id=${selected}]`).click()
+        $table.find(`>.row#${selected}`).click()
       }, 20)
     })
 
@@ -18,7 +18,7 @@ $(function () {
     .on('defer', (e, id) => {
       setTimeout(_ => {
         $(e.currentTarget)
-          .find(`.rows>.row[id=${id}]:not(.selected)`)
+          .find(`.rows>.row#${id}:not(.selected)`)
           .click()
       }, 20)
     })
@@ -55,7 +55,7 @@ $(function () {
         method: 'GET',
         async: true,
         success: (result, status, xhr) => {
-          let $attrlist = $strain.find('datalist[id=known-strain-names]').empty()
+          let $attrlist = $strain.find('datalist#known-strain-names').empty()
           result.forEach(r => { $attrlist.append($(`<option />`).val(r)) })
         },
         error: console.log,
@@ -242,6 +242,7 @@ $(function () {
     .on('click', '>.refresh', e => {
       $table.trigger('reinit')
     })
+    .find('.refresh').remove()
 
   let vendors = []
 
@@ -249,36 +250,31 @@ $(function () {
     .clone(true, true)
     .insertAfter($('body>.main>.workspace>.strain>.table.strain>.rows'))
 
-  function newRow(data = { vendor: {} }) {
-    let attrs = { id: data.id }
-    if (data.generation !== undefined) {
-      attrs.gid = data.generation.id
-    }
-    return $('<div>')
-      .addClass('row hover')
-      .attr(attrs)
-      .append($('<div class="name static" />').text(data.name))
-      .append($('<input class="name live" />').val(data.name))
-      .append($('<div class="species static" />').html(data.species || "&nbsp"))
-      .append($('<input class="species live" />').val(data.species))
-      .append($('<div class="vendor static" />').text(data.vendor.name))
-      .append($('<select class="vendor live" />')
-        .append(vendors)
-        .data('vendor_uuid', data.vendor.id)
-        .val(data.vendor.id))
-      .append($('<div class="ctime static const date" />')
-        .data('value', data.ctime)
-        .text((data.ctime || "Now").replace('T', ' ').replace(/:\d{2}(\.\d+)?Z/, '')))
-  }
+  let newRow = (data = { vendor: {} }) => $('<div>')
+    .addClass('row hover')
+    .attr({
+      id: data.id,
+      dtime: data.dtime,
+      gid: (data.generation || {}).id
+    })
+    .append($('<div class="name static" />').text(data.name))
+    .append($('<input class="name live" />').val(data.name))
+    .append($('<div class="species static" />').html(data.species || "&nbsp"))
+    .append($('<input class="species live" />').val(data.species))
+    .append($('<div class="vendor static" />').text(data.vendor.name))
+    .append($('<select class="vendor live" />')
+      .append(vendors)
+      .data('vendor_uuid', data.vendor.id)
+      .val(data.vendor.id))
+    .append($('<div class="ctime static const date" />')
+      .data('value', data.ctime)
+      .text((data.ctime || "Now").replace('T', ' ').replace(/:\d{2}(\.\d+)?Z/, '')))
 
-  function newAttributeRow(data) {
-    data ||= {}
-    return $('<div>')
-      .addClass('row hover')
-      .attr('id', data.id)
-      .append($('<div class="name static" />').text(data.name))
-      .append($('<input list="known-strain-names" class="name live" />').val(data.name))
-      .append($('<div class="value static" />').text(data.value))
-      .append($('<input class="value live" />').val(data.value))
-  }
+  let newAttributeRow = (data = {}) => $('<div>')
+    .addClass('row hover')
+    .attr('id', data.id)
+    .append($('<div class="name static" />').text(data.name))
+    .append($('<input list="known-strain-names" class="name live" />').val(data.name))
+    .append($('<div class="value static" />').text(data.value))
+    .append($('<input class="value live" />').val(data.value))
 })

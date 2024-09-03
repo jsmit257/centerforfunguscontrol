@@ -4,6 +4,7 @@ $(_ => {
     'bulk_substrate': 'Bulk',
     'count': 'Count/kg',
     'ctime': 'Created',
+    'dtime': 'Deleted',
     'generation': 'Parent(s)',
     'grain_cost': 'Grain cost',
     'grain_substrate': 'Grain',
@@ -16,12 +17,14 @@ $(_ => {
   }
 
   let pluralmap = {
-    'events': 'event',
-    'ingredients': 'ingredient',
     'attributes': 'attribute',
-    'sources': 'source',
-    'photos': 'photo',
+    'events': 'event',
+    'generations': 'generation',
+    'ingredients': 'ingredient',
+    'lifecycles': 'lifecycle',
     'notes': 'note',
+    'photos': 'photo',
+    'sources': 'source',
   }
 
   let format = (p => {
@@ -101,6 +104,7 @@ $(_ => {
         .attr('name', entityname)
         .find('>.entity')
         .attr('name', entityname)
+        .addClass('collapsed')
         .trigger('reinit')
         .find('>.ndx')
         .trigger('refresh', id)
@@ -119,7 +123,7 @@ $(_ => {
           $(e.currentTarget)
             .empty()
             .trigger('send', data)
-            .find(`>.row[id="${id}"]`)
+            .find(`>.row#${id}`)
             .click()
         },
         error: console.log,
@@ -195,9 +199,27 @@ $(_ => {
       data.forEach(sub => {
         $('<div>')
           .addClass('row hover')
-          .attr('id', sub.id)
+          .attr({
+            'id': sub.id,
+            'param': `${sub.type}-id=${sub.id}`,
+            'owner': ['grain', 'bulk'].indexOf(sub.type) !== -1 ? 'lifecycle' : 'generation',
+          })
           .append($('<div>')
             .html(`${sub.name} &bull; <i>${sub.vendor.name}</i>`))
+          .appendTo(e.currentTarget)
+      })
+    })
+    .on('send', '>.entity[name="vendor"]>.ndx', (e, ...data) => {
+      e.stopPropagation()
+
+      data.forEach(sub => {
+        $('<div>')
+          .addClass('row hover')
+          .attr({
+            'id': sub.id,
+          })
+          .append($('<div>')
+            .text(sub.name))
           .appendTo(e.currentTarget)
       })
     })
@@ -231,7 +253,8 @@ $(_ => {
     })
     .on('send', '.entity[name="attribute"]', (e, data) => {
       e.stopPropagation()
-      $(e.currentTarget).find('>.cliff-notes').text(`${data.name}: ${data.value}`)
+
+      $(e.currentTarget).trigger('cliff-notes', [data.name, data.value])
     })
     .on('send', '.entity[name="event"]', (e, data) => {
       e.stopPropagation()
@@ -239,11 +262,11 @@ $(_ => {
       $(e.currentTarget)
         .trigger('get-child', { id: data.id, entityname: 'notes' })
         .trigger('get-child', { id: data.id, entityname: 'photos' })
-        .find('>.cliff-notes')
-        .html(`${format(data.mtime)} ${data.event_type.name}`)
+        .trigger('cliff-notes', [format(data.mtime), data.event_type.name])
     })
     .on('send', '.entity[name="event_type"]', (e, data) => {
       e.stopPropagation()
+
       $(e.currentTarget).find('>.cliff-notes').text(data.name)
     })
     .on('send', '.entity[name="generation"]', (e, data) => {
@@ -256,12 +279,12 @@ $(_ => {
 
       $(e.currentTarget)
         .trigger('get-child', { id: data.id, entityname: 'notes' })
-        .find('>.cliff-notes')
-        .html(`${format(data.mtime)} ${strains.join(' & ')}`)
+        .trigger('cliff-notes', [format(data.mtime), strains.join(' & ')])
     })
     .on('send', '.entity[name="ingredient"]', (e, data) => {
       e.stopPropagation()
-      $(e.currentTarget).find('>.cliff-notes').text(data.name)
+
+      $(e.currentTarget).trigger('cliff-notes', data.name)
     })
     .on('send', '.entity[name="lifecycle"]', (e, data) => {
       e.stopPropagation()
@@ -276,27 +299,25 @@ $(_ => {
 
       $(e.currentTarget)
         .trigger('get-child', { id: data.id, entityname: 'notes' })
-        .find('>.cliff-notes')
-        .html(`${data.strain.name} &bull; ${format(data.mtime)} &bull; $${totalcost || '~'}`)
+        .trigger('cliff-notes', [data.strain.name, format(data.mtime), `$${totalcost || '~'}`])
     })
     .on('send', '.entity[name="note"]', (e, data) => {
       e.stopPropagation()
 
-      $(e.currentTarget)
-        .find('>.cliff-notes')
-        .html(`${format(data.mtime)} &bull; ${data.note.slice(0, 25)}...`)
+      $(e.currentTarget).trigger('cliff-notes', [format(data.mtime), `${data.note.slice(0, 25)}...`])
     })
     .on('send', '.entity[name="photo"]', (e, data) => {
       e.stopPropagation()
 
       $(e.currentTarget)
         .trigger('get-child', { id: data.id, entityname: 'notes' })
-        .find('>.cliff-notes')
-        .html(format(data.mtime))
+        .trigger('cliff-notes', format(data.mtime))
 
       data.image = `<a href=/album/${data.image} target=_lobby>${data.image}</a>`
     })
     .on('send', '.entity[name="source"]', (e, data) => {
+      e.stopPropagation()
+
       $(e.currentTarget)
         .find('>.cliff-notes')
         .html(`${data.type} &rArr; ${data.strain.name}`)
@@ -304,20 +325,35 @@ $(_ => {
     .on('send', '.entity[name="strain"]', (e, data) => {
       e.stopPropagation()
 
-      $(e.currentTarget)
-        .trigger('get-child', {
-          id: (data.generation || {}).id,
-          entityname: 'generation'
-        })
+      let $s = $(e.currentTarget)
+
+      $s
         .trigger('get-child', { id: data.id, entityname: 'photos' })
-        .find('>.cliff-notes').html([
+        .trigger('cliff-notes', [
           data.name,
           data.species,
           data.vendor.name,
           `$${data.strain_cost || '~'}`,
-        ].join(' &bull; '))
+        ])
 
-      delete data.generation
+      if (data.generation) {
+        $s.trigger('get-child', { id: data.generation.id, entityname: 'generation' })
+        delete data.generation
+      }
+
+      if ($s.parents('.entity[name="lifecycle"], .entity[name="generation"]').length === 0) {
+        $s
+          .trigger('get-child', {
+            entityname: "lifecycles",
+            url: `/reports/lifecycles?strain-id=${data.id}`,
+          })
+        $s
+          .trigger('get-child', {
+            entityname: "generations",
+            url: `/reports/generations?strain-id=${data.id}`,
+          })
+      }
+
       // delete data.strain_cost
     })
     .on('send', '.entity[name="vendor"]', (e, data) => {
@@ -325,17 +361,34 @@ $(_ => {
 
       data.website = `<a href=${data.website} target=_macondo>${data.website}</a>`
 
-      $(e.currentTarget).find('>.cliff-notes').text(data.name)
+      $(e.currentTarget).trigger('cliff-notes', data.name)
     })
     .on('send', ['.entity[name="plating', 'liquid', 'grain', 'bulk_substrate"]'].join('_substrate"], .entity[name="'), (e, data) => {
       e.stopPropagation()
 
       $(e.currentTarget)
-        .find('>.cliff-notes')
-        .html(`${data.name} &bull; $${data.grain_cost || data.bulk_cost || '~'}`)
+        .trigger('cliff-notes', [data.name, data.vendor.name, `$${data.grain_cost || data.bulk_cost || '~'}`])
 
       // delete data.grain_cost
       // delete data.strain_cost
+    })
+    .on('send', '.entity[name="substrate"]', (e, data) => {
+      let $s = $(e.currentTarget)
+      let $selected = $s
+        .parents('.history')
+        .find('>.entity>.ndx>.row.selected')
+      let owner = $selected.attr('owner')
+
+      if ($s
+        .trigger('cliff-notes', [data.name, data.vendor.name])
+        .parents(`.entity[name = "${owner}"]`).length === 0
+      ) {
+        $s
+          .trigger('get-child', {
+            entityname: `${owner}s`,
+            url: `/reports/${owner}s?${$selected.attr('param')}`,
+          })
+      }
     })
     .on('send', '.entity', (e, data) => {
       e.stopPropagation()
@@ -364,6 +417,15 @@ $(_ => {
           .children()
           .sort((a, b) => ndx.indexOf(a.getAttribute('sort-key')) - ndx.indexOf(b.getAttribute('sort-key'))))
     })
+    .on('cliff-notes', '.entity', (e, ...data) => {
+      e.stopPropagation()
+
+      let $cliff = $(e.currentTarget)
+        .find('>.cliff-notes')
+        .empty()
+
+      data.forEach(v => $cliff.append($('<span>').text(v)))
+    })
     .on('reinit', '>.entity', e => {
       $(e.currentTarget)
         .find('>.list')
@@ -380,17 +442,8 @@ $(_ => {
     .on('get-child', '.entity', (e, data) => {
       e.stopPropagation()
 
-      if (!data.id) {
-        return
-      }
-
-      if ($(e.currentTarget).parents(`.entity.${data.entityname}[id="${data.id}"]`).length !== 0) {
-        console.log('returning on recursive loop for entityname', data.entityname, 'and id', data.id)
-        return
-      }
-
       $.ajax({
-        url: `/${data.entityname}/${data.id}`,
+        url: data.url || `/${data.entityname}/${data.id}`,
         method: 'GET',
         async: true,
         success: (result, status, xhr) => {
@@ -399,7 +452,7 @@ $(_ => {
           }
 
           let entity = {}
-          entity[`${data.entityname}`] = result  // inlining doesn't work: { `${data.entityname}` : result }
+          entity[`${data.entityname}`] = result  // inlining doesn't work: { `${ data.entityname }` : result }
 
           parsedata(data.entityname, entity, $(e.currentTarget))
 
@@ -415,10 +468,14 @@ $(_ => {
     .on('click', '.entity-name, .cliff-notes', (e, data) => {
       e.stopPropagation()
 
-      $(e.currentTarget)
+      let $e = $(e.currentTarget)
         .parents('.entity')
         .first()
         .toggleClass('collapsed')
+
+      if (e.shiftKey) {
+        $e.find('.entity')[$e.hasClass('collapsed') ? 'addClass' : 'removeClass']('collapsed')
+      }
     })
     .on('map', '.label, .entity-name', (e, key) => {
       $(e.currentTarget).html(labelmap[key] || key)
@@ -436,7 +493,7 @@ $(_ => {
       photo: ['id', 'image', 'notes', 'mtime', 'ctime'],
       // source: [],
       stage: ['id', 'name'],
-      strain: ['id', 'name', 'species', 'strain_cost', 'generation', 'attributes', 'photos', 'vendor', 'ctime'],
+      strain: ['id', 'name', 'species', 'strain_cost', 'generation', 'attributes', 'photos', 'vendor', 'lifecycles', 'generations', 'ctime', 'dtime'],
       vendor: ['id', 'name', 'website'],
     }
 

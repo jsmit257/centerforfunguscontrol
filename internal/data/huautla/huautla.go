@@ -2,11 +2,14 @@ package huautla
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
 	log "github.com/sirupsen/logrus"
@@ -43,6 +46,17 @@ func New(cfg *types.Config, log *log.Entry, mtrcs interface{}) (*HuautlaAdaptor,
 			filer: os.WriteFile,
 		}, nil
 	}
+}
+
+func getUUIDByName(name string, w http.ResponseWriter, r *http.Request, ms *methodStats) (uuid types.UUID, err error) {
+	if id := chi.URLParam(r, name); id == "" {
+		err = fmt.Errorf("missing required id parameter")
+	} else if id, err = url.QueryUnescape(id); err != nil {
+		err = fmt.Errorf("malformed id parameter")
+	} else {
+		uuid = types.UUID(id)
+	}
+	return uuid, err
 }
 
 // helper function adds fields `method` and `cid` to all subsequent logs; returns an object

@@ -10,7 +10,7 @@ body>.main>.workspace .table>.buttonbar {
 
 body>.main>.workspace .table>.buttonbar>.optional {
   float: left;
-  width: 30%;
+  width: 50%;
 }
 
 img.button {
@@ -79,7 +79,7 @@ img.button.cancel.active:hover {
 /*
 div.editing .button.commit,
 img.button.ok {*/
-  /*&check;*/
+/*&check;*/
 .row.editing .button.commit,
 img.button.ok {
   background-color: #32cd3277;

@@ -19,17 +19,15 @@ body>.main>.workspace>.lifecycle>.table.lifecycle>.rows {
 body>.main>.workspace>.lifecycle>.table.lifecycle>.rows.lc {
   float: right;
   margin-left: -5px;
-  width: 69%;
+  width: 70%;
 }
 
 body>.main>.workspace>.lifecycle>.table.lifecycle>.rows.ndx {
   border-radius: 8px;
-  border-color: #bfff9299;
+  border-color: #b099b699;
   border-style: groove;
   border-width: 0 3px 0 0;
   float: left;
-  padding-left: 1%;
-  padding-right: 1%;
   width: 29%;
 }
 

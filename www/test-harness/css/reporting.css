@@ -50,14 +50,29 @@
 }
 
 .history .entity>.cliff-notes {
-  display: none;
+  color: #f0f8ff88;
+  /* display: none; */
   float: left;
   margin-left: .3em;
   width: fit-content;
 }
 
-.history .entity.collapsed>.ndx,
+.history .entity>.cliff-notes>span::before {
+  content: '\2022';
+  padding-left: .3em;
+  padding-right: .3em;
+}
+
+.history .entity>.cliff-notes>span:first-child::before {
+  content: '';
+  padding: 0;
+}
+
 .history .entity.collapsed>.cliff-notes {
+  color: aliceblue;
+}
+
+.history .entity.collapsed>.ndx {
   display: block;
 }
 
