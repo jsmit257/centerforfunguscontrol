@@ -11,8 +11,6 @@ type (
 
 	SubstrateType string
 
-	ReportAttrs map[string]UUID
-
 	Config struct {
 		PGHost string
 		PGUser string

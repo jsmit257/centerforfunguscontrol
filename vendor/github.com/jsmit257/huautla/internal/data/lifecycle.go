@@ -27,11 +27,64 @@ func (db *Conn) SelectLifecycleIndex(ctx context.Context, cid types.CID) ([]type
 	defer rows.Close()
 
 	for rows.Next() {
+		var eID, etID, stID *types.UUID
+		var etName, etSev, stName *string
+		var mtime, ctime *time.Time
+		var temp *float32
+		var hum *int8
+
 		row := types.Lifecycle{}
-		if err = rows.Scan(&row.UUID, &row.Location, &row.MTime, &row.CTime); err != nil {
+
+		if err = rows.Scan(
+			&row.UUID,
+			&row.Location,
+			&row.MTime,
+			&row.CTime,
+			&row.Strain.UUID,
+			&row.Strain.Species,
+			&row.Strain.Name,
+			&row.Strain.CTime,
+			&row.Strain.Vendor.UUID,
+			&row.Strain.Vendor.Name,
+			&row.Strain.Vendor.Website,
+			&eID,
+			&temp,
+			&hum,
+			&mtime,
+			&ctime,
+			&etID,
+			&etName,
+			&etSev,
+			&stID,
+			&stName,
+		); err != nil {
 			break
 		}
-		result = append(result, row)
+
+		if eID != nil {
+			row.Events = []types.Event{{
+				UUID:        *eID,
+				Temperature: *temp,
+				Humidity:    *hum,
+				MTime:       *mtime,
+				CTime:       *ctime,
+				EventType: types.EventType{
+					UUID:     *etID,
+					Name:     *etName,
+					Severity: *etSev,
+					Stage: types.Stage{
+						UUID: *stID,
+						Name: *stName,
+					},
+				},
+			}}
+		}
+
+		if curr := len(result) - 1; curr < 0 || result[curr].UUID != row.UUID {
+			result = append(result, row)
+		} else {
+			result[curr].Events = append(result[curr].Events, row.Events...)
+		}
 	}
 
 	return result, err
@@ -44,7 +97,9 @@ func (db *Conn) SelectLifecycle(ctx context.Context, id types.UUID, cid types.CI
 	deferred, start, l := initAccessFuncs("SelectLifecycle", db.logger, id, cid)
 	defer deferred(start, err, l)
 
-	result, err = db.SelectLifecyclesByAttrs(ctx, types.ReportAttrs{"lifecycle-id": id}, cid)
+	p, _ := types.NewReportAttrs(map[string][]string{"lifecycle-id": {string(id)}})
+
+	result, err = db.SelectLifecyclesByAttrs(ctx, p, cid)
 	if err != nil {
 		return types.Lifecycle{}, err
 	} else if l := len(result); l == 1 {

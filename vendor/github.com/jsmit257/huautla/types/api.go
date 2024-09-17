@@ -1,6 +1,9 @@
 package types
 
-import "context"
+import (
+	"context"
+	"net/url"
+)
 
 type (
 	DB interface {
@@ -87,6 +90,13 @@ type (
 		AddPhoto(ctx context.Context, id UUID, photos []Photo, p Photo, cid CID) ([]Photo, error)
 		ChangePhoto(ctx context.Context, photos []Photo, p Photo, cid CID) ([]Photo, error)
 		RemovePhoto(ctx context.Context, photos []Photo, id UUID, cid CID) ([]Photo, error)
+	}
+
+	ReportAttrs interface {
+		Contains(names ...string) bool
+		Get(name string) *UUID
+		Map(m url.Values) (err error)
+		Set(name string, value string) error
 	}
 
 	Sourcer interface {

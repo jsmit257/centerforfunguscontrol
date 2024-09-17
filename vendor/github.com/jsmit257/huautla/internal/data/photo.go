@@ -13,7 +13,6 @@ func (db *Conn) GetPhotos(ctx context.Context, id types.UUID, cid types.CID) ([]
 	var err error
 	var rows *sql.Rows
 	var result []types.Photo
-	var p types.Photo
 
 	deferred, start, l := initAccessFuncs("GetPhotos", db.logger, id, cid)
 	defer deferred(start, err, l)
@@ -26,18 +25,38 @@ func (db *Conn) GetPhotos(ctx context.Context, id types.UUID, cid types.CID) ([]
 	defer rows.Close()
 
 	for rows.Next() {
-		p = types.Photo{}
+		var p types.Photo
+		var noteid *types.UUID
+		var notetext *string
+		var notemtime, notectime *time.Time
 
 		if err = rows.Scan(
 			&p.UUID,
 			&p.Filename,
 			&p.MTime,
 			&p.CTime,
+			&noteid,
+			&notetext,
+			&notemtime,
+			&notectime,
 		); err != nil {
 			return result, err
 		}
 
-		result = append(result, p)
+		if noteid != nil {
+			p.Notes = []types.Note{{
+				UUID:  *noteid,
+				Note:  *notetext,
+				MTime: *notemtime,
+				CTime: *notectime,
+			}}
+		}
+
+		if curr := len(result) - 1; curr == -1 || result[curr].UUID != p.UUID {
+			result = append(result, p)
+		} else {
+			result[curr].Notes = append(result[curr].Notes, p.Notes...)
+		}
 	}
 
 	return result, nil

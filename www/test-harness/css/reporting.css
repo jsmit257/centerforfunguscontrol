@@ -29,12 +29,6 @@
   width: 100%;
 }
 
-.entity.strain>.ndx>.row,
-.entity.generation>.ndx>.row,
-.history>.entity.lifecycle>.ndx>.row {
-  width: 51%;
-}
-
 .history .entity>.entity-name,
 .history .entity>.cliff-notes {
   cursor: pointer;
@@ -51,19 +45,22 @@
 
 .history .entity>.cliff-notes {
   color: #f0f8ff88;
-  /* display: none; */
   float: left;
   margin-left: .3em;
   width: fit-content;
 }
 
-.history .entity>.cliff-notes>span::before {
+.history .entity>.cliff-notes>div {
+  float: left;
+}
+
+.history .entity>.cliff-notes>div::before {
   content: '\2022';
   padding-left: .3em;
   padding-right: .3em;
 }
 
-.history .entity>.cliff-notes>span:first-child::before {
+.history .entity>.cliff-notes>div:first-child::before {
   content: '';
   padding: 0;
 }
@@ -122,7 +119,20 @@
 
 .entity>.ndx>.row>div {
   float: left;
-  width: 50%;
+  margin-right: 1em;
+}
+
+/* some customizations */
+.history .entity[name="source"]>.cliff-notes>div:nth-child(2)::before {
+  content: '\2190';
+}
+
+.history>.entity[name="strain"]>.ndx>.row>.name {
+  width: 10em;
+}
+
+.history>.entity[name="strain"]>.ndx>.row>.species {
+  width: 12em;
 }
 
 /* conflicts with div.notes/div.photos in note.css/photos.css respectively */

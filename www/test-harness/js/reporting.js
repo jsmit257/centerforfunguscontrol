@@ -115,6 +115,10 @@ $(_ => {
     .on('refresh', '>.entity>.ndx', (e, id) => {
       e.stopPropagation()
 
+      if (id.constructor.prototype !== String.prototype) {
+        id = 'x-undefined'
+      }
+
       $.ajax({
         url: `/${$(e.delegateTarget).attr('name')}s`,
         method: 'GET',
@@ -129,17 +133,19 @@ $(_ => {
         error: console.log,
       })
     })
-    .on('send', '>.entity[nme="eventtype"]>.ndx', (e, ...data) => {
+    .on('send', '>.entity[name="eventtype"]>.ndx', (e, ...data) => {
       e.stopPropagation()
 
       data.forEach(ev => {
         $('<div>')
           .addClass('row hover')
           .attr('id', ev.id)
-          .append($('<div>')
-            .addClass('event-stage')
-            .html(`${ev.name} &larr; ${ev.stage.name}`))
           .appendTo(e.currentTarget)
+          .trigger('send', {
+            name: ev.name,
+            severity: ev.severity,
+            stage: ev.stage.name,
+          })
       })
     })
     .on('send', '>.entity[name="generation"]>.ndx', (e, ...data) => {
@@ -154,14 +160,11 @@ $(_ => {
         $('<div>')
           .addClass('row hover')
           .attr('id', gen.id)
-          .append($('<div>')
-            .addClass('mtime static date'))
-          .append($('<div>')
-            .addClass('que')
-            .html(strains.join(' & ')))
           .appendTo(e.currentTarget)
-          .find('>.static.date')
-          .trigger('set', gen.mtime)
+          .trigger('send', {
+            mtime: gen.mtime,
+            strains: strains.join(' & '),
+          })
       })
     })
     .on('send', '>.entity[name="lifecycle"]>.ndx', (e, ...data) => {
@@ -171,14 +174,12 @@ $(_ => {
         $('<div>')
           .addClass('row hover')
           .attr('id', lc.id)
-          .append($('<div>')
-            .addClass('mtime static date'))
-          .append($('<div>')
-            .addClass('location')
-            .text(lc.location))
           .appendTo(e.currentTarget)
-          .find('>.static.date')
-          .trigger('set', lc.mtime)
+          .trigger('send', {
+            mtime: lc.mtime,
+            location: lc.location,
+            tombstone: typeof lc.events !== 'undefined',
+          })
       })
     })
     .on('send', '>.entity[name="strain"]>.ndx', (e, ...data) => {
@@ -187,10 +188,13 @@ $(_ => {
       data.forEach(strain => {
         $('<div>')
           .addClass('row hover')
-          .attr('id', strain.id)
-          .append($('<div>')
-            .html(`${strain.name} &bull; <i>${strain.species}</i>`))
+          .attr({ id: strain.id, dtime: strain.dtime })
           .appendTo(e.currentTarget)
+          .trigger('send', {
+            name: strain.name,
+            species: strain.species,
+            ctime: strain.ctime,
+          })
       })
     })
     .on('send', '>.entity[name="substrate"]>.ndx', (e, ...data) => {
@@ -200,28 +204,36 @@ $(_ => {
         $('<div>')
           .addClass('row hover')
           .attr({
-            'id': sub.id,
-            'param': `${sub.type}-id=${sub.id}`,
-            'owner': ['grain', 'bulk'].indexOf(sub.type) !== -1 ? 'lifecycle' : 'generation',
+            id: sub.id,
+            param: `${sub.type}-id=${sub.id}`,
+            owner: ['grain', 'bulk'].indexOf(sub.type) !== -1 ? 'lifecycle' : 'generation',
           })
-          .append($('<div>')
-            .html(`${sub.name} &bull; <i>${sub.vendor.name}</i>`))
           .appendTo(e.currentTarget)
+          .trigger('send', { name: sub.name, vendor_name: sub.vendor.name })
       })
     })
     .on('send', '>.entity[name="vendor"]>.ndx', (e, ...data) => {
       e.stopPropagation()
 
-      data.forEach(sub => {
+      data.forEach(ven => {
         $('<div>')
           .addClass('row hover')
-          .attr({
-            'id': sub.id,
-          })
-          .append($('<div>')
-            .text(sub.name))
+          .attr({ id: ven.id })
           .appendTo(e.currentTarget)
+          .trigger('send', { name: ven.name })
       })
+    })
+    .on('send', '>.entity>.ndx>.row', (e, data) => {
+      e.stopPropagation()
+
+      for (let el in data) {
+        if (Object.prototype.hasOwnProperty.call(data, el)) {
+          $('<div>')
+            .addClass(el)
+            .appendTo(e.currentTarget)
+            .text(format(data[el]))
+        }
+      }
     })
     .on('click', '>.entity>.ndx>.row', (e, parent) => {
       e.stopPropagation()
@@ -261,7 +273,6 @@ $(_ => {
 
       $(e.currentTarget)
         .trigger('get-child', { id: data.id, entityname: 'notes' })
-        .trigger('get-child', { id: data.id, entityname: 'photos' })
         .trigger('cliff-notes', [format(data.mtime), data.event_type.name])
     })
     .on('send', '.entity[name="event_type"]', (e, data) => {
@@ -309,18 +320,19 @@ $(_ => {
     .on('send', '.entity[name="photo"]', (e, data) => {
       e.stopPropagation()
 
-      $(e.currentTarget)
-        .trigger('get-child', { id: data.id, entityname: 'notes' })
-        .trigger('cliff-notes', format(data.mtime))
+      $(e.currentTarget).trigger('cliff-notes', format(data.mtime))
 
       data.image = `<a href=/album/${data.image} target=_lobby>${data.image}</a>`
     })
     .on('send', '.entity[name="source"]', (e, data) => {
       e.stopPropagation()
 
-      $(e.currentTarget)
-        .find('>.cliff-notes')
-        .html(`${data.type} &rArr; ${data.strain.name}`)
+      $(e.currentTarget).trigger('cliff-notes', [data.type, data.strain.name])
+    })
+    .on('send', '.entity[name="stage"]', (e, data) => {
+      e.stopPropagation()
+
+      $(e.currentTarget).trigger('cliff-notes', [data.name])
     })
     .on('send', '.entity[name="strain"]', (e, data) => {
       e.stopPropagation()
@@ -424,7 +436,7 @@ $(_ => {
         .find('>.cliff-notes')
         .empty()
 
-      data.forEach(v => $cliff.append($('<span>').text(v)))
+      data.forEach(v => $cliff.append($('<div>').text(v)))
     })
     .on('reinit', '>.entity', e => {
       $(e.currentTarget)
@@ -471,10 +483,11 @@ $(_ => {
       let $e = $(e.currentTarget)
         .parents('.entity')
         .first()
-        .toggleClass('collapsed')
 
-      if (e.shiftKey) {
+      if (e.ctrlKey) {
         $e.find('.entity')[$e.hasClass('collapsed') ? 'addClass' : 'removeClass']('collapsed')
+      } else {
+        $e.toggleClass('collapsed')
       }
     })
     .on('map', '.label, .entity-name', (e, key) => {
@@ -484,7 +497,7 @@ $(_ => {
   let sortindices = (_ => {
     let result = {
       attribute: ['id', 'name', 'value'],
-      event: ['id', 'temperature', 'humidity', 'event_type', 'notes', 'mtime', 'ctime'],
+      event: ['id', 'temperature', 'humidity', 'event_type', 'photos', 'notes', 'mtime', 'ctime'],
       event_type: ['id', 'name', 'severity', 'stage'],
       generation: ['id', 'sources', 'plating_substrate', 'liquid_substrate', 'events', 'notes', 'mtime', 'ctime'],
       ingredient: ['id', 'name'],

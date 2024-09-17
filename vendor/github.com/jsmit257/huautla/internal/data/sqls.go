@@ -258,13 +258,45 @@ var psqls = sqlMap{
 	"lifecycle": {
 		// it's an ugly, bad precedent, except that it saves a lot of hits to the db
 		"index": `
-      select uuid,
-             location,
-             mtime,
-             ctime
-       from  lifecycles
+      select distinct 
+             l.uuid,
+             l.location,
+             l.mtime,
+             l.ctime,
+             s.uuid as strain_uuid,
+             s.species as strain_species,
+             s.name as strain_name,
+             s.ctime as strain_ctime,
+             v.uuid as strain_vendor_uuid,
+             v.name as strain_vendor_name,
+             v.website as strain_vendor_website,
+             e.uuid as event_uuid,
+             e.temperature,
+             e.humidity,
+             e.mtime at time zone 'utc',
+             e.ctime at time zone 'utc',
+             et.uuid as eventtype_uuid,
+             et.name as eventtype_name,
+             et.severity as eventtype_severity,
+             st.uuid as stage_uuid,
+             st.name as stage_name
+       from  lifecycles l
+       join  strains s
+         on  l.strain_uuid = s.uuid
+       join  vendors v 
+         on  s.vendor_uuid = v.uuid
+       left
+       join  events e 
+         on  e.observable_uuid = l.uuid
+        and  e.eventtype_uuid in ('sunset', 'sporeprint', 'clone')
+       left
+       join  event_types et
+         on  e.eventtype_uuid = et.uuid
+       left
+       join  stages st
+         on  et.stage_uuid = st.uuid
       order
-         by  mtime desc`,
+         by  l.mtime desc, l.uuid`,
 		"select": `
       select  lc.uuid,
               lc.location,
@@ -405,11 +437,18 @@ var psqls = sqlMap{
       select  p.uuid,
               p.filename,
               p.mtime,
-              p.ctime
+              p.ctime,
+              n.uuid as note_uuid,
+              n.note,
+              n.mtime as note_mtime,
+              n.ctime as note_ctime
         from  photos p
+        left
+        join  notes n
+          on  n.notable_uuid = p.uuid
        where  p.photoable_uuid = $1
        order
-          by  p.mtime desc`,
+          by  p.mtime desc, p.uuid, n.mtime desc`,
 		"add": `
       insert into photos(uuid, filename, photoable_uuid, mtime, ctime)
       values ($1, $2, $3, $4, $5)`,

@@ -91,7 +91,9 @@ func (db *Conn) SelectGeneration(ctx context.Context, id types.UUID, cid types.C
 	deferred, start, l := initAccessFuncs("SelectGeneration", db.logger, id, cid)
 	defer deferred(start, err, l)
 
-	result, err = db.SelectGenerationsByAttrs(ctx, types.ReportAttrs{"generation-id": id}, cid)
+	p, _ := types.NewReportAttrs(map[string][]string{"generation-id": {string(id)}})
+
+	result, err = db.SelectGenerationsByAttrs(ctx, p, cid)
 	if err != nil {
 		return types.Generation{}, err
 	} else if len(result) == 1 {
