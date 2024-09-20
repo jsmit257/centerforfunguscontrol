@@ -3,12 +3,15 @@
 # https://github.com/jsmit257/centerforfunguscontrol/master/standalone/README.md
 #
 ---
-version: "3.1"
-
+x-pg-host: &pghost huautla-standalone
+x-pg-port: &pgport 5432
+x-pg-user: &pguser postgres
 x-pg-pass: &pgpass root
+x-pg-ssl: &pgssl disable
+x-api-host: &apihost cffc-api
+x-api-port: &apiport 8080
 
 services:
-
   source:
     # usage: don't, used by migration for a one time install
     image: jsmit257/huautla:lkg
@@ -56,7 +59,7 @@ services:
     # when you're done with it
     image: postgres:bookworm
     restart: always
-    hostname: huautla-standalone
+    hostname: *pghost
     ports:
       - 5436:5432
     volumes:
@@ -75,14 +78,14 @@ services:
     # it would be a very good idea(tm) to schedule this to run periodically,
     # and perhaps wipe old archives while we're at it; it would also be good 
     # to ship the archives elsewhere in case of hardware failure
-    depends_on: [ huautla-standalone ]
+    depends_on: [ *pghost ]
     image: jsmit257/huautla:lkg
     hostname: huautla-backup
     volumes:
       - ./backups:/pgbackup
     environment:
-      SOURCE_HOST: huautla-standalone
-      SOURCE_USER: postgres
+      SOURCE_HOST: *pghost
+      SOURCE_USER: *pguser
       POSTGRES_PASSWORD: *pgpass
     entrypoint: /backup-entrypoint.sh
 
@@ -96,20 +99,20 @@ services:
     # latest archive names at the top, or choose an earlier one before any
     # corruption happened; for convenience, the most recent backup is symlinked
     # to the file named 'latest'
-    depends_on: [ huautla-standalone ]
+    depends_on: [ *pghost ]
     image: jsmit257/huautla:lkg
     hostname: huautla-restore
     volumes:
       - ./backups:/pgbackup
     environment:
-      DEST_HOST: huautla-standalone
-      DEST_USER: postgres
+      DEST_HOST: *pghost
+      DEST_USER: *pguser
       RESTORE_POINT: ${RESTORE_POINT}
       POSTGRES_PASSWORD: *pgpass
     entrypoint: /restore-entrypoint.sh
 
-  cffc-standalone:
-    # usage: docker-compose up --remove-orphans -d cffc-standalone
+  cffc-api:
+    # usage: docker-compose up --remove-orphans -d cffc-api
     #
     # that's all there is to it; check that the host port isn't being
     # used by anybody (docker-compose will tell you if it is) then http
@@ -118,32 +121,40 @@ services:
     # NB: the HUAUTLA_* environment variables could connect to any postgres
     # server, but the huautla-standalone will still be started
     #
+    # the normal PSA: please try to shut down cleanly with:
+    # $ docker-compose down --remove-orphans
+    #
+    depends_on: [ *pghost ]
+    image: jsmit257/cffc:lkg
+    restart: always
+    hostname: *apihost
+    volumes:
+      - ./album:/album
+    environment:
+      HUAUTLA_HOST: *pghost
+      HUAUTLA_PORT: *pgport
+      HUAUTLA_USER: *pguser
+      HUAUTLA_PASSWORD: *pgpass
+      HUAUTLA_SSL: *pgssl
+      HTTP_HOST: *apihost
+      HTTP_PORT: *apiport
+      GOCOVERDIR: /tmp
+
+  cffc-standalone:
+    # usage: docker-compose up --remove-orphans -d cffc-standalone
+    #
     # put a file called `image.png` in the `background` folder in this 
     # directory and it will be used on the site; no need to restart this 
     # service, just refresh the page
     #
-    # the normal PSA: please try to shut down cleanly with:
-    #
-    # $ docker-compose down --remove-orphans
-    #
-    # this is a good candidate for a shutdown/logout event when you know
-    # nothing needs to be running and you want them to power down safely,
-    # mostly the database, this service doesn't really care much
-    depends_on: [ huautla-standalone ]
-    image: jsmit257/cffc:lkg
+    depends_on: [ *apihost ]
+    image: cffc-web:latest
     restart: always
     hostname: cffc-standalone
-    ports:
-      - 8082:8080 # if you change the second port, also change environment:HTTP_PORT below
+    ports: [ 8082:80 ]
     volumes:
       - ./background:/www/test-harness/css/images/background
       - ./album:/album
     environment:
-      HUAUTLA_HOST: huautla-standalone
-      HUAUTLA_PORT: 5432
-      HUAUTLA_USER: postgres
-      HUAUTLA_PASSWORD: *pgpass
-      HUAUTLA_SSL: disable
-      HTTP_HOST: cffc-standalone
-      HTTP_PORT: 8080 # this should match the second port in the corresponding ports: list above
-      GOCOVERDIR: /tmp
+      CFFC_API_HOST: *apihost
+      CFFC_API_PORT: *apiport

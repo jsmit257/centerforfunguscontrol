@@ -1,11 +1,11 @@
 ---
-version: "3.1"
-
 x-pg-host: &pghost huautla
 x-pg-port: &pgport 5432
 x-pg-user: &pguser postgres
 x-pg-pass: &pgpass root
 x-pg-ssl: &pgssl disable
+x-api-host: &apihost cffc
+x-api-port: &apiport 8080
 
 services:
 
@@ -21,11 +21,10 @@ services:
   run-docker:
     depends_on: [ postgres ]
     image: cffc:latest
-    hostname: cffc
+    hostname: *apihost
     build: .
-    ports: [ 8080:8080 ]
     volumes:
-      - ./www/test-harness/css/images/background/:/www/test-harness/css/images/background/
+      # - ./www/test-harness/css/images/background/:/www/test-harness/css/images/background/
       - ./album:/album
     environment:
       HUAUTLA_HOST: *pghost
@@ -33,11 +32,27 @@ services:
       HUAUTLA_USER: *pguser
       HUAUTLA_PASSWORD: *pgpass
       HUAUTLA_SSL: disable
-      HTTP_HOST: cffc
-      HTTP_PORT: 8080
+      HTTP_HOST: *apihost
+      HTTP_PORT: *apiport
+
+  cffc-web:
+    depends_on: [ run-docker ]
+    image: cffc-web:latest
+    restart: always
+    hostname: cffc-web
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    ports: [ 8080:80 ]
+    volumes:
+      - ./www/test-harness/css/images/background/:/www/test-harness/css/images/background/
+      - ./album:/album
+    environment:
+      CFFC_API_HOST: *apihost
+      CFFC_API_PORT: *apiport
 
   system-test:
-    depends_on: [ run-docker ]
+    depends_on: [ cffc-web ]
     image: golang:bookworm
     volumes: [ .:/cffc ]
     environment:
@@ -46,7 +61,7 @@ services:
       HUAUTLA_USER: *pguser
       HUAUTLA_PASSWORD: *pgpass
       HUAUTLA_SSL: disable
-      HTTP_HOST: cffc
-      HTTP_PORT: 8080
+      HTTP_HOST: *apihost
+      HTTP_PORT: *apiport
     working_dir: /cffc
     command: ./bin/system-test.sh

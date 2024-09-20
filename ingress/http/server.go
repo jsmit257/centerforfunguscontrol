@@ -76,6 +76,12 @@ func (g *global) staticContent(w http.ResponseWriter, r *http.Request) {
 		mt = "text/css; charset=UTF-8"
 	} else if strings.HasSuffix(f, ".png") {
 		mt = "image/png"
+	} else if strings.HasSuffix(f, ".jpg") {
+		mt = "image/jpg"
+	} else if strings.HasSuffix(f, ".gif") {
+		mt = "image/gif"
+	} else if strings.HasSuffix(f, ".tiff") {
+		mt = "image/tiff"
 	}
 
 	l = l.WithField("content-type", mt)

@@ -20,11 +20,15 @@ run-local:
 run-docker:
 	docker-compose up --build --remove-orphans -d run-docker
 
+run-web:
+	docker-compose up --build --remove-orphans cffc-web
+
 .PHONY: tests
 tests: docker-down
 # tests: docker-down unit
 	docker-compose up --build --remove-orphans system-test
 	docker tag cffc:latest jsmit257/cffc:lkg
+	docker tag cffc-web:latest jsmit257/cffc-web:lkg
 
 vet:
 	go vet ./...
