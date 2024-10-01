@@ -26,10 +26,6 @@ var traps = []os.Signal{
 // 	return nil
 // }
 
-type global struct {
-	l *log.Entry
-}
-
 func main() {
 	cfg := config.NewConfig()
 	log.SetLevel(log.DebugLevel) // TODO: grab this from the config
@@ -40,20 +36,10 @@ func main() {
 		"ingress": "http",
 	})
 
-	g := &global{log}
-
 	wg := &sync.WaitGroup{}
 
 	r := chi.NewRouter()
 	// r.Use(authnz) // someday, maybe more too
-
-	r.Get("/", g.staticContent)
-	r.Get("/css/{f}", g.staticContent)
-	r.Get("/css/images/{f}", g.staticContent)
-	r.Get("/css/images/background/{f}", g.staticContent)
-	r.Get("/js/{f}", g.staticContent)
-	r.Get("/images/{f}", g.staticContent)
-	r.Get("/album/{f}", g.staticContent)
 
 	newHC(r)
 	newHuautla(cfg, r, log)

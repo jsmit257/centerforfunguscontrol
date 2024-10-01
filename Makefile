@@ -24,11 +24,13 @@ run-web:
 	docker-compose up --build --remove-orphans cffc-web
 
 .PHONY: tests
-tests: docker-down
-# tests: docker-down unit
+tests: docker-down unit
 	docker-compose up --build --remove-orphans system-test
 	docker tag cffc:latest jsmit257/cffc:lkg
-	docker tag cffc-web:latest jsmit257/cffc-web:lkg
+
+.PHONY: public
+public: tests
+	docker-compose up -d cffc-web
 
 vet:
 	go vet ./...

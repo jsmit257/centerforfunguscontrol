@@ -1,11 +1,8 @@
-www/test-harness/css/images/background
+/www/test-harness/css/images/background
 
-log.json
+/log.json
 
-album
+/album
 
-standalone/album
-standalone/background
-standalone/backups
-standalone/cron
-standalone/data
+/tests/data
+!/tests/data/sample.png

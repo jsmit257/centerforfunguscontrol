@@ -11,5 +11,4 @@ ENV GOCOVERDIR=/tmp
 RUN apk update
 RUN apk add jq curl
 COPY --from=build /huautla /huautla
-COPY ./www /www
 ENTRYPOINT [ "/huautla" ]

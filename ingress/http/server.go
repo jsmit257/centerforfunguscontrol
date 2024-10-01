@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"time"
 
@@ -50,51 +49,4 @@ func startServer(cfg *config.Config, r *chi.Mux, wg *sync.WaitGroup, log *log.En
 	log.Debug("http server shutdown complete")
 
 	return wg
-}
-
-func (g *global) staticContent(w http.ResponseWriter, r *http.Request) {
-	l := g.l.WithField("method", "staticContent")
-	l.Debug("starting work")
-
-	mt := "text/html"
-	f := chi.URLParam(r, "f")
-	if f == "" {
-		f = "./www/test-harness/index.html"
-	} else if strings.HasPrefix(r.RequestURI, "/album/") {
-		f = "." + r.RequestURI
-	} else {
-		f = "./www/test-harness" + r.RequestURI
-	}
-
-	l = l.WithField("resource", f)
-	l.Info("fetching resource")
-
-	// XXX: poor-man's mime typing; could at least use the parent directory
-	if strings.HasSuffix(f, ".js") {
-		mt = "text/javascript; charset=UTF-8"
-	} else if strings.HasSuffix(f, ".css") {
-		mt = "text/css; charset=UTF-8"
-	} else if strings.HasSuffix(f, ".png") {
-		mt = "image/png"
-	} else if strings.HasSuffix(f, ".jpg") {
-		mt = "image/jpg"
-	} else if strings.HasSuffix(f, ".gif") {
-		mt = "image/gif"
-	} else if strings.HasSuffix(f, ".tiff") {
-		mt = "image/tiff"
-	}
-
-	l = l.WithField("content-type", mt)
-	l.Info("fetching resource")
-
-	if result, err := os.ReadFile(f); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(f))
-		l.WithError(err).Error("fetching resource")
-	} else {
-		w.Header().Add("Content-type", mt)
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(result)
-	}
-	l.Info("done work")
 }

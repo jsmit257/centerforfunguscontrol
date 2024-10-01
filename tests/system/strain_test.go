@@ -22,7 +22,7 @@ var (
 )
 
 func init() {
-	const samplefile = "../../www/test-harness/images/sample.png"
+	const samplefile = "../../tests/data/sample.png"
 
 	w := multipart.NewWriter(&sampledata)
 

@@ -22,9 +22,9 @@ services:
     depends_on: [ postgres ]
     image: cffc:latest
     hostname: *apihost
+    ports: [ 7998:8080 ]
     build: .
     volumes:
-      # - ./www/test-harness/css/images/background/:/www/test-harness/css/images/background/
       - ./album:/album
     environment:
       HUAUTLA_HOST: *pghost
@@ -35,24 +35,8 @@ services:
       HTTP_HOST: *apihost
       HTTP_PORT: *apiport
 
-  cffc-web:
-    depends_on: [ run-docker ]
-    image: cffc-web:latest
-    restart: always
-    hostname: cffc-web
-    build:
-      context: .
-      dockerfile: ./nginx/Dockerfile
-    ports: [ 8080:80 ]
-    volumes:
-      - ./www/test-harness/css/images/background/:/www/test-harness/css/images/background/
-      - ./album:/album
-    environment:
-      CFFC_API_HOST: *apihost
-      CFFC_API_PORT: *apiport
-
   system-test:
-    depends_on: [ cffc-web ]
+    depends_on: [ run-docker ]
     image: golang:bookworm
     volumes: [ .:/cffc ]
     environment:
@@ -65,3 +49,16 @@ services:
       HTTP_PORT: *apiport
     working_dir: /cffc
     command: ./bin/system-test.sh
+
+  cffc-web:
+    depends_on: [ run-docker ]
+    image: cffc-web:latest
+    restart: always
+    hostname: cffc-web
+    ports: [ 8080:80 ]
+    volumes:
+      - ./tests/data/:/www/css/images/background/
+      - ./album:/album
+    environment:
+      CFFC_API_HOST: *apihost
+      CFFC_API_PORT: *apiport
