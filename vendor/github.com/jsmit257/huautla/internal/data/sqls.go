@@ -145,10 +145,9 @@ var psqls = sqlMap{
               stv.name as strain_vendor_name,
               stv.website as strain_vendor_website,
               g.mtime as generation_mtime,
-              g.ctime as generation_ctime
+              g.ctime as generation_ctime,
+              g.dtime as generation_dtime
         from  generations g
-        join  sources s
-          on  g.uuid = s.generation_uuid
         join  substrates ps
           on  g.platingsubstrate_uuid = ps.uuid
         join  vendors psv
@@ -158,13 +157,18 @@ var psqls = sqlMap{
         join  vendors lsv
           on  ls.vendor_uuid = lsv.uuid
         left
+        join  sources s
+          on  g.uuid = s.generation_uuid
+        left
         join  events e
           on  s.progenitor_uuid = e.uuid
         left
         join  lifecycles lc
           on  e.observable_uuid = lc.uuid
+        left
         join  strains st
           on  st.uuid = coalesce(lc.strain_uuid, s.progenitor_uuid)
+        left
         join  vendors stv
           on  st.vendor_uuid = stv.uuid
        order
@@ -202,7 +206,8 @@ var psqls = sqlMap{
               lsv.name as liquid_vendor_name,
               lsv.website as liquid_vendor_website,
               g.mtime,
-              g.ctime
+              g.ctime,
+              g.dtime
         from  generations g
         join  substrates ps
           on  g.platingsubstrate_uuid = ps.uuid
@@ -244,7 +249,7 @@ var psqls = sqlMap{
          and  ps.uuid = $1
          and  ls.uuid = $2
          and  g.uuid = $3`,
-		"delete": "delete from generations where uuid = $1",
+		"delete": "update generations set dtime = current_timestamp where uuid = $1",
 	},
 
 	"ingredient": {
@@ -501,19 +506,6 @@ var psqls = sqlMap{
         join  events e
           on  lc.uuid = e.observable_uuid
        where  e.uuid = $1`,
-	},
-
-	"source-event": {
-		"select": `
-      select  uuid,
-              ...,
-        from  events e 
-        join  eventtypes et
-          on  e.eventtype_uuid = et.uuid
-        join  progenitors p
-          on  e.progenitor_uuid = p.uuid
-      where  et.uuid in ('Spore print')
-        and  p.uuid = ?`,
 	},
 
 	"stage": {

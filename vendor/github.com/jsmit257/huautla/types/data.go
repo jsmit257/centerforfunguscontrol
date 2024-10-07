@@ -120,12 +120,13 @@ type (
 
 	Generation struct {
 		UUID             `json:"id"`
-		PlatingSubstrate Substrate `json:"plating_substrate"`
-		LiquidSubstrate  Substrate `json:"liquid_substrate"`
-		Sources          []Source  `json:"sources,omitempty"`
-		Events           []Event   `json:"events,omitempty"`
-		Notes            []Note    `json:"notes,omitempty"`
-		MTime            time.Time `json:"mtime"`
-		CTime            time.Time `json:"ctime"`
+		PlatingSubstrate Substrate  `json:"plating_substrate"`
+		LiquidSubstrate  Substrate  `json:"liquid_substrate"`
+		Sources          []Source   `json:"sources,omitempty"`
+		Events           []Event    `json:"events,omitempty"`
+		Notes            []Note     `json:"notes,omitempty"`
+		MTime            time.Time  `json:"mtime"`
+		CTime            time.Time  `json:"ctime"`
+		DTime            *time.Time `json:"dtime"`
 	}
 )

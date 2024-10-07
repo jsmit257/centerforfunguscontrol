@@ -4,7 +4,7 @@
 tmpfile="/tmp/`dd if=/dev/urandom bs=8 count=1 | od -x -Anone | sed 's/\s//g'`"
 uuidpat='[[:xdigit:]]\{8\}-[[:xdigit:]]\{4\}-[[:xdigit:]]\{4\}-[[:xdigit:]]\{4\}-[[:xdigit:]]\{12\}'
 
-psql -hlocalhost -Upostgres -p5436 -dhuautla -c"select filename from photos;" -qt >"$tmpfile"
+psql -hlocalhost -Upostgres -p5432 -dhuautla -c"select filename from photos;" -qt >"$tmpfile"
 
 pushd album
 

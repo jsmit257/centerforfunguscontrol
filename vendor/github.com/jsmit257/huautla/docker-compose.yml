@@ -1,5 +1,4 @@
 ---
-version: "3.1"
 
 x-pg-host: &pghost huautla
 x-pg-port: &pgport 5432

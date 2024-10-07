@@ -30,8 +30,27 @@ func (db *Conn) SelectGenerationIndex(ctx context.Context, cid types.CID) ([]typ
 
 	var lcID *types.UUID
 
+	type (
+		source struct {
+			uuid *types.UUID
+			typ  *string
+		}
+		vendor struct {
+			uuid          *types.UUID
+			name, website *string
+		}
+		strain struct {
+			uuid *types.UUID
+			name,
+			species *string
+			ctime *time.Time
+		}
+	)
 	for rows.Next() {
-		temp := types.Generation{Sources: []types.Source{{}}}
+		temp := types.Generation{}
+		so := source{}
+		v := vendor{}
+		st := strain{}
 
 		if err = rows.Scan(
 			&temp.UUID,
@@ -47,24 +66,45 @@ func (db *Conn) SelectGenerationIndex(ctx context.Context, cid types.CID) ([]typ
 			&temp.LiquidSubstrate.Vendor.UUID,
 			&temp.LiquidSubstrate.Vendor.Name,
 			&temp.LiquidSubstrate.Vendor.Website,
-			&temp.Sources[0].UUID,
-			&temp.Sources[0].Type,
+			&so.uuid,
+			&so.typ,
 			&lcID,
-			&temp.Sources[0].Strain.UUID,
-			&temp.Sources[0].Strain.Name,
-			&temp.Sources[0].Strain.Species,
-			&temp.Sources[0].Strain.CTime,
-			&temp.Sources[0].Strain.Vendor.UUID,
-			&temp.Sources[0].Strain.Vendor.Name,
-			&temp.Sources[0].Strain.Vendor.Website,
+			&st.uuid,
+			&st.name,
+			&st.species,
+			&st.ctime,
+			&v.uuid,
+			&v.name,
+			&v.website,
 			&temp.MTime,
 			&temp.CTime,
+			&temp.DTime,
 		); err != nil {
 			return result, err
 		}
 
-		if lcID != nil {
-			temp.Sources[0].Lifecycle = &types.Lifecycle{UUID: *lcID}
+		if so.uuid != nil {
+			source := types.Source{
+				UUID: *so.uuid,
+				Type: *so.typ,
+				Strain: types.Strain{
+					UUID:    *st.uuid,
+					Name:    *st.name,
+					Species: *st.species,
+					CTime:   *st.ctime,
+					Vendor: types.Vendor{
+						UUID:    *v.uuid,
+						Name:    *v.name,
+						Website: *v.website,
+					},
+				},
+			}
+
+			if lcID != nil {
+				source.Lifecycle = &types.Lifecycle{UUID: *lcID}
+			}
+
+			temp.Sources = []types.Source{source}
 		}
 
 		if row != nil {
@@ -150,6 +190,7 @@ func (db *Conn) SelectGenerationsByAttrs(ctx context.Context, p types.ReportAttr
 			&row.LiquidSubstrate.Vendor.Website,
 			&row.MTime,
 			&row.CTime,
+			&row.DTime,
 		); err != nil {
 			break
 		}
