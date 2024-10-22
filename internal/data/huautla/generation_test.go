@@ -34,6 +34,9 @@ type generationerMock struct {
 	rmErr error
 
 	patchErr error
+
+	rpt    types.Entity
+	rptErr error
 }
 
 func Test_GetGenerationIndex(t *testing.T) {
@@ -397,6 +400,72 @@ func Test_DeleteGeneration(t *testing.T) {
 	}
 }
 
+func Test_GetGenerationReport(t *testing.T) {
+	t.Parallel()
+
+	set := map[string]struct {
+		id     string
+		result types.Entity
+		err    error
+		sc     int
+	}{
+		"happy_path": {
+			id:     "1",
+			result: types.Entity{},
+			sc:     http.StatusOK,
+		},
+		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"url_decode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
+		"db_error": {
+			id:  "1",
+			err: fmt.Errorf("db error"),
+			sc:  http.StatusInternalServerError,
+		},
+	}
+
+	for k, v := range set {
+		k, v := k, v
+		ha := &HuautlaAdaptor{
+			db: &huautlaMock{
+				Generationer: &generationerMock{
+					rpt:    v.result,
+					rptErr: v.err,
+				},
+			},
+			log:   log.WithFields(log.Fields{"test": "Test_GetGenerationReport", "case": k}),
+			mtrcs: nil,
+		}
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					context.Background(),
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodGet,
+				"url",
+				nil)
+
+			ha.GetGenerationReport(w, r)
+
+			require.Equal(t, v.sc, w.Code)
+			if w.Code == http.StatusOK {
+				checkResult(t, w.Body, &types.Entity{}, &v.result)
+			}
+		})
+	}
+}
+
 func serializeGeneration(l *types.Generation) []byte {
 	if l == nil {
 		return []byte{}
@@ -428,4 +497,7 @@ func (gm *generationerMock) GeneratedStrain(ctx context.Context, id types.UUID, 
 }
 func (gm *generationerMock) UpdateGeneratedStrain(ctx context.Context, gid *types.UUID, sid types.UUID, cid types.CID) error {
 	return gm.patchErr
+}
+func (gm *generationerMock) GenerationReport(ctx context.Context, id types.UUID, cid types.CID) (types.Entity, error) {
+	return gm.rpt, gm.rptErr
 }

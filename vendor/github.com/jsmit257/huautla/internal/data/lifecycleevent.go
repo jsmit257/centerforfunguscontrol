@@ -24,11 +24,10 @@ func (db *Conn) AddLifecycleEvent(ctx context.Context, lc *types.Lifecycle, e ty
 	deferred, start, l := initAccessFuncs("AddEvent", db.logger, lc.UUID, cid)
 	defer deferred(start, err, l)
 
-	if lc.Events, err = db.addEvent(ctx, lc.UUID, lc.Events, &e, cid); err != nil {
-		return err
-	} else if _, err = db.updateMTime(ctx, "lifecycles", lc.Events[0].MTime, lc.UUID, cid); err != nil {
-		return err
+	if lc.Events, err = db.addEvent(ctx, lc.UUID, lc.Events, &e, cid); err == nil {
+		_, err = db.updateMTime(ctx, "lifecycles", lc.Events[0].MTime, lc.UUID, cid)
 	}
+
 	return err
 }
 
@@ -38,10 +37,8 @@ func (db *Conn) ChangeLifecycleEvent(ctx context.Context, lc *types.Lifecycle, e
 	deferred, start, l := initAccessFuncs("ChangeEvent", db.logger, lc.UUID, cid)
 	defer deferred(start, err, l)
 
-	if lc.Events, err = db.changeEvent(ctx, lc.Events, &e, cid); err != nil {
-		return e, err
-	} else if _, err = db.updateMTime(ctx, "lifecycles", lc.Events[0].MTime, lc.UUID, cid); err != nil {
-		return e, err
+	if lc.Events, err = db.changeEvent(ctx, lc.Events, &e, cid); err == nil {
+		_, err = db.updateMTime(ctx, "lifecycles", lc.Events[0].MTime, lc.UUID, cid)
 	}
 
 	return e, err
@@ -53,11 +50,9 @@ func (db *Conn) RemoveLifecycleEvent(ctx context.Context, lc *types.Lifecycle, i
 	deferred, start, l := initAccessFuncs("RemoveEvent", db.logger, lc.UUID, cid)
 	defer deferred(start, err, l)
 
-	if lc.Events, err = db.removeEvent(ctx, lc.Events, id, cid); err != nil {
-		return err
-	} else if _, err = db.updateMTime(ctx, "lifecycles", time.Now().UTC(), lc.UUID, cid); err != nil {
-		return err
+	if lc.Events, err = db.removeEvent(ctx, lc.Events, id, cid); err == nil {
+		_, err = db.updateMTime(ctx, "lifecycles", time.Now().UTC(), lc.UUID, cid)
 	}
 
-	return nil
+	return err
 }

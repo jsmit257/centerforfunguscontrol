@@ -33,6 +33,9 @@ type strainerMock struct {
 	strErr error
 
 	patchErr error
+
+	rpt    types.Entity
+	rptErr error
 }
 
 func Test_GetAllStrains(t *testing.T) {
@@ -339,7 +342,7 @@ func Test_DeleteStrain(t *testing.T) {
 	}
 }
 
-func Test_GeneratedStrain(t *testing.T) {
+func Test_GetGeneratedStrain(t *testing.T) {
 	t.Parallel()
 	set := map[string]struct {
 		id     string
@@ -375,7 +378,7 @@ func Test_GeneratedStrain(t *testing.T) {
 					strErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GeneratedStrains", "case": k}),
+			log:   log.WithFields(log.Fields{"test": "Test_GetGeneratedStrain", "case": k}),
 			mtrcs: nil,
 		}
 
@@ -528,6 +531,72 @@ func Test_DeleteGeneratedStrain(t *testing.T) {
 	}
 }
 
+func Test_GetStrainReport(t *testing.T) {
+	t.Parallel()
+
+	set := map[string]struct {
+		id     string
+		result types.Entity
+		err    error
+		sc     int
+	}{
+		"happy_path": {
+			id:     "1",
+			result: types.Entity{},
+			sc:     http.StatusOK,
+		},
+		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
+		"db_error": {
+			id:  "1",
+			err: fmt.Errorf("db error"),
+			sc:  http.StatusInternalServerError,
+		},
+	}
+
+	for k, v := range set {
+		k, v := k, v
+		ha := &HuautlaAdaptor{
+			db: &huautlaMock{
+				Strainer: &strainerMock{
+					rpt:    v.result,
+					rptErr: v.err,
+				},
+			},
+			log:   log.WithFields(log.Fields{"test": "Test_GetStrainReport", "case": k}),
+			mtrcs: nil,
+		}
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					context.Background(),
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodGet,
+				"url",
+				bytes.NewReader([]byte("")))
+
+			ha.GetStrainReport(w, r)
+
+			require.Equal(t, v.sc, w.Code)
+			if w.Code == http.StatusOK {
+				checkResult(t, w.Body, &types.Entity{}, &v.result)
+			}
+		})
+	}
+}
+
 func serializeStrain(s *types.Strain) []byte {
 	if s == nil {
 		return []byte{}
@@ -556,4 +625,7 @@ func (sm *strainerMock) GeneratedStrain(ctx context.Context, id types.UUID, cid 
 }
 func (sm *strainerMock) UpdateGeneratedStrain(ctx context.Context, gid *types.UUID, sid types.UUID, cid types.CID) error {
 	return sm.patchErr
+}
+func (sm *strainerMock) StrainReport(context.Context, types.UUID, types.CID) (types.Entity, error) {
+	return sm.rpt, sm.rptErr
 }

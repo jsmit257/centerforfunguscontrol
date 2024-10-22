@@ -104,3 +104,16 @@ func (ha *HuautlaAdaptor) DeleteGeneration(w http.ResponseWriter, r *http.Reques
 		ms.send(w, nil, http.StatusNoContent)
 	}
 }
+
+func (ha *HuautlaAdaptor) GetGenerationReport(w http.ResponseWriter, r *http.Request) {
+	ms := ha.start("GetGenerationReport")
+	defer ms.end()
+
+	if id, err := getUUIDByName("id", w, r, ms); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "failed to fetch uuid")
+	} else if g, err := ha.db.GenerationReport(r.Context(), id, ms.cid); err != nil {
+		ms.error(w, err, http.StatusInternalServerError, "failed to fetch generation")
+	} else {
+		ms.send(w, g, http.StatusOK)
+	}
+}

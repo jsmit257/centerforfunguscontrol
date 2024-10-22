@@ -28,6 +28,9 @@ type substraterMock struct {
 	updateErr error
 
 	deleteErr error
+
+	rpt    types.Entity
+	rptErr error
 }
 
 func Test_GetAllSubstrates(t *testing.T) {
@@ -334,6 +337,72 @@ func Test_DeleteSubstrate(t *testing.T) {
 	}
 }
 
+func Test_GetSubstrateReport(t *testing.T) {
+	t.Parallel()
+
+	set := map[string]struct {
+		id     string
+		result types.Entity
+		err    error
+		sc     int
+	}{
+		"happy_path": {
+			id:     "1",
+			result: types.Entity{},
+			sc:     http.StatusOK,
+		},
+		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
+		"db_error": {
+			id:  "1",
+			err: fmt.Errorf("db error"),
+			sc:  http.StatusInternalServerError,
+		},
+	}
+
+	for k, v := range set {
+		k, v := k, v
+		ha := &HuautlaAdaptor{
+			db: &huautlaMock{
+				Substrater: &substraterMock{
+					rpt:    v.result,
+					rptErr: v.err,
+				},
+			},
+			log:   log.WithFields(log.Fields{"test": "Test_GetSubstrateReport", "case": k}),
+			mtrcs: nil,
+		}
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					context.Background(),
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodGet,
+				"url",
+				nil)
+
+			ha.GetSubstrateReport(w, r)
+
+			require.Equal(t, v.sc, w.Code)
+			if w.Code == http.StatusOK {
+				checkResult(t, w.Body, &types.Entity{}, &v.result)
+			}
+		})
+	}
+}
+
 func serializeSubstrate(s *types.Substrate) []byte {
 	if s == nil {
 		return []byte{}
@@ -345,19 +414,18 @@ func serializeSubstrate(s *types.Substrate) []byte {
 func (vm *substraterMock) SelectAllSubstrates(context.Context, types.CID) ([]types.Substrate, error) {
 	return vm.selectAllResult, vm.selectAllErr
 }
-
 func (vm *substraterMock) SelectSubstrate(context.Context, types.UUID, types.CID) (types.Substrate, error) {
 	return vm.selectResult, vm.selectErr
 }
-
 func (vm *substraterMock) InsertSubstrate(context.Context, types.Substrate, types.CID) (types.Substrate, error) {
 	return vm.insertResult, vm.insertErr
 }
-
 func (vm *substraterMock) UpdateSubstrate(context.Context, types.UUID, types.Substrate, types.CID) error {
 	return vm.updateErr
 }
-
 func (vm *substraterMock) DeleteSubstrate(context.Context, types.UUID, types.CID) error {
 	return vm.deleteErr
+}
+func (vm *substraterMock) SubstrateReport(context.Context, types.UUID, types.CID) (types.Entity, error) {
+	return vm.rpt, vm.rptErr
 }

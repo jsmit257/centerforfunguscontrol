@@ -1,5 +1,4 @@
 ---
-
 x-pg-host: &pghost huautla
 x-pg-port: &pgport 5432
 x-pg-user: &pguser postgres
@@ -7,7 +6,6 @@ x-pg-pass: &pgpass root
 x-pg-ssl: &pgssl disable
 
 services:
-
   postgres:
     image: huautla:latest
     build: .

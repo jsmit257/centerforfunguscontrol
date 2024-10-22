@@ -122,3 +122,23 @@ func (db *Conn) RemoveNote(ctx context.Context, notes []types.Note, id types.UUI
 
 	return append(notes[:i], notes[i+1:]...), nil
 }
+
+func (db *Conn) notesReport(ctx context.Context, id types.UUID, cid types.CID, p *rpttree) ([]types.Entity, error) {
+	notes, err := db.GetNotes(ctx, id, cid)
+	if err != nil {
+		return nil, err
+	} else if len(notes) == 0 {
+		return nil, nil
+	}
+
+	result := make([]types.Entity, len(notes))
+	for i, n := range notes {
+		rpt, err := db.newRpt(ctx, n, cid, p)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = rpt.Data()
+	}
+
+	return result, nil
+}

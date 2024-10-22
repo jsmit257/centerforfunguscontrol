@@ -11,29 +11,29 @@ import (
 func (db *Conn) GetAllIngredients(ctx context.Context, s *types.Substrate, cid types.CID) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs("GetAllIngredients", db.logger, "nil", cid)
+	deferred, start, l := initAccessFuncs("GetAllIngredients", db.logger, s.UUID, cid)
 	defer deferred(start, err, l)
 
-	var rows *sql.Rows
-
-	s.Ingredients = make([]types.Ingredient, 0, 100)
-
-	rows, err = db.query.QueryContext(ctx, psqls["substrate-ingredient"]["all"], s.UUID)
+	rows, err := db.query.QueryContext(ctx, psqls["substrate-ingredient"]["all"], s.UUID)
 	if err != nil {
 		return err
 	}
 
+	ing := make([]types.Ingredient, 0, 100)
 	for rows.Next() {
 		row := types.Ingredient{}
 		if err = rows.Scan(
 			&row.UUID,
-			&row.Name); err != nil {
+			&row.Name,
+		); err != nil {
 			return err
 		}
-		s.Ingredients = append(s.Ingredients, row)
+		ing = append(ing, row)
 	}
 
-	return err
+	s.Ingredients = ing
+
+	return nil
 }
 
 func (db *Conn) AddIngredient(ctx context.Context, s *types.Substrate, i types.Ingredient, cid types.CID) error {

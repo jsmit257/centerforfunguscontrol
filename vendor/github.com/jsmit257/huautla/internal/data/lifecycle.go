@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/jsmit257/huautla/types"
@@ -144,7 +145,6 @@ func (db *Conn) SelectLifecyclesByAttrs(ctx context.Context, p types.ReportAttrs
 		row := types.Lifecycle{}
 
 		if err = rows.Scan(
-
 			&row.UUID,
 			&row.Location,
 			&row.StrainCost,
@@ -160,6 +160,7 @@ func (db *Conn) SelectLifecyclesByAttrs(ctx context.Context, p types.ReportAttrs
 			&row.Strain.Name,
 			&generationID,
 			&row.Strain.CTime,
+			&row.Strain.DTime,
 			&row.Strain.Vendor.UUID,
 			&row.Strain.Vendor.Name,
 			&row.Strain.Vendor.Website,
@@ -183,13 +184,7 @@ func (db *Conn) SelectLifecyclesByAttrs(ctx context.Context, p types.ReportAttrs
 			row.Strain.Generation = &types.Generation{UUID: *generationID}
 		}
 
-		if err = db.GetAllAttributes(ctx, &row.Strain, cid); err != nil {
-			break
-		} else if err = db.GetAllIngredients(ctx, &row.GrainSubstrate, cid); err != nil {
-			break
-		} else if err = db.GetAllIngredients(ctx, &row.BulkSubstrate, cid); err != nil {
-			break
-		} else if err = db.GetLifecycleEvents(ctx, &row, cid); err != nil {
+		if err = db.GetLifecycleEvents(ctx, &row, cid); err != nil {
 			break
 		}
 
@@ -287,4 +282,84 @@ func (db *Conn) UpdateLifecycleMTime(ctx context.Context, lc *types.Lifecycle, m
 
 func (db *Conn) DeleteLifecycle(ctx context.Context, id types.UUID, cid types.CID) error {
 	return db.deleteByUUID(ctx, id, cid, "DeleteLifecycle", "lifecycle", db.logger)
+}
+
+type Lifecycle types.Lifecycle
+
+func (lc Lifecycle) children(db *Conn, ctx context.Context, cid types.CID, p *rpttree) error {
+	var err error
+
+	deferred, start, l := initAccessFuncs("Lifecycle::children", db.logger, lc.UUID, cid)
+	defer deferred(start, err, l)
+
+	notes, err := db.notesReport(ctx, lc.UUID, cid, p)
+	if err != nil {
+		return err
+	} else if len(notes) != 0 {
+		p.data["notes"] = notes
+	}
+
+	photos, err := db.photosReport(ctx, lc.Strain.UUID, cid, p)
+	if err != nil {
+		return err
+	} else if len(photos) != 0 {
+		p.data["strain"].(map[string]interface{})["photos"] = photos
+	}
+
+	return nil
+}
+
+func (db *Conn) LifecycleReport(ctx context.Context, id types.UUID, cid types.CID) (types.Entity, error) {
+	var err error
+
+	deferred, start, l := initAccessFuncs("LifecycleReport", db.logger, id, cid)
+	defer deferred(start, err, l)
+
+	var result []types.Entity
+
+	param, err := types.NewReportAttrs(url.Values{"lifecycle-id": {string(id)}})
+	if err != nil {
+		return nil, err
+	} else if result, err = db.lifecycleReport(ctx, param, cid, nil); err != nil {
+		return nil, err
+	} else if len(result) == 0 {
+		err = sql.ErrNoRows
+		return nil, err
+	}
+
+	return result[0], nil
+}
+
+func (db *Conn) lifecycleReport(ctx context.Context, params types.ReportAttrs, cid types.CID, p *rpttree) ([]types.Entity, error) {
+	var err error
+
+	deferred, start, l := initAccessFuncs("lifecycleReport", db.logger, "nil", cid)
+	defer deferred(start, err, l)
+
+	lcs, err := db.SelectLifecyclesByAttrs(ctx, params, cid)
+	if err != nil {
+		return nil, err
+	}
+
+	var rpt rpt
+	result := make([]types.Entity, 0, len(lcs))
+	for _, lc := range lcs {
+		if err = db.GetAllAttributes(ctx, &lc.Strain, cid); err != nil {
+			return nil, err
+		} else if err = db.GetAllIngredients(ctx, &lc.GrainSubstrate, cid); err != nil {
+			return nil, err
+		} else if err = db.GetAllIngredients(ctx, &lc.BulkSubstrate, cid); err != nil {
+			return nil, err
+		} else if err = db.notesAndPhotos(ctx, lc.Events, lc.UUID, cid); err != nil {
+			return nil, err
+		} else if rpt, err = db.newRpt(ctx, Lifecycle(lc), cid, p); err != nil {
+			return nil, err
+		} else if rpt == nil {
+			break
+		} else {
+			result = append(result, rpt.Data())
+		}
+	}
+
+	return result, nil
 }

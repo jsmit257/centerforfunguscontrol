@@ -30,6 +30,9 @@ type lifecyclerMock struct {
 	updateErr    error
 
 	deleteErr error
+
+	rpt    types.Entity
+	rptErr error
 }
 
 func Test_GetLifecycleIndex(t *testing.T) {
@@ -409,6 +412,77 @@ func Test_DeleteLifecycle(t *testing.T) {
 	}
 }
 
+func Test_GetLifecycleReport(t *testing.T) {
+	t.Parallel()
+
+	set := map[string]struct {
+		id     string
+		result types.Entity
+		err    error
+		sc     int
+	}{
+		"happy_path": {
+			id:     "1",
+			result: types.Entity{},
+			sc:     http.StatusOK,
+		},
+		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"url_decode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
+		"missing_row": {
+			id:  "abcdefg",
+			err: sql.ErrNoRows,
+			sc:  http.StatusBadRequest,
+		},
+		"db_error": {
+			id:  "1",
+			err: fmt.Errorf("db error"),
+			sc:  http.StatusInternalServerError,
+		},
+	}
+
+	for k, v := range set {
+		k, v := k, v
+		ha := &HuautlaAdaptor{
+			db: &huautlaMock{
+				Lifecycler: &lifecyclerMock{
+					rpt:    v.result,
+					rptErr: v.err,
+				},
+			},
+			log:   log.WithFields(log.Fields{"test": "Test_GetLifecycleReport", "case": k}),
+			mtrcs: nil,
+		}
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					context.Background(),
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodGet,
+				"url",
+				bytes.NewReader([]byte("")))
+
+			ha.GetLifecycleReport(w, r)
+
+			require.Equal(t, v.sc, w.Code)
+			if w.Code == http.StatusOK {
+				checkResult(t, w.Body, &types.Entity{}, &v.result)
+			}
+		})
+	}
+}
+
 func serializeLifecycle(l *types.Lifecycle) []byte {
 	if l == nil {
 		return []byte{}
@@ -423,18 +497,6 @@ func (vm *lifecyclerMock) SelectLifecycleIndex(context.Context, types.CID) ([]ty
 func (vm *lifecyclerMock) SelectLifecyclesByAttrs(context.Context, types.ReportAttrs, types.CID) ([]types.Lifecycle, error) {
 	return vm.selectIndexResult, vm.selectIndexErr
 }
-
-//	func (vm *lifecyclerMock) SelectLifecyclesByStrain(context.Context, types.UUID, types.CID) ([]types.Lifecycle, error) {
-//		return vm.selectIndexResult, vm.selectIndexErr
-//	}
-//
-//	func (vm *lifecyclerMock) SelectLifecyclesByGrain(context.Context, types.UUID, types.CID) ([]types.Lifecycle, error) {
-//		return vm.selectIndexResult, vm.selectIndexErr
-//	}
-//
-//	func (vm *lifecyclerMock) SelectLifecyclesByBulk(context.Context, types.UUID, types.CID) ([]types.Lifecycle, error) {
-//		return vm.selectIndexResult, vm.selectIndexErr
-//	}
 func (vm *lifecyclerMock) SelectLifecycle(context.Context, types.UUID, types.CID) (types.Lifecycle, error) {
 	return vm.selectResult, vm.selectErr
 }
@@ -446,4 +508,7 @@ func (vm *lifecyclerMock) UpdateLifecycle(context.Context, types.Lifecycle, type
 }
 func (vm *lifecyclerMock) DeleteLifecycle(context.Context, types.UUID, types.CID) error {
 	return vm.deleteErr
+}
+func (vm *lifecyclerMock) LifecycleReport(context.Context, types.UUID, types.CID) (types.Entity, error) {
+	return vm.rpt, vm.rptErr
 }

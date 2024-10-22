@@ -9,17 +9,20 @@ var validReportAttrs = map[string]struct{}{
 	"generation-id": {},
 	"lifecycle-id":  {},
 	"strain-id":     {},
+	"substrate-id":  {},
 	"plating-id":    {},
 	"liquid-id":     {},
 	"grain-id":      {},
 	"bulk-id":       {},
+	"eventtype-id":  {},
+	"vendor-id":     {},
 }
 
 type reportAttrs map[string]UUID
 
 func NewReportAttrs(m url.Values) (ReportAttrs, error) {
 	result := reportAttrs{}
-	return result, result.Map(m)
+	return result, result.apply(m)
 }
 
 func (ra reportAttrs) Set(name, value string) error {
@@ -51,7 +54,7 @@ func (ra reportAttrs) Contains(names ...string) bool {
 	return false
 }
 
-func (ra reportAttrs) Map(m url.Values) (err error) {
+func (ra reportAttrs) apply(m url.Values) (err error) {
 	errs := []string{}
 	for k, v := range m {
 		if err := ra.Set(k, v[0]); err != nil {

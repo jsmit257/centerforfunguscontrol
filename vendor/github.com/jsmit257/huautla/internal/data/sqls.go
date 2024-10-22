@@ -15,9 +15,7 @@ var psqls = sqlMap{
              et.name as eventtype_name,
              et.severity as eventtype_severity,
              s.uuid as stage_uuid,
-             s.name as stage_name,
-             coalesce((select 1 from photos ep where ep.photoable_uuid = e.uuid limit 1), 0) as has_photos,
-             coalesce((select 1 from notes en where en.notable_uuid = e.uuid limit 1), 0) as has_notes
+             s.name as stage_name
        from  events e
        join  event_types et
          on  e.eventtype_uuid = et.uuid
@@ -36,15 +34,41 @@ var psqls = sqlMap{
               et.name as eventtype_name,
               et.severity as eventtype_severity,
               s.uuid as stage_uuid,
-              s.name as stage_name,
-              coalesce((select 1 from photos ep where ep.photoable_uuid = e.uuid limit 1), 0) as has_photos,
-              coalesce((select 1 from notes en where en.notable_uuid = e.uuid limit 1), 0) as has_notes
+              s.name as stage_name
         from  events e
         join  event_types et
           on  e.eventtype_uuid = et.uuid
         join  stages s
           on  et.stage_uuid = s.uuid
        where  et.uuid = $1`,
+		"notes-and-photos": `
+      select  e.uuid as event_uuid,
+              n.uuid as note_uuid,
+              n.note as note_note,
+              n.mtime as note_mtime,
+              n.ctime as note_ctime,
+              p.uuid as photo_uuid,
+              p.filename as photo_filename,
+              p.mtime as photo_mtime,
+              p.ctime as photo_ctime,
+              pn.uuid as photonote_uuid,
+              pn.note as photonote_note,
+              pn.mtime as photonote_mtime,
+              pn.ctime as photonote_ctime
+        from  events e
+        left
+        join  notes n 
+          on  e.uuid = n.notable_uuid
+        left
+        join  photos p
+          on  e.uuid = p.photoable_uuid
+        left
+        join  notes pn
+          on  p.uuid = pn.notable_uuid
+       where  e.observable_uuid = $1
+         and  coalesce(n.uuid, p.uuid) is not null
+       order
+          by  e.uuid, n.mtime, p.mtime, pn.mtime`,
 		"select": `
     select e.temperature,
            e.humidity,
@@ -174,25 +198,58 @@ var psqls = sqlMap{
        order
           by  g.uuid`,
 		"select": `
-      with strain_sources as (
-        select  so.generation_uuid,
-                st.uuid as strain_uuid
-          from  sources so
-          join  strains st
-            on  so.progenitor_uuid = st.uuid
-         union
-        select  so.generation_uuid,
-                st.uuid
-          from  sources so
-          join  events ev
-            on  so.progenitor_uuid = ev.uuid
-          join  lifecycles lc
-            on  ev.observable_uuid = lc.uuid
-          join  strains st
-            on  lc.strain_uuid = st.uuid
+        with  strain_sources as (
+      select  so.generation_uuid,
+              st.uuid as strain_uuid
+        from  sources so
+        join  strains st
+          on  so.progenitor_uuid = st.uuid
+        union
+      select  so.generation_uuid,
+              st.uuid
+        from  sources so
+        join  events ev
+          on  so.progenitor_uuid = ev.uuid
+        join  lifecycles lc
+          on  ev.observable_uuid = lc.uuid
+        join  strains st
+          on  lc.strain_uuid = st.uuid
       )
-      select  
-    distinct  g.uuid,
+      select  distinct
+              g.uuid,
+              ps.uuid as plating_id,
+              ps.name as plating_name,
+              ps.type as plating_type,
+              psv.uuid as plating_vendor_uuid,
+              psv.name as plating_vendor_name,
+              psv.website as plating_vendor_website,
+              ls.uuid as liquid_uuid,
+              ls.name as liquid_name,
+              ls.type as liquid_type,
+              lsv.uuid as liquid_vendor_uuid,
+              lsv.name as liquid_vendor_name,
+              lsv.website as liquid_vendor_website,
+              g.mtime,
+              g.ctime,
+              g.dtime
+        from  generations g
+        join  substrates ps
+          on  g.platingsubstrate_uuid = ps.uuid
+        join  vendors psv
+          on  ps.vendor_uuid = psv.uuid
+        join  substrates ls
+          on  g.liquidsubstrate_uuid = ls.uuid
+        join  vendors lsv
+          on  ls.vendor_uuid = lsv.uuid
+        join  strain_sources ss
+          on  g.uuid = ss.generation_uuid
+       where  g.uuid = coalesce($1, g.uuid)
+         and  ss.strain_uuid = coalesce($2, ss.strain_uuid)
+         and  ps.uuid = coalesce($3, ps.uuid)
+         and  ls.uuid = coalesce($4, ls.uuid)
+       union
+      select  distinct
+              g.uuid,
               ps.uuid as plating_id,
               ps.name as plating_name,
               ps.type as plating_type,
@@ -220,8 +277,9 @@ var psqls = sqlMap{
         left
         join  strain_sources ss
           on  g.uuid = ss.generation_uuid
-         and  ss.strain_uuid = coalesce($2, ss.strain_uuid)
-       where  g.uuid = coalesce($1, g.uuid)
+       where  ss.generation_uuid is null
+         and  g.uuid = coalesce($1, g.uuid)
+         and  $2 is null
          and  ps.uuid = coalesce($3, ps.uuid)
          and  ls.uuid = coalesce($4, ls.uuid)`,
 		"insert": `
@@ -318,6 +376,7 @@ var psqls = sqlMap{
               s.name as strain_name,
               s.generation_uuid,
               s.ctime as strain_ctime,
+              s.dtime as strain_dtime,
               sv.uuid as strain_vendor_uuid,
               sv.name as strain_vendor_name,
               sv.website as strain_vendor_website,
@@ -475,6 +534,7 @@ var psqls = sqlMap{
               st.name as strain_name,
               st.species,
               st.ctime as strain_ctime,
+              st.dtime as strain_dtime,
               v.uuid as strain_vendor_uuid,
               v.name as strain_vendor_name,
               v.website as strain_vendor_website
@@ -533,7 +593,8 @@ var psqls = sqlMap{
        order
           by  s.name`,
 		"select": `
-      select  s.species,
+      select  s.uuid,
+              s.species,
               s.name,
               s.ctime,
               s.dtime,
@@ -544,7 +605,8 @@ var psqls = sqlMap{
         from  strains s
         join  vendors v
           on  s.vendor_uuid = v.uuid
-       where  s.uuid = $1`,
+       where  s.uuid = coalesce($1, s.uuid)
+         and  v.uuid = coalesce($2, v.uuid)`,
 		"insert": `
       insert
         into  strains(uuid, species, name, ctime, vendor_uuid)
@@ -558,15 +620,16 @@ var psqls = sqlMap{
               vendor_uuid = $3
        where  uuid = $4`,
 		"delete": `update strains set mtime = current_timestamp, dtime = current_timestamp where uuid = $1`,
-		// "delete": `delete from strains where uuid = $1`,
+		// XXX: combine this with the general select?
 		"generated-strain": `
       select  s.uuid,
               s.species,
               s.name,
+              s.ctime,
+              s.dtime,
               v.uuid as vendor_uuid,
               v.name as vendor_name,
-              v.website as vendor_website,
-              s.ctime
+              v.website as vendor_website
         from  strains s 
         join  vendors v
           on  s.vendor_uuid = v.uuid
@@ -643,7 +706,8 @@ var psqls = sqlMap{
        order
           by  s.name`,
 		"select": `
-      select  s.name,
+      select  s.uuid,
+              s.name,
               s.type,
               v.uuid as vendor_uuid,
               v.name as vendor_name,
@@ -651,7 +715,8 @@ var psqls = sqlMap{
         from  substrates s
         join  vendors v
           on  s.vendor_uuid = v.uuid
-       where  s.uuid = $1`,
+       where  s.uuid = coalesce($1, s.uuid)
+         and  v.uuid = coalesce($2, v.uuid)`,
 		"insert": `
       insert
         into substrates(uuid, name, type, vendor_uuid)

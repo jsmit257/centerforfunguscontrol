@@ -104,3 +104,18 @@ func (ha *HuautlaAdaptor) DeleteLifecycle(w http.ResponseWriter, r *http.Request
 		ms.send(w, nil, http.StatusNoContent)
 	}
 }
+
+func (ha *HuautlaAdaptor) GetLifecycleReport(w http.ResponseWriter, r *http.Request) {
+	ms := ha.start("GetLifecycleReport")
+	defer ms.end()
+
+	if id, err := getUUIDByName("id", w, r, ms); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "failed to fetch uuid")
+	} else if l, err := ha.db.LifecycleReport(r.Context(), id, ms.cid); errors.Is(err, sql.ErrNoRows) {
+		ms.error(w, err, http.StatusBadRequest, "failed to fetch lifecycle")
+	} else if err != nil {
+		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycle")
+	} else {
+		ms.send(w, l, http.StatusOK)
+	}
+}

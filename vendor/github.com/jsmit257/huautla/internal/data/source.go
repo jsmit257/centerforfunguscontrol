@@ -38,6 +38,7 @@ func (db *Conn) GetSources(ctx context.Context, g *types.Generation, cid types.C
 			&row.Strain.Name,
 			&row.Strain.Species,
 			&row.Strain.CTime,
+			&row.Strain.DTime,
 			&row.Strain.Vendor.UUID,
 			&row.Strain.Vendor.Name,
 			&row.Strain.Vendor.Website,

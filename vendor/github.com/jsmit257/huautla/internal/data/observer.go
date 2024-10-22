@@ -21,7 +21,7 @@ func (db *Conn) SelectByEventType(ctx context.Context, et types.EventType, cid t
 	return result, err
 }
 
-func (db *Conn) selectEventsList(ctx context.Context, query string, id types.UUID, cid types.CID) ([]types.Event, error) {
+func (db *Conn) selectEventsList(ctx context.Context, query string, id types.UUID, _ types.CID) ([]types.Event, error) {
 	var err error
 	var rows *sql.Rows
 
@@ -35,7 +35,6 @@ func (db *Conn) selectEventsList(ctx context.Context, query string, id types.UUI
 
 	for rows.Next() {
 		row := types.Event{}
-		var hasPhotos, hasNotes bool
 
 		if err = rows.Scan(
 			&row.UUID,
@@ -48,25 +47,124 @@ func (db *Conn) selectEventsList(ctx context.Context, query string, id types.UUI
 			&row.EventType.Severity,
 			&row.EventType.Stage.UUID,
 			&row.EventType.Stage.Name,
-			&hasPhotos,
-			&hasNotes,
 		); err != nil {
 			return result, err
 		}
 
-		if hasPhotos {
-			if row.Photos, err = db.GetPhotos(ctx, row.UUID, cid); err != nil {
-				return result, err
-			}
-		}
 		result = append(result, row)
-
 	}
 
 	return result, err
 }
 
-// XXX: is this even useful??
+func (db *Conn) notesAndPhotos(ctx context.Context, e []types.Event, id types.UUID, cid types.CID) error {
+	type (
+		nullnote struct {
+			uuid         *types.UUID
+			note         *string
+			ctime, mtime *time.Time
+		}
+		nullphoto struct {
+			uuid         *types.UUID
+			filename     *string
+			ctime, mtime *time.Time
+		}
+	)
+
+	var err error
+	var rows *sql.Rows
+
+	deferred, start, l := initAccessFuncs("notesAndPhotos", db.logger, id, cid)
+	defer deferred(start, err, l)
+
+	if len(e) == 0 { // not really needed for safety, but it saves a hit to the db
+		return nil
+	}
+
+	evts := make(map[types.UUID]*types.Event, len(e))
+	for i, v := range e {
+		evts[v.UUID] = &e[i]
+	}
+
+	rows, err = db.query.QueryContext(ctx, psqls["event"]["notes-and-photos"], id)
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	var lastnote *types.Note
+	var lastphoto *types.Photo
+	var eventUUID types.UUID
+	for rows.Next() {
+		n := nullnote{}
+		p := nullphoto{}
+		pn := nullnote{}
+		if err = rows.Scan(
+			&eventUUID,
+			&n.uuid,
+			&n.note,
+			&n.mtime,
+			&n.ctime,
+			&p.uuid,
+			&p.filename,
+			&p.mtime,
+			&p.ctime,
+			&pn.uuid,
+			&pn.note,
+			&pn.mtime,
+			&pn.ctime,
+		); err != nil {
+			return err
+		}
+
+		evt := evts[eventUUID]
+
+		if n.uuid != nil {
+			note := types.Note{
+				UUID:  *n.uuid,
+				Note:  *n.note,
+				MTime: *n.mtime,
+				CTime: *n.ctime,
+			}
+
+			if lastnote == nil || *lastnote != note {
+				evt.Notes = append([]types.Note{note}, evt.Notes...)
+			}
+
+			lastnote = &note
+		}
+
+		if p.uuid != nil {
+			photo := types.Photo{
+				UUID:     *p.uuid,
+				Filename: *p.filename,
+				MTime:    *p.mtime,
+				CTime:    *p.ctime,
+			}
+
+			if pn.uuid != nil {
+				photo.Notes = []types.Note{{
+					UUID:  *pn.uuid,
+					Note:  *pn.note,
+					MTime: *pn.mtime,
+					CTime: *pn.ctime,
+				}}
+			}
+
+			if lastphoto == nil || lastphoto.UUID != photo.UUID {
+				evt.Photos = append([]types.Photo{photo}, evt.Photos...)
+			} else if lastphoto.UUID == photo.UUID {
+				evt.Photos[0].Notes = append(photo.Notes, evt.Photos[0].Notes...)
+			}
+
+			lastphoto = &photo
+		}
+	}
+
+	return nil
+}
+
 func (db *Conn) SelectEvent(ctx context.Context, id types.UUID, cid types.CID) (types.Event, error) {
 	var err error
 

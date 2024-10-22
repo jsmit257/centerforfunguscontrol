@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/jsmit257/huautla/types"
@@ -151,8 +152,6 @@ func (db *Conn) SelectGenerationsByAttrs(ctx context.Context, p types.ReportAttr
 	deferred, start, l := initAccessFuncs("SelectGenerationsByAttrs", db.logger, "nil", cid)
 	defer deferred(start, err, l)
 
-	var rows *sql.Rows
-
 	result := make([]types.Generation, 0, 100)
 
 	if !p.Contains("generation-id", "strain-id", "plating-id", "liquid-id") {
@@ -160,7 +159,7 @@ func (db *Conn) SelectGenerationsByAttrs(ctx context.Context, p types.ReportAttr
 		return result, err
 	}
 
-	rows, err = db.query.QueryContext(ctx, psqls["generation"]["select"],
+	rows, err := db.query.QueryContext(ctx, psqls["generation"]["select"],
 		p.Get("generation-id"),
 		p.Get("strain-id"),
 		p.Get("plating-id"),
@@ -192,12 +191,6 @@ func (db *Conn) SelectGenerationsByAttrs(ctx context.Context, p types.ReportAttr
 			&row.CTime,
 			&row.DTime,
 		); err != nil {
-			break
-		}
-
-		if err = db.GetAllIngredients(ctx, &row.PlatingSubstrate, cid); err != nil {
-			break
-		} else if err = db.GetAllIngredients(ctx, &row.LiquidSubstrate, cid); err != nil {
 			break
 		} else if err = db.GetGenerationEvents(ctx, &row, cid); err != nil {
 			break
@@ -280,4 +273,83 @@ func (db *Conn) UpdateGenerationMTime(ctx context.Context, g *types.Generation, 
 
 func (db *Conn) DeleteGeneration(ctx context.Context, id types.UUID, cid types.CID) error {
 	return db.deleteByUUID(ctx, id, cid, "DeleteGeneration", "generation", db.logger)
+}
+
+type generation types.Generation
+
+func (g generation) children(db *Conn, ctx context.Context, cid types.CID, p *rpttree) error {
+	var err error
+
+	deferred, start, l := initAccessFuncs("Generation::children", db.logger, g.UUID, cid)
+	defer deferred(start, err, l)
+
+	notes, err := db.notesReport(ctx, g.UUID, cid, p)
+	if err != nil {
+		return err
+	} else if len(notes) != 0 {
+		p.data["notes"] = notes
+	}
+
+	var rpt rpt
+	progeny, err := db.GeneratedStrain(ctx, g.UUID, cid)
+	if err != sql.ErrNoRows {
+		if err != nil {
+			return err
+		} else if rpt, err = db.newRpt(ctx, strain(progeny), cid, p); err != nil {
+			return err
+		} else if rpt != nil {
+			p.data["progeny"] = rpt.Data()
+		}
+	}
+
+	return nil
+}
+
+func (db *Conn) GenerationReport(ctx context.Context, id types.UUID, cid types.CID) (types.Entity, error) {
+	var err error
+
+	deferred, start, l := initAccessFuncs("GenerationReport", db.logger, id, cid)
+	defer deferred(start, err, l)
+
+	var result []types.Entity
+	p, err := types.NewReportAttrs(url.Values{"generation-id": {string(id)}})
+	if err != nil {
+		return nil, err
+	} else if result, err = db.generationReport(ctx, p, cid, nil); err != nil {
+		return nil, err
+	} else if len(result) == 0 {
+		err = sql.ErrNoRows
+		return nil, err
+	}
+
+	return result[0], nil
+}
+
+func (db *Conn) generationReport(ctx context.Context, params types.ReportAttrs, cid types.CID, p *rpttree) ([]types.Entity, error) {
+	var err error
+
+	deferred, start, l := initAccessFuncs("generationReport", db.logger, "nil", cid)
+	defer deferred(start, err, l)
+
+	gens, err := db.SelectGenerationsByAttrs(ctx, params, cid)
+	if err != nil {
+		return nil, err
+	}
+
+	var rpt rpt
+	result := make([]types.Entity, 0, len(gens))
+	for _, gen := range gens {
+		if err = db.GetAllIngredients(ctx, &gen.PlatingSubstrate, cid); err != nil {
+			return nil, err
+		} else if err = db.GetAllIngredients(ctx, &gen.LiquidSubstrate, cid); err != nil {
+			return nil, err
+		} else if err = db.notesAndPhotos(ctx, gen.Events, gen.UUID, cid); err != nil {
+			return nil, err
+		} else if rpt, err = db.newRpt(ctx, generation(gen), cid, p); err != nil {
+			return nil, err
+		} else if rpt != nil {
+			result = append(result, rpt.Data())
+		}
+	}
+	return result, nil
 }

@@ -91,3 +91,18 @@ func (ha *HuautlaAdaptor) DeleteSubstrate(w http.ResponseWriter, r *http.Request
 		ms.send(w, nil, http.StatusNoContent)
 	}
 }
+
+func (ha *HuautlaAdaptor) GetSubstrateReport(w http.ResponseWriter, r *http.Request) {
+	ms := ha.start("GetSubstrateReport")
+	defer ms.end()
+
+	if id := chi.URLParam(r, "id"); id == "" {
+		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+	} else if id, err := url.QueryUnescape(id); err != nil {
+		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
+	} else if s, err := ha.db.SubstrateReport(r.Context(), types.UUID(id), ms.cid); err != nil {
+		ms.error(w, err, http.StatusInternalServerError, "failed to fetch substrate")
+	} else {
+		ms.send(w, s, http.StatusOK)
+	}
+}

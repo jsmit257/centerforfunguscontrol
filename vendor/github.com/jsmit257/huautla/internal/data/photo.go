@@ -144,3 +144,23 @@ func (db *Conn) RemovePhoto(ctx context.Context, photos []types.Photo, id types.
 
 	return append(photos[:i], photos[i+1:]...), nil
 }
+
+func (db *Conn) photosReport(ctx context.Context, id types.UUID, cid types.CID, p *rpttree) ([]types.Entity, error) {
+	photos, err := db.GetPhotos(ctx, id, cid)
+	if err != nil {
+		return nil, err
+	} else if len(photos) == 0 {
+		return nil, nil
+	}
+
+	result := make([]types.Entity, len(photos))
+	for i, photo := range photos {
+		rpt, err := db.newRpt(ctx, photo, cid, p)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = rpt.Data()
+	}
+
+	return result, nil
+}

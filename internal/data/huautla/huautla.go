@@ -48,7 +48,7 @@ func New(cfg *types.Config, log *log.Entry, mtrcs interface{}) (*HuautlaAdaptor,
 	}
 }
 
-func getUUIDByName(name string, w http.ResponseWriter, r *http.Request, ms *methodStats) (uuid types.UUID, err error) {
+func getUUIDByName(name string, _ http.ResponseWriter, r *http.Request, _ *methodStats) (uuid types.UUID, err error) {
 	if id := chi.URLParam(r, name); id == "" {
 		err = fmt.Errorf("missing required id parameter")
 	} else if id, err = url.QueryUnescape(id); err != nil {

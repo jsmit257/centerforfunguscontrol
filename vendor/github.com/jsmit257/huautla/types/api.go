@@ -2,7 +2,6 @@ package types
 
 import (
 	"context"
-	"net/url"
 )
 
 type (
@@ -40,6 +39,7 @@ type (
 		InsertGeneration(context.Context, Generation, CID) (Generation, error)
 		UpdateGeneration(context.Context, Generation, CID) (Generation, error)
 		DeleteGeneration(context.Context, UUID, CID) error
+		GenerationReport(context.Context, UUID, CID) (Entity, error)
 	}
 
 	GenerationEventer interface {
@@ -71,6 +71,7 @@ type (
 		InsertLifecycle(ctx context.Context, lc Lifecycle, cid CID) (Lifecycle, error)
 		UpdateLifecycle(ctx context.Context, lc Lifecycle, cid CID) (Lifecycle, error)
 		DeleteLifecycle(ctx context.Context, id UUID, cid CID) error
+		LifecycleReport(context.Context, UUID, CID) (Entity, error)
 	}
 
 	Noter interface {
@@ -95,7 +96,6 @@ type (
 	ReportAttrs interface {
 		Contains(names ...string) bool
 		Get(name string) *UUID
-		Map(m url.Values) (err error)
 		Set(name string, value string) error
 	}
 
@@ -131,6 +131,7 @@ type (
 		DeleteStrain(ctx context.Context, id UUID, cid CID) error
 		GeneratedStrain(ctx context.Context, id UUID, cid CID) (Strain, error)
 		UpdateGeneratedStrain(ctx context.Context, gid *UUID, sid UUID, cid CID) error
+		StrainReport(context.Context, UUID, CID) (Entity, error)
 	}
 
 	SubstrateIngredienter interface {
@@ -146,6 +147,7 @@ type (
 		InsertSubstrate(ctx context.Context, s Substrate, cid CID) (Substrate, error)
 		UpdateSubstrate(ctx context.Context, id UUID, s Substrate, cid CID) error
 		DeleteSubstrate(ctx context.Context, id UUID, cid CID) error
+		SubstrateReport(context.Context, UUID, CID) (Entity, error)
 	}
 
 	// vendors aren't meant to be a comprehensive list of attributes, really just
