@@ -9,11 +9,21 @@ import (
 )
 
 type (
+	attr       types.StrainAttribute
+	event      types.Event
+	eventtype  types.EventType
+	generation types.Generation
+	ingredient types.Ingredient
+	lifecycle  types.Lifecycle
+	note       types.Note
+	photo      types.Photo
+	strain     types.Strain
+	substrate  types.Substrate
+	vendor     types.Vendor
+
 	rpt interface {
 		Data() types.Entity
 	}
-
-	// entity map[string]any
 
 	rpttree struct {
 		id     string
@@ -32,20 +42,19 @@ func (db *Conn) newRpt(ctx context.Context, e any, cid types.CID, p *rpttree) (r
 	}
 
 	if result.id == "" {
-		return nil, fmt.Errorf("couldn't determine entity type: '%v'", e)
+		return nil, fmt.Errorf("couldn't determine entity type: '%v' '%T'", e, e)
 	} else if result.cycle(result.id) {
 		return nil, nil //fmt.Errorf("detected cycle in the graph at: '%s', %v", result.id, result.parents().String())
 	}
 
 	js, err := json.Marshal(e)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("marshal error: '%w' for : '%w'", err, result.err())
 	} else if err = json.Unmarshal(js, &result.data); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unmarshal error: '%w' for : '%w'", err, result.err())
 	} else if T, ok := e.(interface {
 		children(*Conn, context.Context, types.CID, *rpttree) error
 	}); ok {
-		db.logger.Warnf("calling children on '%#v", e)
 		err = T.children(db, ctx, cid, result)
 	}
 
@@ -66,6 +75,10 @@ func (r *rpttree) cycle(test string) bool {
 	return r.parent.cycle(test)
 }
 
+func (r *rpttree) err() error {
+	return fmt.Errorf("rpttree: '%v'", r.parents())
+}
+
 func (r *rpttree) parents() rpttrees {
 	if r.parent == nil {
 		return nil
@@ -75,7 +88,7 @@ func (r *rpttree) parents() rpttrees {
 
 func rptID(e any) string {
 	switch T := e.(type) {
-	case Lifecycle:
+	case lifecycle:
 		return fmt.Sprintf("lifecycle#%s", T.UUID)
 	case generation:
 		return fmt.Sprintf("generation#%s", T.UUID)
@@ -83,13 +96,13 @@ func rptID(e any) string {
 		return fmt.Sprintf("strain#%s", T.UUID)
 	case types.StrainAttribute:
 		return fmt.Sprintf("strainattribute#%s", T.UUID)
-	case Substrate:
+	case substrate:
 		return fmt.Sprintf("substrate#%s", T.UUID)
 	case types.Ingredient:
 		return fmt.Sprintf("ingredient#%s", T.UUID)
 	case types.Event:
 		return fmt.Sprintf("event#%s", T.UUID)
-	case types.EventType:
+	case eventtype:
 		return fmt.Sprintf("eventtype#%s", T.UUID)
 	case types.Stage:
 		return fmt.Sprintf("stage#%s", T.UUID)
@@ -98,6 +111,8 @@ func rptID(e any) string {
 	case types.Note:
 		return fmt.Sprintf("note#%s", T.UUID)
 	case types.Vendor:
+		return fmt.Sprintf("vendor#%s", T.UUID)
+	case vendor:
 		return fmt.Sprintf("vendor#%s", T.UUID)
 	}
 	return ""

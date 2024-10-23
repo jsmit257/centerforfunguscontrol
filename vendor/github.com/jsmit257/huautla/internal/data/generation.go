@@ -134,7 +134,7 @@ func (db *Conn) SelectGeneration(ctx context.Context, id types.UUID, cid types.C
 
 	p, _ := types.NewReportAttrs(map[string][]string{"generation-id": {string(id)}})
 
-	result, err = db.SelectGenerationsByAttrs(ctx, p, cid)
+	result, err = db.selectGenerations(ctx, p, cid)
 	if err != nil {
 		return types.Generation{}, err
 	} else if len(result) == 1 {
@@ -146,7 +146,7 @@ func (db *Conn) SelectGeneration(ctx context.Context, id types.UUID, cid types.C
 	return types.Generation{}, err
 }
 
-func (db *Conn) SelectGenerationsByAttrs(ctx context.Context, p types.ReportAttrs, cid types.CID) ([]types.Generation, error) {
+func (db *Conn) selectGenerations(ctx context.Context, p types.ReportAttrs, cid types.CID) ([]types.Generation, error) {
 	var err error
 
 	deferred, start, l := initAccessFuncs("SelectGenerationsByAttrs", db.logger, "nil", cid)
@@ -154,7 +154,7 @@ func (db *Conn) SelectGenerationsByAttrs(ctx context.Context, p types.ReportAttr
 
 	result := make([]types.Generation, 0, 100)
 
-	if !p.Contains("generation-id", "strain-id", "plating-id", "liquid-id") {
+	if !p.Contains("generation-id", "strain-id", "plating-id", "liquid-id", "eventtype-id") {
 		err = fmt.Errorf("request doesn't contain at least 1 required field")
 		return result, err
 	}
@@ -163,7 +163,8 @@ func (db *Conn) SelectGenerationsByAttrs(ctx context.Context, p types.ReportAttr
 		p.Get("generation-id"),
 		p.Get("strain-id"),
 		p.Get("plating-id"),
-		p.Get("liquid-id"))
+		p.Get("liquid-id"),
+		p.Get("eventtype-id"))
 	if err != nil {
 		return nil, err
 	}
@@ -275,12 +276,10 @@ func (db *Conn) DeleteGeneration(ctx context.Context, id types.UUID, cid types.C
 	return db.deleteByUUID(ctx, id, cid, "DeleteGeneration", "generation", db.logger)
 }
 
-type generation types.Generation
-
 func (g generation) children(db *Conn, ctx context.Context, cid types.CID, p *rpttree) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs("Generation::children", db.logger, g.UUID, cid)
+	deferred, start, l := initAccessFuncs("generation::children", db.logger, g.UUID, cid)
 	defer deferred(start, err, l)
 
 	notes, err := db.notesReport(ctx, g.UUID, cid, p)
@@ -331,7 +330,7 @@ func (db *Conn) generationReport(ctx context.Context, params types.ReportAttrs, 
 	deferred, start, l := initAccessFuncs("generationReport", db.logger, "nil", cid)
 	defer deferred(start, err, l)
 
-	gens, err := db.SelectGenerationsByAttrs(ctx, params, cid)
+	gens, err := db.selectGenerations(ctx, params, cid)
 	if err != nil {
 		return nil, err
 	}

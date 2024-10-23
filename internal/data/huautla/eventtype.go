@@ -1,7 +1,9 @@
 package huautla
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -89,5 +91,20 @@ func (ha *HuautlaAdaptor) DeleteEventType(w http.ResponseWriter, r *http.Request
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete eventtype")
 	} else {
 		ms.send(w, nil, http.StatusNoContent)
+	}
+}
+
+func (ha *HuautlaAdaptor) GetEventTypeReport(w http.ResponseWriter, r *http.Request) {
+	ms := ha.start("GetEventTypeReport")
+	defer ms.end()
+
+	if id, err := getUUIDByName("id", w, r, ms); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "failed to fetch uuid")
+	} else if v, err := ha.db.EventTypeReport(r.Context(), id, ms.cid); errors.Is(err, sql.ErrNoRows) {
+		ms.error(w, err, http.StatusBadRequest, "failed to fetch eventtype")
+	} else if err != nil {
+		ms.error(w, err, http.StatusInternalServerError, "failed to fetch eventtype")
+	} else {
+		ms.send(w, v, http.StatusOK)
 	}
 }

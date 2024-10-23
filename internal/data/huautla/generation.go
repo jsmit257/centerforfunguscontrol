@@ -22,23 +22,6 @@ func (ha *HuautlaAdaptor) GetGenerationIndex(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func (ha *HuautlaAdaptor) GetGenerationsByAttrs(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetGenerationsByAttrs")
-	defer ms.end()
-
-	if q, err := url.ParseQuery(r.URL.RawQuery); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "query string is malformed")
-	} else if p, err := types.NewReportAttrs(q); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "couldn't parse report params")
-	} else if !p.Contains("generation-id", "strain-id", "plating-id", "liquid-id") {
-		ms.error(w, fmt.Errorf("no report parameters supplied"), http.StatusBadRequest, "no report parameters supplied")
-	} else if g, err := ha.db.SelectGenerationsByAttrs(r.Context(), p, ms.cid); err != nil {
-		ms.error(w, err, http.StatusInternalServerError, "failed to fetch generations")
-	} else {
-		ms.send(w, g, http.StatusOK)
-	}
-}
-
 func (ha *HuautlaAdaptor) GetGeneration(w http.ResponseWriter, r *http.Request) {
 	ms := ha.start("GetGeneration")
 	defer ms.end()

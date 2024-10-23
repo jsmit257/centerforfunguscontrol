@@ -25,7 +25,7 @@ services:
     ports: [ 7998:8080 ]
     build: .
     volumes:
-      - ./album:/album
+      - ./testalbum:/album
     environment:
       HUAUTLA_HOST: *pghost
       HUAUTLA_PORT: *pgport
@@ -58,7 +58,7 @@ services:
     ports: [ 8080:80 ]
     volumes:
       - ./tests/data/:/www/css/images/background/
-      - ./album:/album
+      - ./testalbum:/album
     environment:
       CFFC_API_HOST: *apihost
       CFFC_API_PORT: *apiport

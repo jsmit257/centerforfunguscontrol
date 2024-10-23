@@ -208,30 +208,25 @@ func (db *Conn) UpdateGeneratedStrain(ctx context.Context, gid *types.UUID, sid 
 	return nil
 }
 
-type strain types.Strain
-
 func (s strain) children(db *Conn, ctx context.Context, cid types.CID, p *rpttree) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs("Strain::children", db.logger, s.UUID, cid)
+	deferred, start, l := initAccessFuncs("strain::children", db.logger, s.UUID, cid)
 	defer deferred(start, err, l)
 
-	params, _ := types.NewReportAttrs(url.Values{"strain-id": {string(s.UUID)}})
+	param, _ := types.NewReportAttrs(url.Values{"strain-id": {string(s.UUID)}})
 
-	gens, err := db.generationReport(ctx, params, cid, p)
+	gens, err := db.generationReport(ctx, param, cid, p)
 	if err != nil {
 		return err
 	} else if len(gens) != 0 {
 		p.data["generations"] = gens
 	}
 
-	db.logger.Warnf("i am calling lifecycle with strain params: %#v", s.UUID)
-	lcs, err := db.lifecycleReport(ctx, params, cid, p)
+	lcs, err := db.lifecycleReport(ctx, param, cid, p)
 	if err != nil {
-		db.logger.Warnf("this is an error with strain params: %#v", s.UUID)
 		return err
 	} else if len(lcs) != 0 {
-		db.logger.Warnf("this is the happy path with strain params: %#v", s.UUID)
 		p.data["lifecycles"] = lcs
 	}
 
@@ -244,9 +239,9 @@ func (s strain) children(db *Conn, ctx context.Context, cid types.CID, p *rpttre
 
 	if s.Generation == nil {
 		return nil
-	} else if params, err = types.NewReportAttrs(url.Values{"generation-id": {string(s.Generation.UUID)}}); err != nil {
+	} else if param, err = types.NewReportAttrs(url.Values{"generation-id": {string(s.Generation.UUID)}}); err != nil {
 		return err
-	} else if gens, err = db.generationReport(ctx, params, cid, p); err != nil {
+	} else if gens, err = db.generationReport(ctx, param, cid, p); err != nil {
 		return err
 	} else if len(gens) == 0 {
 		err = fmt.Errorf("how does '%s' not identify a generation?", s.Generation.UUID)
@@ -282,6 +277,7 @@ func (db *Conn) StrainReport(ctx context.Context, id types.UUID, cid types.CID) 
 
 func (db *Conn) strainReport(ctx context.Context, params types.ReportAttrs, cid types.CID, p *rpttree) ([]types.Entity, error) {
 	var err error
+	var rpt rpt
 
 	deferred, start, l := initAccessFuncs("strainReport", db.logger, "nil", cid)
 	defer deferred(start, err, l)
@@ -291,7 +287,6 @@ func (db *Conn) strainReport(ctx context.Context, params types.ReportAttrs, cid 
 		return nil, err
 	}
 
-	var rpt rpt
 	result := make([]types.Entity, 0, len(strs))
 	for _, str := range strs {
 		if rpt, err = db.newRpt(ctx, strain(str), cid, p); err != nil {

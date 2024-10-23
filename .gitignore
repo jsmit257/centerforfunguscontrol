@@ -3,6 +3,7 @@
 /log.json
 
 /album
+/testalbum
 
 /tests/data
 !/tests/data/sample.png

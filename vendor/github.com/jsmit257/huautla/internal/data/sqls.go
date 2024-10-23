@@ -116,7 +116,8 @@ var psqls = sqlMap{
       order
           by  s.name, e.name`,
 		"select": `
-    select e.name,
+    select e.uuid,
+           e.name,
            e.severity,
            s.uuid as stage_uuid,
            s.name as stage_name
@@ -197,6 +198,7 @@ var psqls = sqlMap{
           on  st.vendor_uuid = stv.uuid
        order
           by  g.uuid`,
+		// just goes to show you can solve every problem with a union
 		"select": `
         with  strain_sources as (
       select  so.generation_uuid,
@@ -214,6 +216,20 @@ var psqls = sqlMap{
           on  ev.observable_uuid = lc.uuid
         join  strains st
           on  lc.strain_uuid = st.uuid
+      ),      events_filter as (
+      select  g.uuid as generation_uuid
+        from  generations g
+        join  events e
+          on  g.uuid = e.observable_uuid
+       where  e.eventtype_uuid = coalesce($5, e.eventtype_uuid)
+       union
+      select  g.uuid 
+        from  generations g
+        left
+        join  events e
+          on  g.uuid = e.observable_uuid
+       where  e.uuid is null
+         and  $5 is null
       )
       select  distinct
               g.uuid,
@@ -233,6 +249,8 @@ var psqls = sqlMap{
               g.ctime,
               g.dtime
         from  generations g
+        join  events_filter ef
+          on  g.uuid = ef.generation_uuid
         join  substrates ps
           on  g.platingsubstrate_uuid = ps.uuid
         join  vendors psv
@@ -266,6 +284,8 @@ var psqls = sqlMap{
               g.ctime,
               g.dtime
         from  generations g
+        join  events_filter ef
+          on  g.uuid = ef.generation_uuid
         join  substrates ps
           on  g.platingsubstrate_uuid = ps.uuid
         join  vendors psv
@@ -361,6 +381,20 @@ var psqls = sqlMap{
       order
          by  l.mtime desc, l.uuid`,
 		"select": `
+        with  event_filter as (
+      select  lc.uuid as lifecycle_uuid
+        from  lifecycles lc
+        join  events e
+          on  lc.uuid = e.observable_uuid
+       where  e.eventtype_uuid = coalesce($5, e.eventtype_uuid)
+       union  
+      select  lc.uuid
+        from  lifecycles lc
+        join  events e
+          on  lc.uuid = e.observable_uuid
+       where  e.uuid is null
+         and  $5 is null
+      )
       select  lc.uuid,
               lc.location,
               lc.strain_cost,
@@ -393,6 +427,9 @@ var psqls = sqlMap{
               bv.name as bulk_vendor_name,
               bv.website as bulk_vendor_website
         from  lifecycles lc
+        left
+        join  event_filter ef
+          on  lc.uuid = ef.lifecycle_uuid
         join  strains s
           on  lc.strain_uuid = s.uuid
         join  vendors sv
@@ -736,7 +773,7 @@ var psqls = sqlMap{
 
 	"vendor": {
 		"select-all": `select uuid, name, website from vendors order by name`,
-		"select":     `select name, website from vendors where uuid = $1`,
+		"select":     `select uuid, name, website from vendors where uuid = $1`,
 		"insert":     `insert into vendors(uuid, name, website) values($1, $2, $3)`,
 		"update":     `update vendors set name = $1, website = $2 where uuid = $3`,
 		"delete":     `delete from vendors where uuid = $1`,

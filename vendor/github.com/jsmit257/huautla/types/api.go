@@ -30,11 +30,11 @@ type (
 		InsertEventType(ctx context.Context, e EventType, cid CID) (EventType, error)
 		UpdateEventType(ctx context.Context, id UUID, e EventType, cid CID) error
 		DeleteEventType(ctx context.Context, id UUID, cid CID) error
+		EventTypeReport(context.Context, UUID, CID) (Entity, error)
 	}
 
 	Generationer interface {
 		SelectGenerationIndex(context.Context, CID) ([]Generation, error)
-		SelectGenerationsByAttrs(context.Context, ReportAttrs, CID) ([]Generation, error)
 		SelectGeneration(context.Context, UUID, CID) (Generation, error)
 		InsertGeneration(context.Context, Generation, CID) (Generation, error)
 		UpdateGeneration(context.Context, Generation, CID) (Generation, error)
@@ -66,7 +66,6 @@ type (
 
 	Lifecycler interface {
 		SelectLifecycleIndex(ctx context.Context, cid CID) ([]Lifecycle, error)
-		SelectLifecyclesByAttrs(ctx context.Context, p ReportAttrs, cid CID) ([]Lifecycle, error)
 		SelectLifecycle(ctx context.Context, id UUID, cid CID) (Lifecycle, error)
 		InsertLifecycle(ctx context.Context, lc Lifecycle, cid CID) (Lifecycle, error)
 		UpdateLifecycle(ctx context.Context, lc Lifecycle, cid CID) (Lifecycle, error)
@@ -150,23 +149,12 @@ type (
 		SubstrateReport(context.Context, UUID, CID) (Entity, error)
 	}
 
-	// vendors aren't meant to be a comprehensive list of attributes, really just
-	// a name that makes a unique constraint with Strain.Name in the strain table;
-	// storing them is just for convenience, and to avoid spelling errors
 	Vendorer interface {
-		// this doesn't support pagination, because our list of vendors will only
-		// range into the hundreds *at most*
 		SelectAllVendors(ctx context.Context, cid CID) ([]Vendor, error)
-		// mostly useful for filling in complex objects like strains or substrates
 		SelectVendor(ctx context.Context, id UUID, cid CID) (Vendor, error)
-		// assigns a generated uuid, ctime and mtime to `v` and inserts it into vendors;
-		// the modified `v` struct is returned
 		InsertVendor(ctx context.Context, v Vendor, cid CID) (Vendor, error)
-		// assigns a generated mtime to the `v` arg, then updates every vendor attribute
-		// except uuid based on the `id` arg; overwrites the uuid in `v` and returns `v`
 		UpdateVendor(ctx context.Context, id UUID, v Vendor, cid CID) error
-		// this should really never be used; none of the foreign keys have cascade
-		// delete, so any referenced vendors will cause an error here; just don't use it
 		DeleteVendor(ctx context.Context, id UUID, cid CID) error
+		VendorReport(context.Context, UUID, CID) (Entity, error)
 	}
 )

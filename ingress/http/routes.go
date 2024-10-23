@@ -110,13 +110,10 @@ func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
 	r.Patch("/photos/{o_id}/{id}", ha.PatchPhoto)
 	r.Delete("/photos/{o_id}/{id}", ha.DeletePhoto)
 
-	r.Get("/reports/lifecycles", ha.GetLifecyclesByAttrs)
-	r.Get("/reports/generations", ha.GetGenerationsByAttrs)
-
 	r.Get("/reports/lifecycle/{id}", ha.GetLifecycleReport)
 	r.Get("/reports/generation/{id}", ha.GetGenerationReport)
 	r.Get("/reports/strain/{id}", ha.GetStrainReport)
 	r.Get("/reports/substrate/{id}", ha.GetSubstrateReport)
-	// r.Get("/reports/eventtype/{id}", ha.GetEventtypeReport)
-	// r.Get("/reports/vendor/{id}", ha.GetVendorReport)
+	r.Get("/reports/eventtype/{id}", ha.GetEventTypeReport)
+	r.Get("/reports/vendor/{id}", ha.GetVendorReport)
 }

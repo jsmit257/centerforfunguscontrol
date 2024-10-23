@@ -35,11 +35,3 @@ func checkResult(t *testing.T, b *bytes.Buffer, rx any, expected any) {
 	require.Nil(t, json.Unmarshal(body, rx))
 	require.Equal(t, expected, rx)
 }
-
-// func serializeEntity(v any) []byte {
-// 	if v == nil {
-// 		return []byte{}
-// 	}
-// 	result, _ := json.Marshal(v)
-// 	return result
-// }

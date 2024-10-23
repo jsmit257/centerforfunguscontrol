@@ -100,7 +100,7 @@ func (db *Conn) SelectLifecycle(ctx context.Context, id types.UUID, cid types.CI
 
 	p, _ := types.NewReportAttrs(map[string][]string{"lifecycle-id": {string(id)}})
 
-	result, err = db.SelectLifecyclesByAttrs(ctx, p, cid)
+	result, err = db.selectLifecycles(ctx, p, cid)
 	if err != nil {
 		return types.Lifecycle{}, err
 	} else if l := len(result); l == 1 {
@@ -114,7 +114,7 @@ func (db *Conn) SelectLifecycle(ctx context.Context, id types.UUID, cid types.CI
 	return types.Lifecycle{}, err
 }
 
-func (db *Conn) SelectLifecyclesByAttrs(ctx context.Context, p types.ReportAttrs, cid types.CID) ([]types.Lifecycle, error) {
+func (db *Conn) selectLifecycles(ctx context.Context, p types.ReportAttrs, cid types.CID) ([]types.Lifecycle, error) {
 	var err error
 	var rows *sql.Rows
 
@@ -125,7 +125,7 @@ func (db *Conn) SelectLifecyclesByAttrs(ctx context.Context, p types.ReportAttrs
 
 	var generationID *types.UUID
 
-	if !p.Contains("lifecycle-id", "strain-id", "grain-id", "bulk-id") {
+	if !p.Contains("lifecycle-id", "strain-id", "grain-id", "bulk-id", "eventtype-id") {
 		err = fmt.Errorf("request doesn't contain at least 1 required field")
 		return result, err
 	}
@@ -134,7 +134,8 @@ func (db *Conn) SelectLifecyclesByAttrs(ctx context.Context, p types.ReportAttrs
 		p.Get("lifecycle-id"),
 		p.Get("strain-id"),
 		p.Get("grain-id"),
-		p.Get("bulk-id"))
+		p.Get("bulk-id"),
+		p.Get("eventtype-id"))
 	if err != nil {
 		return nil, err
 	}
@@ -284,12 +285,10 @@ func (db *Conn) DeleteLifecycle(ctx context.Context, id types.UUID, cid types.CI
 	return db.deleteByUUID(ctx, id, cid, "DeleteLifecycle", "lifecycle", db.logger)
 }
 
-type Lifecycle types.Lifecycle
-
-func (lc Lifecycle) children(db *Conn, ctx context.Context, cid types.CID, p *rpttree) error {
+func (lc lifecycle) children(db *Conn, ctx context.Context, cid types.CID, p *rpttree) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs("Lifecycle::children", db.logger, lc.UUID, cid)
+	deferred, start, l := initAccessFuncs("lifecycle::children", db.logger, lc.UUID, cid)
 	defer deferred(start, err, l)
 
 	notes, err := db.notesReport(ctx, lc.UUID, cid, p)
@@ -332,16 +331,16 @@ func (db *Conn) LifecycleReport(ctx context.Context, id types.UUID, cid types.CI
 
 func (db *Conn) lifecycleReport(ctx context.Context, params types.ReportAttrs, cid types.CID, p *rpttree) ([]types.Entity, error) {
 	var err error
+	var rpt rpt
 
 	deferred, start, l := initAccessFuncs("lifecycleReport", db.logger, "nil", cid)
 	defer deferred(start, err, l)
 
-	lcs, err := db.SelectLifecyclesByAttrs(ctx, params, cid)
+	lcs, err := db.selectLifecycles(ctx, params, cid)
 	if err != nil {
 		return nil, err
 	}
 
-	var rpt rpt
 	result := make([]types.Entity, 0, len(lcs))
 	for _, lc := range lcs {
 		if err = db.GetAllAttributes(ctx, &lc.Strain, cid); err != nil {
@@ -352,7 +351,7 @@ func (db *Conn) lifecycleReport(ctx context.Context, params types.ReportAttrs, c
 			return nil, err
 		} else if err = db.notesAndPhotos(ctx, lc.Events, lc.UUID, cid); err != nil {
 			return nil, err
-		} else if rpt, err = db.newRpt(ctx, Lifecycle(lc), cid, p); err != nil {
+		} else if rpt, err = db.newRpt(ctx, lifecycle(lc), cid, p); err != nil {
 			return nil, err
 		} else if rpt == nil {
 			break

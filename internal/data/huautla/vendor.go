@@ -1,7 +1,9 @@
 package huautla
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -89,5 +91,20 @@ func (ha *HuautlaAdaptor) DeleteVendor(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete vendor")
 	} else {
 		ms.send(w, nil, http.StatusNoContent)
+	}
+}
+
+func (ha *HuautlaAdaptor) GetVendorReport(w http.ResponseWriter, r *http.Request) {
+	ms := ha.start("GetVendorReport")
+	defer ms.end()
+
+	if id, err := getUUIDByName("id", w, r, ms); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "failed to fetch uuid")
+	} else if v, err := ha.db.VendorReport(r.Context(), id, ms.cid); errors.Is(err, sql.ErrNoRows) {
+		ms.error(w, err, http.StatusBadRequest, "failed to fetch vendor")
+	} else if err != nil {
+		ms.error(w, err, http.StatusInternalServerError, "failed to fetch vendor")
+	} else {
+		ms.send(w, v, http.StatusOK)
 	}
 }

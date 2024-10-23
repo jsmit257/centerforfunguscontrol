@@ -31,6 +31,9 @@ type vendorerMock struct {
 	updateErr error
 
 	deleteErr error
+
+	vr    types.Entity
+	vrErr error
 }
 
 func Test_GetAllVendors(t *testing.T) {
@@ -340,6 +343,72 @@ func Test_DeleteVendor(t *testing.T) {
 	}
 }
 
+func Test_GetVendorReport(t *testing.T) {
+	t.Parallel()
+
+	set := map[string]struct {
+		id     string
+		result types.Entity
+		err    error
+		sc     int
+	}{
+		"happy_path": {
+			id:     "1",
+			result: types.Entity{},
+			sc:     http.StatusOK,
+		},
+		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urldecode_error": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
+		"db_error": {
+			id:  "1",
+			err: fmt.Errorf("db error"),
+			sc:  http.StatusInternalServerError,
+		},
+	}
+
+	for k, v := range set {
+		k, v := k, v
+		ha := &HuautlaAdaptor{
+			db: &huautlaMock{
+				Vendorer: &vendorerMock{
+					vr:    v.result,
+					vrErr: v.err,
+				},
+			},
+			log:   log.WithFields(log.Fields{"test": "Test_GetVendor", "case": k}),
+			mtrcs: nil,
+		}
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					context.Background(),
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodGet,
+				"url",
+				nil)
+
+			ha.GetVendorReport(w, r)
+
+			require.Equal(t, v.sc, w.Code)
+			if w.Code == http.StatusOK {
+				checkResult(t, w.Body, &types.Entity{}, &v.result)
+			}
+		})
+	}
+}
+
 func serializeVendor(v *types.Vendor) []byte {
 	if v == nil {
 		return []byte{}
@@ -351,19 +420,18 @@ func serializeVendor(v *types.Vendor) []byte {
 func (vm *vendorerMock) SelectAllVendors(context.Context, types.CID) ([]types.Vendor, error) {
 	return vm.selectAllResult, vm.selectAllErr
 }
-
 func (vm *vendorerMock) SelectVendor(context.Context, types.UUID, types.CID) (types.Vendor, error) {
 	return vm.selectResult, vm.selectErr
 }
-
 func (vm *vendorerMock) InsertVendor(context.Context, types.Vendor, types.CID) (types.Vendor, error) {
 	return vm.insertResult, vm.insertErr
 }
-
 func (vm *vendorerMock) UpdateVendor(context.Context, types.UUID, types.Vendor, types.CID) error {
 	return vm.updateErr
 }
-
 func (vm *vendorerMock) DeleteVendor(context.Context, types.UUID, types.CID) error {
 	return vm.deleteErr
+}
+func (vm *vendorerMock) VendorReport(context.Context, types.UUID, types.CID) (types.Entity, error) {
+	return vm.vr, vm.vrErr
 }

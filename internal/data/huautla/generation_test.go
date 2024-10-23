@@ -90,68 +90,6 @@ func Test_GetGenerationIndex(t *testing.T) {
 	}
 }
 
-func Test_GetGenerationsByAttrs(t *testing.T) {
-	t.Parallel()
-
-	set := map[string]struct {
-		params string
-		result []types.Generation
-		err    error
-		sc     int
-	}{
-		"happy_path": {
-			params: "strain-id=0",
-			result: []types.Generation{},
-			sc:     http.StatusOK,
-		},
-		"missing_id": {
-			sc: http.StatusBadRequest,
-		},
-		"url_decode_error": {
-			params: "%zzz",
-			sc:     http.StatusBadRequest,
-		},
-		"db_error": {
-			params: "strain-id=0",
-			err:    fmt.Errorf("db error"),
-			sc:     http.StatusInternalServerError,
-		},
-	}
-
-	for k, v := range set {
-		k, v := k, v
-		ha := &HuautlaAdaptor{
-			db: &huautlaMock{
-				Generationer: &generationerMock{
-					all:    v.result,
-					allErr: v.err,
-				},
-			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetGenerationsByAttrs", "case": k}),
-			mtrcs: nil,
-		}
-
-		t.Run(k, func(t *testing.T) {
-			t.Parallel()
-			w := httptest.NewRecorder()
-			defer w.Result().Body.Close()
-			r, _ := http.NewRequestWithContext(
-				context.WithValue(
-					context.Background(),
-					chi.RouteCtxKey,
-					chi.NewRouteContext()),
-				http.MethodGet,
-				"/reports/generations?"+v.params,
-				nil)
-			ha.GetGenerationsByAttrs(w, r)
-			require.Equal(t, v.sc, w.Code)
-			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &[]types.Generation{}, &v.result)
-			}
-		})
-	}
-}
-
 func Test_GetGeneration(t *testing.T) {
 	t.Parallel()
 

@@ -57,7 +57,7 @@ func (db *Conn) SelectSubstrate(ctx context.Context, id types.UUID, cid types.CI
 		return types.Substrate{}, err
 	}
 
-	subs, err := db.selectSubstrateByAttrs(ctx, param, cid)
+	subs, err := db.selectSubstrates(ctx, param, cid)
 	if err != nil {
 		return types.Substrate{}, err
 	} else if l := len(subs); l == 1 {
@@ -69,10 +69,8 @@ func (db *Conn) SelectSubstrate(ctx context.Context, id types.UUID, cid types.CI
 	return types.Substrate{}, err
 }
 
-func (db *Conn) selectSubstrateByAttrs(ctx context.Context, param types.ReportAttrs, cid types.CID) ([]types.Substrate, error) {
+func (db *Conn) selectSubstrates(ctx context.Context, param types.ReportAttrs, cid types.CID) ([]types.Substrate, error) {
 	var err error
-
-	db.logger.WithField("param", param).Errorf("incoming!!!")
 
 	deferred, start, l := initAccessFuncs("SelectSubstrateByAttrs", db.logger, "nil", cid)
 	defer deferred(start, err, l)
@@ -157,12 +155,10 @@ func (db *Conn) DeleteSubstrate(ctx context.Context, id types.UUID, cid types.CI
 	return db.deleteByUUID(ctx, id, cid, "DeleteSubstrate", "substrate", db.logger)
 }
 
-type Substrate types.Substrate
-
-func (s Substrate) children(db *Conn, ctx context.Context, cid types.CID, p *rpttree) error {
+func (s substrate) children(db *Conn, ctx context.Context, cid types.CID, p *rpttree) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs("Substrate::children", db.logger, s.UUID, cid)
+	deferred, start, l := initAccessFuncs("substrate::children", db.logger, s.UUID, cid)
 	defer deferred(start, err, l)
 
 	getter := db.lifecycleReport
@@ -192,15 +188,46 @@ func (db *Conn) SubstrateReport(ctx context.Context, id types.UUID, cid types.CI
 	deferred, start, l := initAccessFuncs("SubstrateReport", db.logger, id, cid)
 	defer deferred(start, err, l)
 
-	var rpt rpt
-	sub, err := db.SelectSubstrate(ctx, id, cid)
+	var result []types.Entity
+
+	param, err := types.NewReportAttrs(url.Values{"substrate-id": {string(id)}})
 	if err != nil {
 		return nil, err
-	} else if rpt, err = db.newRpt(ctx, Substrate(sub), cid, nil); err != nil {
+	} else if result, err = db.substrateReport(ctx, param, cid, nil); err != nil {
 		return nil, err
-	} else if rpt == nil {
-		return nil, nil
+	} else if len(result) == 1 {
+		return result[0], nil
+	} else {
+		err = sql.ErrNoRows
 	}
 
-	return rpt.Data(), nil
+	return nil, err
+}
+
+func (db *Conn) substrateReport(ctx context.Context, param types.ReportAttrs, cid types.CID, p *rpttree) ([]types.Entity, error) {
+	var err error
+	var rpt rpt
+
+	deferred, start, l := initAccessFuncs("substrateReport", db.logger, "nil", cid)
+	defer deferred(start, err, l)
+
+	subs, err := db.selectSubstrates(ctx, param, cid)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]types.Entity, 0, len(subs))
+
+	for _, s := range subs {
+		if rpt, err = db.newRpt(ctx, substrate(s), cid, p); err != nil {
+			return nil, err
+		} else if rpt == nil {
+			continue
+		} else {
+			result = append(result, rpt.Data())
+		}
+	}
+
+	return result, nil
+
 }
