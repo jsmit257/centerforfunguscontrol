@@ -11,9 +11,8 @@ import (
 
 func (db *Conn) GetSources(ctx context.Context, g *types.Generation, cid types.CID) error {
 	var err error
-
-	deferred, start, l := initAccessFuncs("GetSources", db.logger, g.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("GetSources", db.logger, g.UUID, cid)
+	defer deferred(&err, l)
 
 	var rows *sql.Rows
 
@@ -70,9 +69,8 @@ func (db *Conn) GetSources(ctx context.Context, g *types.Generation, cid types.C
 
 func (db *Conn) AddStrainSource(ctx context.Context, g *types.Generation, s types.Source, cid types.CID) error {
 	var err error
-
-	deferred, start, l := initAccessFuncs("AddStrainSource", db.logger, g.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("AddStrainSource", db.logger, g.UUID, cid)
+	defer deferred(&err, l)
 
 	s.UUID = types.UUID(db.generateUUID().String())
 	s.CTime = time.Now().UTC()
@@ -85,8 +83,8 @@ func (db *Conn) AddStrainSource(ctx context.Context, g *types.Generation, s type
 func (db *Conn) AddEventSource(ctx context.Context, g *types.Generation, e types.Event, cid types.CID) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs("AddEventSource", db.logger, g.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("AddEventSource", db.logger, g.UUID, cid)
+	defer deferred(&err, l)
 
 	s := types.Source{
 		UUID: types.UUID(db.generateUUID().String()),
@@ -108,9 +106,8 @@ func (db *Conn) AddEventSource(ctx context.Context, g *types.Generation, e types
 
 func (db *Conn) getEventStrainID(ctx context.Context, id types.UUID, cid types.CID) (types.UUID, error) {
 	var err error
-
-	deferred, start, l := initAccessFuncs("getEventStrainID", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("getEventStrainID", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	var result types.UUID
 
@@ -150,9 +147,8 @@ func (db *Conn) addSource(ctx context.Context, sources []types.Source, s types.S
 
 func (db *Conn) ChangeSource(ctx context.Context, g *types.Generation, s types.Source, cid types.CID) error {
 	var err error
-
-	deferred, start, l := initAccessFuncs("ChangeSource", db.logger, g.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("ChangeSource", db.logger, g.UUID, cid)
+	defer deferred(&err, l)
 
 	var result sql.Result
 
@@ -177,9 +173,8 @@ func (db *Conn) ChangeSource(ctx context.Context, g *types.Generation, s types.S
 
 func (db *Conn) RemoveSource(ctx context.Context, g *types.Generation, id types.UUID, cid types.CID) error {
 	var err error
-
-	deferred, start, l := initAccessFuncs("RemoveSource", db.logger, g.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("RemoveSource", db.logger, g.UUID, cid)
+	defer deferred(&err, l)
 
 	if err := db.deleteByUUID(ctx, id, cid, "RemoveSource", "source", l); err != nil {
 		return err

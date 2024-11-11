@@ -14,8 +14,8 @@ func (db *Conn) GetNotes(ctx context.Context, id types.UUID, cid types.CID) ([]t
 	var rows *sql.Rows
 	var result []types.Note
 
-	deferred, start, l := initAccessFuncs("GetNotes", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("GetNotes", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	rows, err = db.query.QueryContext(ctx, psqls["note"]["get"], id)
 	if err != nil {
@@ -43,26 +43,26 @@ func (db *Conn) GetNotes(ctx context.Context, id types.UUID, cid types.CID) ([]t
 
 func (db *Conn) AddNote(ctx context.Context, oID types.UUID, notes []types.Note, n types.Note, cid types.CID) ([]types.Note, error) {
 	var err error
-	var result sql.Result
-
-	deferred, start, l := initAccessFuncs("AddNote", db.logger, oID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("AddNote", db.logger, oID, cid)
+	defer deferred(&err, l)
 
 	n.UUID = types.UUID(db.generateUUID().String())
 	n.MTime = time.Now().UTC()
 	n.CTime = n.MTime
 
-	if result, err = db.ExecContext(ctx, psqls["note"]["add"],
+	var rows int64
+	result, err := db.ExecContext(ctx, psqls["note"]["add"],
 		n.UUID,
 		n.Note,
 		oID,
 		n.CTime,
-	); err != nil {
+	)
+	if err != nil {
 		if isPrimaryKeyViolation(err) {
 			return db.AddNote(ctx, oID, notes, n, cid)
 		}
 		return notes, err
-	} else if rows, err := result.RowsAffected(); err != nil {
+	} else if rows, err = result.RowsAffected(); err != nil {
 		return notes, err
 	} else if rows != 1 {
 		return notes, fmt.Errorf("note was not added")
@@ -73,20 +73,20 @@ func (db *Conn) AddNote(ctx context.Context, oID types.UUID, notes []types.Note,
 
 func (db *Conn) ChangeNote(ctx context.Context, notes []types.Note, n types.Note, cid types.CID) ([]types.Note, error) {
 	var err error
-	var result sql.Result
-
-	deferred, start, l := initAccessFuncs("ChangeNote", db.logger, n.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("ChangeNote", db.logger, n.UUID, cid)
+	defer deferred(&err, l)
 
 	n.MTime = time.Now().UTC()
 
-	if result, err = db.ExecContext(ctx, psqls["note"]["change"],
+	var rows int64
+	result, err := db.ExecContext(ctx, psqls["note"]["change"],
 		n.Note,
 		n.MTime,
 		n.UUID,
-	); err != nil {
+	)
+	if err != nil {
 		return notes, err
-	} else if rows, err := result.RowsAffected(); err != nil {
+	} else if rows, err = result.RowsAffected(); err != nil {
 		return notes, err
 	} else if rows != 1 {
 		return notes, fmt.Errorf("note was not changed")
@@ -102,17 +102,18 @@ func (db *Conn) ChangeNote(ctx context.Context, notes []types.Note, n types.Note
 
 func (db *Conn) RemoveNote(ctx context.Context, notes []types.Note, id types.UUID, cid types.CID) ([]types.Note, error) {
 	var err error
-	var result sql.Result
+	deferred, l := initAccessFuncs("RemoveNote", db.logger, id, cid)
+	defer deferred(&err, l)
 
-	deferred, start, l := initAccessFuncs("RemoveNote", db.logger, id, cid)
-	defer deferred(start, err, l)
-
-	if result, err = db.ExecContext(ctx, psqls["note"]["remove"], id); err != nil {
+	var rows int64
+	result, err := db.ExecContext(ctx, psqls["note"]["remove"], id)
+	if err != nil {
 		return notes, err
-	} else if rows, err := result.RowsAffected(); err != nil {
+	} else if rows, err = result.RowsAffected(); err != nil {
 		return notes, err
 	} else if rows != 1 {
-		return notes, fmt.Errorf("note could not be removed")
+		err = fmt.Errorf("note could not be removed")
+		return notes, err
 	}
 
 	i, j := 0, len(notes)

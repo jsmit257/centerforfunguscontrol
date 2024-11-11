@@ -11,8 +11,8 @@ import (
 func (db *Conn) GetGenerationEvents(ctx context.Context, g *types.Generation, cid types.CID) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs("GetGenerationEvents", db.logger, g.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("GetGenerationEvents", db.logger, g.UUID, cid)
+	defer deferred(&err, l)
 
 	g.Events, err = db.selectEventsList(ctx, psqls["event"]["all-by-observable"], g.UUID, cid)
 
@@ -22,8 +22,8 @@ func (db *Conn) GetGenerationEvents(ctx context.Context, g *types.Generation, ci
 func (db *Conn) AddGenerationEvent(ctx context.Context, g *types.Generation, e types.Event, cid types.CID) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs("AddGenerationEvent", db.logger, g.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("AddGenerationEvent", db.logger, g.UUID, cid)
+	defer deferred(&err, l)
 
 	if g.Events, err = db.addEvent(ctx, g.UUID, g.Events, &e, cid); err != nil {
 		return err
@@ -36,8 +36,8 @@ func (db *Conn) AddGenerationEvent(ctx context.Context, g *types.Generation, e t
 func (db *Conn) ChangeGenerationEvent(ctx context.Context, g *types.Generation, e types.Event, cid types.CID) (types.Event, error) {
 	var err error
 
-	deferred, start, l := initAccessFuncs("ChangeEvent", db.logger, g.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("ChangeEvent", db.logger, g.UUID, cid)
+	defer deferred(&err, l)
 
 	if g.Events, err = db.changeEvent(ctx, g.Events, &e, cid); err != nil {
 		return e, err
@@ -51,8 +51,8 @@ func (db *Conn) ChangeGenerationEvent(ctx context.Context, g *types.Generation, 
 func (db *Conn) RemoveGenerationEvent(ctx context.Context, g *types.Generation, id types.UUID, cid types.CID) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs("RemoveEvent", db.logger, g.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("RemoveEvent", db.logger, g.UUID, cid)
+	defer deferred(&err, l)
 
 	if g.Events, err = db.removeEvent(ctx, g.Events, id, cid); err != nil {
 		return err

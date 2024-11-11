@@ -4,10 +4,13 @@ import "github.com/kelseyhightower/envconfig"
 
 type Config struct {
 	HuautlaHost string `envconfig:"HUAUTLA_HOST" default:"localhost"`
-	HuautlaPort int    `envconfig:"HUAUTLA_PORT" default:"5432"`
+	HuautlaPort uint   `envconfig:"HUAUTLA_PORT" default:"5432"`
 	HuautlaUser string `envconfig:"HUAUTLA_USER" default:"postgres"`
 	HuautlaPass string `envconfig:"HUAUTLA_PASS" default:"root"`
 	HuautlaSSL  string `envconfig:"HUAUTLA_SSL" default:"disable"`
+
+	AuthnHost string `envconfig:"AUTHN_HOST"`
+	AuthnPort uint16 `envconfig:"AUTHN_PORT"`
 
 	HTTPHost string `envconfig:"HTTP_HOST" default:"127.0.0.1"`
 	HTTPPort int    `envconfig:"HTTP_PORT" default:"8080"`

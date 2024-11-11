@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/jsmit257/huautla/types"
@@ -10,9 +9,8 @@ import (
 
 func (db *Conn) GetAllIngredients(ctx context.Context, s *types.Substrate, cid types.CID) error {
 	var err error
-
-	deferred, start, l := initAccessFuncs("GetAllIngredients", db.logger, s.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("GetAllIngredients", db.logger, s.UUID, cid)
+	defer deferred(&err, l)
 
 	rows, err := db.query.QueryContext(ctx, psqls["substrate-ingredient"]["all"], s.UUID)
 	if err != nil {
@@ -38,13 +36,11 @@ func (db *Conn) GetAllIngredients(ctx context.Context, s *types.Substrate, cid t
 
 func (db *Conn) AddIngredient(ctx context.Context, s *types.Substrate, i types.Ingredient, cid types.CID) error {
 	var err error
-	var result sql.Result
+	deferred, l := initAccessFuncs("AddIngredient", db.logger, "nil", cid)
+	defer deferred(&err, l)
+
 	var rows int64
-
-	deferred, start, l := initAccessFuncs("AddIngredient", db.logger, "nil", cid)
-	defer deferred(start, err, l)
-
-	result, err = db.query.ExecContext(ctx, psqls["substrate-ingredient"]["add"], db.generateUUID(), s.UUID, i.UUID)
+	result, err := db.query.ExecContext(ctx, psqls["substrate-ingredient"]["add"], db.generateUUID(), s.UUID, i.UUID)
 	if err != nil {
 		if isPrimaryKeyViolation(err) {
 			return db.AddIngredient(ctx, s, i, cid) // FIXME: infinite loop?
@@ -63,15 +59,14 @@ func (db *Conn) AddIngredient(ctx context.Context, s *types.Substrate, i types.I
 
 func (db *Conn) ChangeIngredient(ctx context.Context, s *types.Substrate, oldI, newI types.Ingredient, cid types.CID) error {
 	var err error
-	var result sql.Result
+	deferred, l := initAccessFuncs("ChangeIngredient", db.logger, "nil", cid)
+	defer deferred(&err, l)
 
-	deferred, start, l := initAccessFuncs("ChangeIngredient", db.logger, "nil", cid)
-	defer deferred(start, err, l)
-
-	result, err = db.query.ExecContext(ctx, psqls["substrate-ingredient"]["change"], newI.UUID, s.UUID, oldI.UUID)
+	var rows int64
+	result, err := db.query.ExecContext(ctx, psqls["substrate-ingredient"]["change"], newI.UUID, s.UUID, oldI.UUID)
 	if err != nil {
 		return err
-	} else if rows, err := result.RowsAffected(); err != nil {
+	} else if rows, err = result.RowsAffected(); err != nil {
 		return err
 	} else if rows != 1 { // most likely cause is a bad vendor.uuid
 		return fmt.Errorf("substrateingredient was not changed")
@@ -87,18 +82,18 @@ func (db *Conn) ChangeIngredient(ctx context.Context, s *types.Substrate, oldI, 
 
 func (db *Conn) RemoveIngredient(ctx context.Context, s *types.Substrate, i types.Ingredient, cid types.CID) error {
 	var err error
-	var result sql.Result
+	deferred, l := initAccessFuncs("RemoveIngredient", db.logger, s.UUID, cid)
+	defer deferred(&err, l)
 
-	deferred, start, l := initAccessFuncs("RemoveIngredient", db.logger, s.UUID, cid)
-	defer deferred(start, err, l)
-
-	result, err = db.query.ExecContext(ctx, psqls["substrate-ingredient"]["remove"], s.UUID, i.UUID)
+	var rows int64
+	result, err := db.query.ExecContext(ctx, psqls["substrate-ingredient"]["remove"], s.UUID, i.UUID)
 	if err != nil {
 		return err
-	} else if rows, err := result.RowsAffected(); err != nil {
+	} else if rows, err = result.RowsAffected(); err != nil {
 		return err
 	} else if rows != 1 { // most likely cause is a bad vendor.uuid
-		return fmt.Errorf("substrateingredient was not removed")
+		err = fmt.Errorf("substrateingredient was not removed")
+		return err
 	}
 
 	ndx, j := 0, len(s.Ingredients)

@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/url"
 
@@ -11,19 +10,15 @@ import (
 
 func (db *Conn) SelectAllVendors(ctx context.Context, cid types.CID) ([]types.Vendor, error) {
 	var err error
+	deferred, l := initAccessFuncs("SelectAllVendors", db.logger, "nil", cid)
+	defer deferred(&err, l)
 
-	deferred, start, l := initAccessFuncs("SelectAllVendors", db.logger, "nil", cid)
-	defer deferred(start, err, l)
-
-	var rows *sql.Rows
-
-	result := make([]types.Vendor, 0, 100)
-
-	rows, err = db.query.QueryContext(ctx, psqls["vendor"]["select-all"])
+	rows, err := db.query.QueryContext(ctx, psqls["vendor"]["select-all"])
 	if err != nil {
 		return nil, err
 	}
 
+	result := make([]types.Vendor, 0, 100)
 	for rows.Next() {
 		row := types.Vendor{}
 		if err = rows.Scan(&row.UUID, &row.Name, &row.Website); err != nil {
@@ -37,9 +32,8 @@ func (db *Conn) SelectAllVendors(ctx context.Context, cid types.CID) ([]types.Ve
 
 func (db *Conn) SelectVendor(ctx context.Context, id types.UUID, cid types.CID) (types.Vendor, error) {
 	var err error
-
-	deferred, start, l := initAccessFuncs("SelectVendor", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("SelectVendor", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	result := types.Vendor{UUID: id}
 	err = db.
@@ -51,15 +45,13 @@ func (db *Conn) SelectVendor(ctx context.Context, id types.UUID, cid types.CID) 
 
 func (db *Conn) InsertVendor(ctx context.Context, v types.Vendor, cid types.CID) (types.Vendor, error) {
 	var err error
-	var result sql.Result
-	var rows int64
+	deferred, l := initAccessFuncs("InsertVendor", db.logger, v.UUID, cid)
+	defer deferred(&err, l)
 
 	v.UUID = types.UUID(db.generateUUID().String())
 
-	deferred, start, l := initAccessFuncs("InsertVendor", db.logger, v.UUID, cid)
-	defer deferred(start, err, l)
-
-	result, err = db.ExecContext(ctx, psqls["vendor"]["insert"], v.UUID, v.Name, v.Website)
+	var rows int64
+	result, err := db.ExecContext(ctx, psqls["vendor"]["insert"], v.UUID, v.Name, v.Website)
 	if err != nil {
 		if isPrimaryKeyViolation(err) {
 			return db.InsertVendor(ctx, v, cid) // FIXME: infinite loop?
@@ -76,9 +68,8 @@ func (db *Conn) InsertVendor(ctx context.Context, v types.Vendor, cid types.CID)
 
 func (db *Conn) UpdateVendor(ctx context.Context, id types.UUID, v types.Vendor, cid types.CID) error {
 	var err error
-
-	deferred, start, l := initAccessFuncs("UpdateVendor", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("UpdateVendor", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	result, err := db.ExecContext(ctx, psqls["vendor"]["update"], v.Name, v.Website, id)
 	if err != nil {
@@ -97,9 +88,8 @@ func (db *Conn) DeleteVendor(ctx context.Context, id types.UUID, cid types.CID) 
 
 func (v vendor) children(db *Conn, ctx context.Context, cid types.CID, p *rpttree) error {
 	var err error
-
-	deferred, start, l := initAccessFuncs("vendor::children", db.logger, types.UUID(v.UUID), cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("vendor::children", db.logger, types.UUID(v.UUID), cid)
+	defer deferred(&err, l)
 
 	param, _ := types.NewReportAttrs(url.Values{"vendor-id": {string(v.UUID)}})
 
@@ -122,11 +112,10 @@ func (v vendor) children(db *Conn, ctx context.Context, cid types.CID, p *rpttre
 
 func (db *Conn) VendorReport(ctx context.Context, id types.UUID, cid types.CID) (types.Entity, error) {
 	var err error
+	deferred, l := initAccessFuncs("VendorReport", db.logger, id, cid)
+	defer deferred(&err, l)
+
 	var rpt rpt
-
-	deferred, start, l := initAccessFuncs("VendorReport", db.logger, id, cid)
-	defer deferred(start, err, l)
-
 	result, err := db.SelectVendor(ctx, id, cid)
 	if err != nil {
 		return nil, err

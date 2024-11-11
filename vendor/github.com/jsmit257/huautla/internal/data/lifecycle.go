@@ -12,19 +12,15 @@ import (
 
 func (db *Conn) SelectLifecycleIndex(ctx context.Context, cid types.CID) ([]types.Lifecycle, error) {
 	var err error
-
-	deferred, start, l := initAccessFuncs("SelectLifecycleIndex", db.logger, "nil", cid)
-	defer deferred(start, err, l)
-
-	var rows *sql.Rows
+	deferred, l := initAccessFuncs("SelectLifecycleIndex", db.logger, "nil", cid)
+	defer deferred(&err, l)
 
 	result := make([]types.Lifecycle, 0, 1000)
 
-	rows, err = db.query.QueryContext(ctx, psqls["lifecycle"]["index"])
+	rows, err := db.query.QueryContext(ctx, psqls["lifecycle"]["index"])
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	for rows.Next() {
@@ -93,14 +89,12 @@ func (db *Conn) SelectLifecycleIndex(ctx context.Context, cid types.CID) ([]type
 
 func (db *Conn) SelectLifecycle(ctx context.Context, id types.UUID, cid types.CID) (types.Lifecycle, error) {
 	var err error
-	var result []types.Lifecycle
-
-	deferred, start, l := initAccessFuncs("SelectLifecycle", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("SelectLifecycle", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	p, _ := types.NewReportAttrs(map[string][]string{"lifecycle-id": {string(id)}})
 
-	result, err = db.selectLifecycles(ctx, p, cid)
+	result, err := db.selectLifecycles(ctx, p, cid)
 	if err != nil {
 		return types.Lifecycle{}, err
 	} else if l := len(result); l == 1 {
@@ -116,21 +110,19 @@ func (db *Conn) SelectLifecycle(ctx context.Context, id types.UUID, cid types.CI
 
 func (db *Conn) selectLifecycles(ctx context.Context, p types.ReportAttrs, cid types.CID) ([]types.Lifecycle, error) {
 	var err error
-	var rows *sql.Rows
-
-	deferred, start, l := initAccessFuncs("SelectLifecyclesByAttr", db.logger, "nil", cid)
-	defer deferred(start, err, l)
-
-	result := make([]types.Lifecycle, 0, 1000)
+	deferred, l := initAccessFuncs("selectLifecycles", db.logger, "nil", cid)
+	defer deferred(&err, l)
 
 	var generationID *types.UUID
+
+	result := make([]types.Lifecycle, 0, 1000)
 
 	if !p.Contains("lifecycle-id", "strain-id", "grain-id", "bulk-id", "eventtype-id") {
 		err = fmt.Errorf("request doesn't contain at least 1 required field")
 		return result, err
 	}
 
-	rows, err = db.QueryContext(ctx, psqls["lifecycle"]["select"],
+	rows, err := db.QueryContext(ctx, psqls["lifecycle"]["select"],
 		p.Get("lifecycle-id"),
 		p.Get("strain-id"),
 		p.Get("grain-id"),
@@ -139,7 +131,6 @@ func (db *Conn) selectLifecycles(ctx context.Context, p types.ReportAttrs, cid t
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	for rows.Next() {
@@ -197,15 +188,15 @@ func (db *Conn) selectLifecycles(ctx context.Context, p types.ReportAttrs, cid t
 
 func (db *Conn) InsertLifecycle(ctx context.Context, lc types.Lifecycle, cid types.CID) (types.Lifecycle, error) {
 	var err error
+	deferred, l := initAccessFuncs("InsertLifecycle", db.logger, lc.UUID, cid)
+	defer deferred(&err, l)
+
 	var result sql.Result
 	var rows int64
 
 	lc.UUID = types.UUID(db.generateUUID().String())
 	lc.MTime = time.Now().UTC()
 	lc.CTime = lc.MTime
-
-	deferred, start, l := initAccessFuncs("InsertLifecycle", db.logger, lc.UUID, cid)
-	defer deferred(start, err, l)
 
 	result, err = db.ExecContext(ctx, psqls["lifecycle"]["insert"],
 		lc.UUID,
@@ -238,13 +229,13 @@ func (db *Conn) InsertLifecycle(ctx context.Context, lc types.Lifecycle, cid typ
 
 func (db *Conn) UpdateLifecycle(ctx context.Context, lc types.Lifecycle, cid types.CID) (types.Lifecycle, error) {
 	var err error
+	deferred, l := initAccessFuncs("UpdateLifecycle", db.logger, lc.UUID, cid)
+	defer deferred(&err, l)
+
 	var result sql.Result
 	var rows int64
 
 	lc.MTime = time.Now().UTC()
-
-	deferred, start, l := initAccessFuncs("UpdateLifecycle", db.logger, lc.UUID, cid)
-	defer deferred(start, err, l)
 
 	if result, err = db.ExecContext(ctx, psqls["lifecycle"]["update"],
 		lc.Location,
@@ -272,9 +263,8 @@ func (db *Conn) UpdateLifecycle(ctx context.Context, lc types.Lifecycle, cid typ
 
 func (db *Conn) UpdateLifecycleMTime(ctx context.Context, lc *types.Lifecycle, modified time.Time, cid types.CID) (*types.Lifecycle, error) {
 	var err error
-
-	deferred, start, l := initAccessFuncs("UpdateLifecycleMTime", db.logger, lc.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("UpdateLifecycleMTime", db.logger, lc.UUID, cid)
+	defer deferred(&err, l)
 
 	lc.MTime, err = db.updateMTime(ctx, "lifecycles", modified, lc.UUID, cid)
 
@@ -288,8 +278,8 @@ func (db *Conn) DeleteLifecycle(ctx context.Context, id types.UUID, cid types.CI
 func (lc lifecycle) children(db *Conn, ctx context.Context, cid types.CID, p *rpttree) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs("lifecycle::children", db.logger, lc.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("lifecycle::children", db.logger, lc.UUID, cid)
+	defer deferred(&err, l)
 
 	notes, err := db.notesReport(ctx, lc.UUID, cid, p)
 	if err != nil {
@@ -311,8 +301,8 @@ func (lc lifecycle) children(db *Conn, ctx context.Context, cid types.CID, p *rp
 func (db *Conn) LifecycleReport(ctx context.Context, id types.UUID, cid types.CID) (types.Entity, error) {
 	var err error
 
-	deferred, start, l := initAccessFuncs("LifecycleReport", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("LifecycleReport", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	var result []types.Entity
 
@@ -333,8 +323,8 @@ func (db *Conn) lifecycleReport(ctx context.Context, params types.ReportAttrs, c
 	var err error
 	var rpt rpt
 
-	deferred, start, l := initAccessFuncs("lifecycleReport", db.logger, "nil", cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("lifecycleReport", db.logger, "nil", cid)
+	defer deferred(&err, l)
 
 	lcs, err := db.selectLifecycles(ctx, params, cid)
 	if err != nil {

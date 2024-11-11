@@ -11,19 +11,16 @@ import (
 
 func (db *Conn) GetPhotos(ctx context.Context, id types.UUID, cid types.CID) ([]types.Photo, error) {
 	var err error
-	var rows *sql.Rows
-	var result []types.Photo
+	deferred, l := initAccessFuncs("GetPhotos", db.logger, id, cid)
+	defer deferred(&err, l)
 
-	deferred, start, l := initAccessFuncs("GetPhotos", db.logger, id, cid)
-	defer deferred(start, err, l)
-
-	rows, err = db.query.QueryContext(ctx, psqls["photo"]["get"], id)
+	rows, err := db.query.QueryContext(ctx, psqls["photo"]["get"], id)
 	if err != nil {
-		return result, err
+		return nil /*[]types.Photo*/, err
 	}
-
 	defer rows.Close()
 
+	var result []types.Photo
 	for rows.Next() {
 		var p types.Photo
 		var noteid *types.UUID
@@ -64,27 +61,27 @@ func (db *Conn) GetPhotos(ctx context.Context, id types.UUID, cid types.CID) ([]
 
 func (db *Conn) AddPhoto(ctx context.Context, id types.UUID, photos []types.Photo, p types.Photo, cid types.CID) ([]types.Photo, error) {
 	var err error
-	var result sql.Result
-
-	deferred, start, l := initAccessFuncs("AddPhoto", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("AddPhoto", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	p.UUID = types.UUID(db.generateUUID().String())
 	p.CTime = time.Now().UTC()
 	p.MTime = p.CTime
 
-	if result, err = db.ExecContext(ctx, psqls["photo"]["add"],
+	var rows int64
+	result, err := db.ExecContext(ctx, psqls["photo"]["add"],
 		p.UUID,
 		p.Filename,
 		id,
 		p.MTime,
 		p.CTime,
-	); err != nil {
+	)
+	if err != nil {
 		if isPrimaryKeyViolation(err) {
 			return db.AddPhoto(ctx, id, photos, p, cid)
 		}
 		return photos, err
-	} else if rows, err := result.RowsAffected(); err != nil {
+	} else if rows, err = result.RowsAffected(); err != nil {
 		return photos, err
 	} else if rows != 1 {
 		return photos, fmt.Errorf("photo was not added")
@@ -95,23 +92,24 @@ func (db *Conn) AddPhoto(ctx context.Context, id types.UUID, photos []types.Phot
 
 func (db *Conn) ChangePhoto(ctx context.Context, photos []types.Photo, p types.Photo, cid types.CID) ([]types.Photo, error) {
 	var err error
-	var result sql.Result
-
-	deferred, start, l := initAccessFuncs("ChangePhoto", db.logger, p.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("ChangePhoto", db.logger, p.UUID, cid)
+	defer deferred(&err, l)
 
 	p.MTime = time.Now().UTC()
 
-	if result, err = db.ExecContext(ctx, psqls["photo"]["change"],
+	var rows int64
+	result, err := db.ExecContext(ctx, psqls["photo"]["change"],
 		p.Filename,
 		p.MTime,
 		p.UUID,
-	); err != nil {
+	)
+	if err != nil {
 		return photos, err
-	} else if rows, err := result.RowsAffected(); err != nil {
+	} else if rows, err = result.RowsAffected(); err != nil {
 		return photos, err
 	} else if rows != 1 {
-		return photos, fmt.Errorf("photo was not changed")
+		err = fmt.Errorf("photo was not changed")
+		return photos, err
 	}
 
 	i, j := 0, len(photos)
@@ -126,8 +124,8 @@ func (db *Conn) RemovePhoto(ctx context.Context, photos []types.Photo, id types.
 	var err error
 	var result sql.Result
 
-	deferred, start, l := initAccessFuncs("RemovePhoto", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("RemovePhoto", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	if result, err = db.ExecContext(ctx, psqls["photo"]["remove"], id); err != nil {
 		return photos, err

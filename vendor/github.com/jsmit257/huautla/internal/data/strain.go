@@ -12,23 +12,17 @@ import (
 
 func (db *Conn) SelectAllStrains(ctx context.Context, cid types.CID) ([]types.Strain, error) {
 	var err error
+	deferred, l := initAccessFuncs("SelectAllStrains", db.logger, "nil", cid)
+	defer deferred(&err, l)
 
-	deferred, start, l := initAccessFuncs("SelectAllStrains", db.logger, "nil", cid)
-	defer deferred(start, err, l)
-
-	var rows *sql.Rows
-
-	result := make([]types.Strain, 0, 100)
-
-	rows, err = db.query.QueryContext(ctx, psqls["strain"]["select-all"])
+	rows, err := db.query.QueryContext(ctx, psqls["strain"]["select-all"])
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	var generationID *types.UUID
-
+	result := make([]types.Strain, 0, 100)
 	for rows.Next() {
 		row := types.Strain{}
 
@@ -58,13 +52,12 @@ func (db *Conn) SelectAllStrains(ctx context.Context, cid types.CID) ([]types.St
 
 func (db *Conn) SelectStrain(ctx context.Context, id types.UUID, cid types.CID) (types.Strain, error) {
 	var err error
-
-	deferred, start, l := initAccessFuncs("selectStrainByAttrs", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("SelectStrain", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	p, _ := types.NewReportAttrs(url.Values{"strain-id": []string{string(id)}})
 
-	strs, err := db.selectStrainByAttrs(ctx, p, cid)
+	strs, err := db.selectStrains(ctx, p, cid)
 	if err != nil {
 		return types.Strain{}, err
 	} else if len(strs) == 1 {
@@ -76,11 +69,10 @@ func (db *Conn) SelectStrain(ctx context.Context, id types.UUID, cid types.CID) 
 	return types.Strain{}, err
 }
 
-func (db *Conn) selectStrainByAttrs(ctx context.Context, p types.ReportAttrs, cid types.CID) ([]types.Strain, error) {
+func (db *Conn) selectStrains(ctx context.Context, p types.ReportAttrs, cid types.CID) ([]types.Strain, error) {
 	var err error
-
-	deferred, start, l := initAccessFuncs("selectStrainByAttrs", db.logger, types.UUID(fmt.Sprintf("%v", p)), cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("selectStrains", db.logger, types.UUID(fmt.Sprintf("%v", p)), cid)
+	defer deferred(&err, l)
 
 	rows, err := db.query.QueryContext(ctx, psqls["strain"]["select"],
 		p.Get("strain-id"),
@@ -88,7 +80,6 @@ func (db *Conn) selectStrainByAttrs(ctx context.Context, p types.ReportAttrs, ci
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	var generationID *types.UUID
@@ -128,19 +119,20 @@ func (db *Conn) InsertStrain(ctx context.Context, s types.Strain, cid types.CID)
 	s.UUID = types.UUID(db.generateUUID().String())
 	s.CTime = time.Now().UTC()
 
-	deferred, start, l := initAccessFuncs("InsertStrain", db.logger, s.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("InsertStrain", db.logger, s.UUID, cid)
+	defer deferred(&err, l)
 
+	var rows int64
 	result, err := db.ExecContext(ctx, psqls["strain"]["insert"], s.UUID, s.Species, s.Name, s.CTime, s.Vendor.UUID)
 	if err != nil {
 		if isPrimaryKeyViolation(err) {
 			return db.InsertStrain(ctx, s, cid) // FIXME: infinite loop?
 		}
 		return s, err
-	} else if rows, err := result.RowsAffected(); err != nil {
+	} else if rows, err = result.RowsAffected(); err != nil {
 		return s, err
 	} else if rows != 1 { // most likely cause is a bad vendor.uuid
-		return s, fmt.Errorf("strain was not added")
+		err = fmt.Errorf("strain was not added")
 	}
 
 	return s, err
@@ -148,14 +140,14 @@ func (db *Conn) InsertStrain(ctx context.Context, s types.Strain, cid types.CID)
 
 func (db *Conn) UpdateStrain(ctx context.Context, id types.UUID, s types.Strain, cid types.CID) error {
 	var err error
+	deferred, l := initAccessFuncs("UpdateStrain", db.logger, id, cid)
+	defer deferred(&err, l)
 
-	deferred, start, l := initAccessFuncs("UpdateStrain", db.logger, id, cid)
-	defer deferred(start, err, l)
-
+	var rows int64
 	result, err := db.ExecContext(ctx, psqls["strain"]["update"], s.Species, s.Name, s.Vendor.UUID, id)
 	if err != nil {
 		return err
-	} else if rows, err := result.RowsAffected(); err != nil {
+	} else if rows, err = result.RowsAffected(); err != nil {
 		return err
 	} else if rows != 1 {
 		return fmt.Errorf("strain was not updated: '%s'", id)
@@ -170,9 +162,8 @@ func (db *Conn) DeleteStrain(ctx context.Context, id types.UUID, cid types.CID) 
 
 func (db *Conn) GeneratedStrain(ctx context.Context, id types.UUID, cid types.CID) (types.Strain, error) {
 	var err error
-
-	deferred, start, l := initAccessFuncs("GeneratedStrains", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("GeneratedStrains", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	result := types.Strain{}
 
@@ -192,14 +183,14 @@ func (db *Conn) GeneratedStrain(ctx context.Context, id types.UUID, cid types.CI
 
 func (db *Conn) UpdateGeneratedStrain(ctx context.Context, gid *types.UUID, sid types.UUID, cid types.CID) error {
 	var err error
+	deferred, l := initAccessFuncs("UpdateGeneratedStrain", db.logger, sid, cid)
+	defer deferred(&err, l)
 
-	deferred, start, l := initAccessFuncs("UpdateGeneratedStrain", db.logger, sid, cid)
-	defer deferred(start, err, l)
-
+	var rows int64
 	result, err := db.ExecContext(ctx, psqls["strain"]["update-gen-strain"], gid, sid)
 	if err != nil {
 		return err
-	} else if rows, err := result.RowsAffected(); err != nil {
+	} else if rows, err = result.RowsAffected(); err != nil {
 		return err
 	} else if rows != 1 {
 		return sql.ErrNoRows
@@ -210,9 +201,8 @@ func (db *Conn) UpdateGeneratedStrain(ctx context.Context, gid *types.UUID, sid 
 
 func (s strain) children(db *Conn, ctx context.Context, cid types.CID, p *rpttree) error {
 	var err error
-
-	deferred, start, l := initAccessFuncs("strain::children", db.logger, s.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("strain::children", db.logger, s.UUID, cid)
+	defer deferred(&err, l)
 
 	param, _ := types.NewReportAttrs(url.Values{"strain-id": {string(s.UUID)}})
 
@@ -245,22 +235,19 @@ func (s strain) children(db *Conn, ctx context.Context, cid types.CID, p *rpttre
 		return err
 	} else if len(gens) == 0 {
 		err = fmt.Errorf("how does '%s' not identify a generation?", s.Generation.UUID)
-		return err
 	} else {
 		p.data["generation"] = gens[0]
 	}
 
-	return nil
+	return err
 }
 
 func (db *Conn) StrainReport(ctx context.Context, id types.UUID, cid types.CID) (types.Entity, error) {
 	var err error
-
-	deferred, start, l := initAccessFuncs("StrainReport", db.logger, "nil", cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("StrainReport", db.logger, "nil", cid)
+	defer deferred(&err, l)
 
 	var result []types.Entity
-
 	param, err := types.NewReportAttrs(url.Values{"strain-id": {string(id)}})
 	if err != nil {
 		return nil, err
@@ -277,12 +264,11 @@ func (db *Conn) StrainReport(ctx context.Context, id types.UUID, cid types.CID) 
 
 func (db *Conn) strainReport(ctx context.Context, params types.ReportAttrs, cid types.CID, p *rpttree) ([]types.Entity, error) {
 	var err error
+	deferred, l := initAccessFuncs("strainReport", db.logger, "nil", cid)
+	defer deferred(&err, l)
+
 	var rpt rpt
-
-	deferred, start, l := initAccessFuncs("strainReport", db.logger, "nil", cid)
-	defer deferred(start, err, l)
-
-	strs, err := db.selectStrainByAttrs(ctx, params, cid)
+	strs, err := db.selectStrains(ctx, params, cid)
 	if err != nil {
 		return nil, err
 	}

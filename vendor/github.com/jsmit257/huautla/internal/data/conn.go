@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
+	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	log "github.com/sirupsen/logrus"
 
 	_ "github.com/lib/pq"
@@ -31,9 +32,9 @@ type (
 
 	uuidgen func() uuid.UUID
 
-	getMockDB func() *sql.DB
+	getMockDB func(*sql.DB, sqlmock.Sqlmock, error) *sql.DB
 
-	deferred func(start time.Time, err error, l *log.Entry)
+	deferred func(*error, *log.Entry)
 )
 
 // var mtrcs = metrics.DataMetrics.MustCurryWith(prometheus.Labels{"pkg": "data"})
@@ -58,8 +59,8 @@ func New(cnxInfo string, log *log.Entry) (types.DB, error) {
 func (db *Conn) deleteByUUID(ctx context.Context, id types.UUID, cid types.CID, method, table string, l *log.Entry) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs(method, l, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs(method, l, id, cid)
+	defer deferred(&err, l)
 
 	var result sql.Result
 
@@ -76,28 +77,28 @@ func (db *Conn) deleteByUUID(ctx context.Context, id types.UUID, cid types.CID, 
 	return err
 }
 
-func initAccessFuncs(method string, l *log.Entry, id types.UUID, cid types.CID) (deferred, time.Time, *log.Entry) {
+func initAccessFuncs(fn string, l *log.Entry, id any, cid types.CID) (deferred, *log.Entry) {
 	start := time.Now()
 	l = l.WithFields(log.Fields{
-		"method": method,
-		"cid":    cid,
-		"id":     id,
+		"function": fn,
+		"cid":      cid,
 	})
+	if id != nil {
+		l = l.WithField("key", id)
+	}
 
 	l.Info("starting work")
 
-	return func(start time.Time, err error, l *log.Entry) {
-			duration := time.Since(start)
+	return func(err *error, l *log.Entry) {
+		duration := time.Since(start)
 
-			l.
-				WithField("duration", duration).
-				WithError(err).
-				Infof("finished work")
+		if err != nil {
+			l.WithError(*err)
+		}
+		l.WithField("duration", duration).Infof("finished work")
 
-			// TODO: metrics
-		},
-		start,
-		l
+		// TODO: metrics
+	}, l
 }
 
 func isPrimaryKeyViolation(error) bool {

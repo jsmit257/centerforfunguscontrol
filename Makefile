@@ -26,7 +26,7 @@ run-web:
 .PHONY: tests
 tests: docker-down unit
 	docker-compose up --build --remove-orphans system-test
-	docker tag cffc:latest jsmit257/cffc:lkg
+	docker tag jsmit257/cffc:latest jsmit257/cffc:lkg
 
 .PHONY: public
 public: tests

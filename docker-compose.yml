@@ -20,7 +20,7 @@ services:
 
   run-docker:
     depends_on: [ postgres ]
-    image: cffc:latest
+    image: jsmit257/cffc:latest
     hostname: *apihost
     ports: [ 7998:8080 ]
     build: .
@@ -52,7 +52,7 @@ services:
 
   cffc-web:
     depends_on: [ run-docker ]
-    image: cffc-web:latest
+    image: jsmit257/cffc-web:lkg
     restart: always
     hostname: cffc-web
     ports: [ 8080:80 ]

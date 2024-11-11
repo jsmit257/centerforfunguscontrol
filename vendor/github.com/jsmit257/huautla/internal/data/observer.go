@@ -9,14 +9,25 @@ import (
 	"github.com/jsmit257/huautla/types"
 )
 
+type (
+	nullnote struct {
+		uuid         *types.UUID
+		note         *string
+		ctime, mtime *time.Time
+	}
+	nullphoto struct {
+		uuid         *types.UUID
+		filename     *string
+		ctime, mtime *time.Time
+	}
+)
+
 func (db *Conn) SelectByEventType(ctx context.Context, et types.EventType, cid types.CID) ([]types.Event, error) {
 	var err error
-	var result []types.Event
+	deferred, l := initAccessFuncs("SelectByEventType", db.logger, et.UUID, cid)
+	defer deferred(&err, l)
 
-	deferred, start, l := initAccessFuncs("SelectByEventType", db.logger, et.UUID, cid)
-	defer deferred(start, err, l)
-
-	result, err = db.selectEventsList(ctx, psqls["event"]["all-by-eventtype"], et.UUID, cid)
+	result, err := db.selectEventsList(ctx, psqls["event"]["all-by-eventtype"], et.UUID, cid)
 
 	return result, err
 }
@@ -58,24 +69,9 @@ func (db *Conn) selectEventsList(ctx context.Context, query string, id types.UUI
 }
 
 func (db *Conn) notesAndPhotos(ctx context.Context, e []types.Event, id types.UUID, cid types.CID) error {
-	type (
-		nullnote struct {
-			uuid         *types.UUID
-			note         *string
-			ctime, mtime *time.Time
-		}
-		nullphoto struct {
-			uuid         *types.UUID
-			filename     *string
-			ctime, mtime *time.Time
-		}
-	)
-
 	var err error
-	var rows *sql.Rows
-
-	deferred, start, l := initAccessFuncs("notesAndPhotos", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("notesAndPhotos", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	if len(e) == 0 { // not really needed for safety, but it saves a hit to the db
 		return nil
@@ -86,11 +82,10 @@ func (db *Conn) notesAndPhotos(ctx context.Context, e []types.Event, id types.UU
 		evts[v.UUID] = &e[i]
 	}
 
-	rows, err = db.query.QueryContext(ctx, psqls["event"]["notes-and-photos"], id)
+	rows, err := db.query.QueryContext(ctx, psqls["event"]["notes-and-photos"], id)
 	if err != nil {
 		return err
 	}
-
 	defer rows.Close()
 
 	var lastnote *types.Note
@@ -167,15 +162,15 @@ func (db *Conn) notesAndPhotos(ctx context.Context, e []types.Event, id types.UU
 
 func (db *Conn) SelectEvent(ctx context.Context, id types.UUID, cid types.CID) (types.Event, error) {
 	var err error
-
-	deferred, start, l := initAccessFuncs("SelectEvent", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("SelectEvent", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	result := types.Event{UUID: id}
 
 	if err = db.
 		QueryRowContext(ctx, psqls["event"]["select"], id).
 		Scan(
+			&result.UUID,
 			&result.Temperature,
 			&result.Humidity,
 			&result.MTime,

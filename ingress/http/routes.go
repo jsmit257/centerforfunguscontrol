@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 
 	log "github.com/sirupsen/logrus"
@@ -9,13 +11,38 @@ import (
 
 	"github.com/jsmit257/centerforfunguscontrol/internal/config"
 	"github.com/jsmit257/centerforfunguscontrol/internal/data/huautla"
+	us "github.com/jsmit257/userservice/shared/v1"
 )
+
+var login = "/login"
+
+func loginRedirect(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Add("Location", login)
+	w.WriteHeader(http.StatusFound)
+}
+
+func authn(host string, port uint16) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if c, err := r.Cookie("us-authn"); err == http.ErrNoCookie {
+				loginRedirect(w, r)
+			} else if ok, err := us.CheckValid(host, port, c); err != nil {
+				w.Write([]byte("apocalypse"))
+				w.WriteHeader(http.StatusInternalServerError)
+			} else if !ok {
+				loginRedirect(w, r)
+			} else {
+				next.ServeHTTP(w, r)
+			}
+		})
+	}
+}
 
 func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
 	ha, err := huautla.New(
 		&types.Config{
 			PGHost: cfg.HuautlaHost,
-			PGPort: uint(cfg.HuautlaPort),
+			PGPort: cfg.HuautlaPort,
 			PGUser: cfg.HuautlaUser,
 			PGPass: cfg.HuautlaPass,
 			PGSSL:  cfg.HuautlaSSL,
@@ -24,6 +51,10 @@ func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
 		nil)
 	if err != nil {
 		panic(err)
+	}
+
+	if cfg.AuthnHost != "" && cfg.AuthnPort != 0 {
+		r.Use(authn(cfg.AuthnHost, cfg.AuthnPort))
 	}
 
 	r.Get("/vendors", ha.GetAllVendors)

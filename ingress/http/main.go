@@ -14,17 +14,10 @@ import (
 
 var traps = []os.Signal{
 	os.Interrupt,
-	// syscall.SIGPIPE,
 	syscall.SIGHUP,
 	syscall.SIGTERM,
-	syscall.SIGQUIT}
-
-// var mtrcs = metrics.ServiceMetrics.MustCurryWith(prometheus.Labels{})
-
-// func authnz(handler http.Handler) http.Handler {
-// 	// check auth tokens and whatever other sanity
-// 	return nil
-// }
+	syscall.SIGQUIT,
+}
 
 func main() {
 	cfg := config.NewConfig()

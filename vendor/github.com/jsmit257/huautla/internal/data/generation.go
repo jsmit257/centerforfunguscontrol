@@ -13,8 +13,8 @@ import (
 func (db *Conn) SelectGenerationIndex(ctx context.Context, cid types.CID) ([]types.Generation, error) {
 	var err error
 
-	deferred, start, l := initAccessFuncs("SelectGenerationIndex", db.logger, "nil", cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("SelectGenerationIndex", db.logger, "nil", cid)
+	defer deferred(&err, l)
 
 	var rows *sql.Rows
 
@@ -129,12 +129,15 @@ func (db *Conn) SelectGeneration(ctx context.Context, id types.UUID, cid types.C
 	var err error
 	var result []types.Generation
 
-	deferred, start, l := initAccessFuncs("SelectGeneration", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("SelectGeneration", db.logger, id, cid)
+	defer deferred(&err, l)
 
-	p, _ := types.NewReportAttrs(map[string][]string{"generation-id": {string(id)}})
+	param, err := types.NewReportAttrs(map[string][]string{"generation-id": {string(id)}})
+	if err != nil {
+		return types.Generation{}, err
+	}
 
-	result, err = db.selectGenerations(ctx, p, cid)
+	result, err = db.selectGenerations(ctx, param, cid)
 	if err != nil {
 		return types.Generation{}, err
 	} else if len(result) == 1 {
@@ -149,8 +152,8 @@ func (db *Conn) SelectGeneration(ctx context.Context, id types.UUID, cid types.C
 func (db *Conn) selectGenerations(ctx context.Context, p types.ReportAttrs, cid types.CID) ([]types.Generation, error) {
 	var err error
 
-	deferred, start, l := initAccessFuncs("SelectGenerationsByAttrs", db.logger, "nil", cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("selectGenerations", db.logger, "nil", cid)
+	defer deferred(&err, l)
 
 	result := make([]types.Generation, 0, 100)
 
@@ -213,8 +216,8 @@ func (db *Conn) InsertGeneration(ctx context.Context, g types.Generation, cid ty
 	g.UUID = types.UUID(db.generateUUID().String())
 	g.CTime = time.Now().UTC()
 
-	deferred, start, l := initAccessFuncs("InsertGeneration", db.logger, g.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("InsertGeneration", db.logger, g.UUID, cid)
+	defer deferred(&err, l)
 
 	if result, err = db.ExecContext(ctx, psqls["generation"]["insert"],
 		g.UUID,
@@ -240,8 +243,8 @@ func (db *Conn) UpdateGeneration(ctx context.Context, g types.Generation, cid ty
 	var result sql.Result
 	var rows int64
 
-	deferred, start, l := initAccessFuncs("UpdateGeneration", db.logger, g.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("UpdateGeneration", db.logger, g.UUID, cid)
+	defer deferred(&err, l)
 
 	g.MTime = time.Now().UTC()
 
@@ -264,8 +267,8 @@ func (db *Conn) UpdateGeneration(ctx context.Context, g types.Generation, cid ty
 func (db *Conn) UpdateGenerationMTime(ctx context.Context, g *types.Generation, modified time.Time, cid types.CID) (*types.Generation, error) {
 	var err error
 
-	deferred, start, l := initAccessFuncs("UpdateGenerationMTime", db.logger, g.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("UpdateGenerationMTime", db.logger, g.UUID, cid)
+	defer deferred(&err, l)
 
 	g.MTime, err = db.updateMTime(ctx, "generations", modified, g.UUID, cid)
 
@@ -279,8 +282,8 @@ func (db *Conn) DeleteGeneration(ctx context.Context, id types.UUID, cid types.C
 func (g generation) children(db *Conn, ctx context.Context, cid types.CID, p *rpttree) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs("generation::children", db.logger, g.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("generation::children", db.logger, g.UUID, cid)
+	defer deferred(&err, l)
 
 	notes, err := db.notesReport(ctx, g.UUID, cid, p)
 	if err != nil {
@@ -307,8 +310,8 @@ func (g generation) children(db *Conn, ctx context.Context, cid types.CID, p *rp
 func (db *Conn) GenerationReport(ctx context.Context, id types.UUID, cid types.CID) (types.Entity, error) {
 	var err error
 
-	deferred, start, l := initAccessFuncs("GenerationReport", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("GenerationReport", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	var result []types.Entity
 	p, err := types.NewReportAttrs(url.Values{"generation-id": {string(id)}})
@@ -327,8 +330,8 @@ func (db *Conn) GenerationReport(ctx context.Context, id types.UUID, cid types.C
 func (db *Conn) generationReport(ctx context.Context, params types.ReportAttrs, cid types.CID, p *rpttree) ([]types.Entity, error) {
 	var err error
 
-	deferred, start, l := initAccessFuncs("generationReport", db.logger, "nil", cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("generationReport", db.logger, "nil", cid)
+	defer deferred(&err, l)
 
 	gens, err := db.selectGenerations(ctx, params, cid)
 	if err != nil {

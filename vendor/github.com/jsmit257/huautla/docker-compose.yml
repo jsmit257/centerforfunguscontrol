@@ -7,10 +7,10 @@ x-pg-ssl: &pgssl disable
 
 services:
   postgres:
-    image: huautla:latest
+    image: jsmit257/huautla:latest
     build: .
     restart: always
-    hostname: huautla
+    hostname: *pghost
     ports:
       - 5434:5432
     volumes: [ .:/huautla ]

@@ -70,7 +70,8 @@ var psqls = sqlMap{
        order
           by  e.uuid, n.mtime, p.mtime, pn.mtime`,
 		"select": `
-    select e.temperature,
+    select e.uuid,
+           e.temperature,
            e.humidity,
            e.mtime,
            e.ctime,

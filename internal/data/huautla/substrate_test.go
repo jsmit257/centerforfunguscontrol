@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jsmit257/huautla/types"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,7 +59,7 @@ func Test_GetAllSubstrates(t *testing.T) {
 					selectAllErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetAllSubstrates", "case": k}),
+			log:   logrus.WithFields(logrus.Fields{"test": "Test_GetAllSubstrates", "case": k}),
 			mtrcs: nil,
 		}
 
@@ -121,7 +121,7 @@ func Test_GetSubstrate(t *testing.T) {
 					selectErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetSubstrate", "case": k}),
+			log:   logrus.WithFields(logrus.Fields{"test": "Test_GetSubstrate", "case": k}),
 			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
@@ -183,7 +183,7 @@ func Test_PostSubstrate(t *testing.T) {
 					insertErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PostSubstrate", "case": k}),
+			log:   logrus.WithFields(logrus.Fields{"test": "Test_PostSubstrate", "case": k}),
 			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
@@ -251,7 +251,7 @@ func Test_PatchSubstrate(t *testing.T) {
 					updateErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PatchSubstrate", "case": k}),
+			log:   logrus.WithFields(logrus.Fields{"test": "Test_PatchSubstrate", "case": k}),
 			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
@@ -311,7 +311,7 @@ func Test_DeleteSubstrate(t *testing.T) {
 					deleteErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_DeleteSubstrate", "case": k}),
+			log:   logrus.WithFields(logrus.Fields{"test": "Test_DeleteSubstrate", "case": k}),
 			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
@@ -374,7 +374,7 @@ func Test_GetSubstrateReport(t *testing.T) {
 					rptErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetSubstrateReport", "case": k}),
+			log:   logrus.WithFields(logrus.Fields{"test": "Test_GetSubstrateReport", "case": k}),
 			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {

@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/jsmit257/huautla/types"
@@ -10,19 +9,15 @@ import (
 
 func (db *Conn) SelectAllStages(ctx context.Context, cid types.CID) ([]types.Stage, error) {
 	var err error
+	deferred, l := initAccessFuncs("SelectAllStages", db.logger, types.UUID("nil"), cid)
+	defer deferred(&err, l)
 
-	deferred, start, l := initAccessFuncs("SelectAllStages", db.logger, types.UUID("nil"), cid)
-	defer deferred(start, err, l)
-
-	var rows *sql.Rows
-
-	result := make([]types.Stage, 0, 100)
-
-	rows, err = db.query.QueryContext(ctx, psqls["stage"]["select-all"])
+	rows, err := db.query.QueryContext(ctx, psqls["stage"]["select-all"])
 	if err != nil {
 		return nil, err
 	}
 
+	result := make([]types.Stage, 0, 100)
 	for rows.Next() {
 		row := types.Stage{}
 		if err = rows.Scan(&row.UUID, &row.Name); err != nil {
@@ -36,9 +31,8 @@ func (db *Conn) SelectAllStages(ctx context.Context, cid types.CID) ([]types.Sta
 
 func (db *Conn) SelectStage(ctx context.Context, id types.UUID, cid types.CID) (types.Stage, error) {
 	var err error
-
-	deferred, start, l := initAccessFuncs("SelectStage", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("SelectStage", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	result := types.Stage{UUID: id}
 	err = db.
@@ -53,9 +47,10 @@ func (db *Conn) InsertStage(ctx context.Context, s types.Stage, cid types.CID) (
 
 	s.UUID = types.UUID(db.generateUUID().String())
 
-	deferred, start, l := initAccessFuncs("InsertStage", db.logger, s.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("InsertStage", db.logger, s.UUID, cid)
+	defer deferred(&err, l)
 
+	var rows int64
 	result, err := db.ExecContext(ctx, psqls["stage"]["insert"], s.UUID, s.Name)
 	if err != nil {
 		// FIXME: choose what to do based on the tupe of error
@@ -64,7 +59,7 @@ func (db *Conn) InsertStage(ctx context.Context, s types.Stage, cid types.CID) (
 			return db.InsertStage(ctx, s, cid) // FIXME: infinite loop?
 		}
 		return s, err
-	} else if rows, err := result.RowsAffected(); err != nil {
+	} else if rows, err = result.RowsAffected(); err != nil {
 		return s, err
 	} else if rows != 1 {
 		return s, fmt.Errorf("stage was not added")
@@ -75,19 +70,19 @@ func (db *Conn) InsertStage(ctx context.Context, s types.Stage, cid types.CID) (
 
 func (db *Conn) UpdateStage(ctx context.Context, id types.UUID, s types.Stage, cid types.CID) error {
 	var err error
+	deferred, l := initAccessFuncs("UpdateStage", db.logger, id, cid)
+	defer deferred(&err, l)
 
-	deferred, start, l := initAccessFuncs("UpdateStage", db.logger, id, cid)
-	defer deferred(start, err, l)
-
+	var rows int64
 	result, err := db.ExecContext(ctx, psqls["stage"]["update"], s.Name, id)
 	if err != nil {
 		return err
-	} else if rows, err := result.RowsAffected(); err != nil {
+	} else if rows, err = result.RowsAffected(); err != nil {
 		return err
 	} else if rows != 1 {
-		return fmt.Errorf("stage was not updated: '%s'", id)
+		err = fmt.Errorf("stage was not updated: '%s'", id)
 	}
-	return nil
+	return err
 }
 
 func (db *Conn) DeleteStage(ctx context.Context, id types.UUID, cid types.CID) error {

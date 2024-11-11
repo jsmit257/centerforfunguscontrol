@@ -12,8 +12,8 @@ import (
 func (db *Conn) SelectAllEventTypes(ctx context.Context, cid types.CID) ([]types.EventType, error) {
 	var err error
 
-	deferred, start, l := initAccessFuncs("SelectAllEventTypes", db.logger, "nil", cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("SelectAllEventTypes", db.logger, "nil", cid)
+	defer deferred(&err, l)
 
 	var rows *sql.Rows
 
@@ -46,8 +46,8 @@ func (db *Conn) SelectAllEventTypes(ctx context.Context, cid types.CID) ([]types
 func (db *Conn) SelectEventType(ctx context.Context, id types.UUID, cid types.CID) (types.EventType, error) {
 	var err error
 
-	deferred, start, l := initAccessFuncs("SelectEventType", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("SelectEventType", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	result := types.EventType{}
 
@@ -68,8 +68,8 @@ func (db *Conn) InsertEventType(ctx context.Context, e types.EventType, cid type
 
 	e.UUID = types.UUID(db.generateUUID().String())
 
-	deferred, start, l := initAccessFuncs("InsertEventType", db.logger, e.UUID, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("InsertEventType", db.logger, e.UUID, cid)
+	defer deferred(&err, l)
 
 	result, err := db.ExecContext(ctx, psqls["eventtype"]["insert"], e.UUID, e.Name, e.Severity, e.Stage.UUID)
 	if err != nil {
@@ -86,8 +86,8 @@ func (db *Conn) InsertEventType(ctx context.Context, e types.EventType, cid type
 func (db *Conn) UpdateEventType(ctx context.Context, id types.UUID, e types.EventType, cid types.CID) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs("UpdateEventType", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("UpdateEventType", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	result, err := db.ExecContext(ctx, psqls["eventtype"]["update"], e.Name, e.Severity, e.Stage.UUID, id)
 	if err != nil {
@@ -107,8 +107,8 @@ func (db *Conn) DeleteEventType(ctx context.Context, id types.UUID, cid types.CI
 func (e eventtype) children(db *Conn, ctx context.Context, cid types.CID, p *rpttree) error {
 	var err error
 
-	deferred, start, l := initAccessFuncs("eventtype::children", db.logger, types.UUID(e.UUID), cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("eventtype::children", db.logger, types.UUID(e.UUID), cid)
+	defer deferred(&err, l)
 
 	param, _ := types.NewReportAttrs(url.Values{"eventtype-id": {string(e.UUID)}})
 
@@ -133,8 +133,8 @@ func (db *Conn) EventTypeReport(ctx context.Context, id types.UUID, cid types.CI
 	var err error
 	var rpt rpt
 
-	deferred, start, l := initAccessFuncs("EventTypeReport", db.logger, id, cid)
-	defer deferred(start, err, l)
+	deferred, l := initAccessFuncs("EventTypeReport", db.logger, id, cid)
+	defer deferred(&err, l)
 
 	result, err := db.SelectEventType(ctx, id, cid)
 	if err != nil {

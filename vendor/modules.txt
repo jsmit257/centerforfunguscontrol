@@ -1,7 +1,10 @@
+# github.com/DATA-DOG/go-sqlmock v1.5.2
+## explicit; go 1.15
+github.com/DATA-DOG/go-sqlmock
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/go-chi/chi/v5 v5.0.12
+# github.com/go-chi/chi/v5 v5.1.0
 ## explicit; go 1.14
 github.com/go-chi/chi/v5
 # github.com/google/uuid v1.6.0
@@ -12,6 +15,9 @@ github.com/google/uuid
 github.com/jsmit257/huautla
 github.com/jsmit257/huautla/internal/data
 github.com/jsmit257/huautla/types
+# github.com/jsmit257/userservice v0.0.0-20241108003705-317a096c31d8 => /home/johnny/dev/go/src/github.com/jsmit257/userservice
+## explicit; go 1.20
+github.com/jsmit257/userservice/shared/v1
 # github.com/kelseyhightower/envconfig v1.4.0
 ## explicit
 github.com/kelseyhightower/envconfig
@@ -38,3 +44,4 @@ golang.org/x/sys/windows
 ## explicit
 gopkg.in/yaml.v3
 # github.com/jsmit257/huautla => /home/johnny/dev/go/src/github.com/jsmit257/huautla
+# github.com/jsmit257/userservice => /home/johnny/dev/go/src/github.com/jsmit257/userservice
