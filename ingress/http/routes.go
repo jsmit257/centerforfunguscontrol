@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -14,10 +15,8 @@ import (
 	us "github.com/jsmit257/userservice/shared/v1"
 )
 
-var login = "/login"
-
 func loginRedirect(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Add("Location", login)
+	w.Header().Add("Location", "/")
 	w.WriteHeader(http.StatusFound)
 }
 
@@ -27,11 +26,13 @@ func authn(host string, port uint16) func(next http.Handler) http.Handler {
 			if c, err := r.Cookie("us-authn"); err == http.ErrNoCookie {
 				loginRedirect(w, r)
 			} else if ok, err := us.CheckValid(host, port, c); err != nil {
-				w.Write([]byte("apocalypse"))
+				_, _ = w.Write([]byte("apocalypse"))
 				w.WriteHeader(http.StatusInternalServerError)
 			} else if !ok {
 				loginRedirect(w, r)
 			} else {
+				c.Expires = time.Now().UTC() // not exactly precise
+				http.SetCookie(w, c)
 				next.ServeHTTP(w, r)
 			}
 		})

@@ -21,10 +21,12 @@ run-docker:
 	docker-compose up --build --remove-orphans -d run-docker
 
 run-web:
-	docker-compose up --build --remove-orphans cffc-web
+	docker-compose down -t5 --remove-orphans cffc-web
+	docker-compose up --build --remove-orphans -d cffc-web
 
 .PHONY: tests
-tests: docker-down unit
+tests: down unit
+	sudo rm -v ./testalbum/*
 	docker-compose up --build --remove-orphans system-test
 	docker tag jsmit257/cffc:latest jsmit257/cffc:lkg
 
@@ -38,6 +40,23 @@ vet:
 fmt:
 	go fmt ./...
 
-.PHONY: docker-down
-docker-down:
-	docker-compose down --remove-orphans
+.PHONY: down
+down:
+	docker-compose down -t5 --remove-orphans
+
+.PHONY: deploy
+deploy: # no hard dependency on `tests/public/etc` for mow
+	docker-compose build run-docker
+	docker tag jsmit257/cffc:latest jsmit257/cffc:lkg
+
+.PHONY: push
+push: # just docker, not git
+	docker push jsmit257/cffc:lkg
+
+.PHONY: push-all
+push-all: push
+	docker push jsmit257/huautla:lkg
+	docker push jsmit257/us-db-mysql-test:lkg
+	docker push jsmit257/us-srv-mysql:lkg
+	docker push jsmit257/cffc-web:lkg
+	

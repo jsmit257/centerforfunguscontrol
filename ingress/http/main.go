@@ -32,10 +32,9 @@ func main() {
 	wg := &sync.WaitGroup{}
 
 	r := chi.NewRouter()
-	// r.Use(authnz) // someday, maybe more too
 
-	newHC(r)
 	newHuautla(cfg, r, log)
+	newHC(r)
 
 	startServer(cfg, r, wg, log).Wait()
 
