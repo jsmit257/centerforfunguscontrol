@@ -30,8 +30,7 @@ install-system-test: postgres
 		-ePOSTGRES_PASSWORD=root \
 		postgres \
 		/bin/sh -c "cd /huautla && ./bin/install-system-test.sh"
-	docker tag huautla:latest jsmit257/huautla:lkg
-	# make docker-down
+	docker tag jsmit257/huautla:latest jsmit257/huautla:lkg
 
 .PHONY: system-test
 system-test: docker-down unit install-system-test
@@ -49,3 +48,12 @@ fmt:
 .PHONY: docker-down
 docker-down:
 	docker-compose down --remove-orphans
+
+.PHONY: deploy
+deploy: # no hard dependency on `tests/public/etc` for mow
+	docker-compose build postgres
+	docker tag jsmit257/huautla:latest jsmit257/huautla:lkg
+
+.PHONY: push
+push: # just docker, not git
+	docker push jsmit257/cffc:lkg

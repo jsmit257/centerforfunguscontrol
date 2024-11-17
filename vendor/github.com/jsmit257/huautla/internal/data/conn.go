@@ -37,8 +37,6 @@ type (
 	deferred func(*error, *log.Entry)
 )
 
-// var mtrcs = metrics.DataMetrics.MustCurryWith(prometheus.Labels{"pkg": "data"})
-
 func New(cnxInfo string, log *log.Entry) (types.DB, error) {
 	var err error
 	var query *sql.DB
