@@ -43,6 +43,7 @@ func Test_HappySubstrateIngredient(t *testing.T) {
 				fmt.Sprintf(urlfmt, substrates[s].UUID),
 				bytes.NewReader(b))
 			require.Nil(t, err)
+			req.AddCookie(cookie)
 
 			res, err := http.DefaultClient.Do(req)
 			require.Nil(t, err)

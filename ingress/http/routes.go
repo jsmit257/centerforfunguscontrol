@@ -24,7 +24,7 @@ func authn(host string, port uint16) func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if c, err := r.Cookie("us-authn"); err == http.ErrNoCookie {
 				loginRedirect(w, r)
-			} else if newc, err := us.CheckValid(host, port, c); err != nil {
+			} else if newc, sc := us.CheckValid(host, port, c); sc != http.StatusFound {
 				loginRedirect(w, r)
 			} else {
 				http.SetCookie(w, newc)

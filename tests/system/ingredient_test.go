@@ -19,6 +19,7 @@ func init() {
 
 	if req, err := http.NewRequest(http.MethodGet, url, nil); err != nil {
 		panic(err)
+	} else if req.AddCookie(cookie); false {
 	} else if res, err := http.DefaultClient.Do(req); err != nil {
 		panic(err)
 	} else if http.StatusOK != res.StatusCode {
@@ -58,6 +59,7 @@ func Test_HappyIngredient(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
 		require.Nil(t, err)
+		req.AddCookie(cookie)
 
 		res, err := http.DefaultClient.Do(req)
 		require.Nil(t, err)

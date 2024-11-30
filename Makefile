@@ -12,6 +12,10 @@ postgres:
 inspect:
 	docker-compose exec -it postgres psql -Upostgres huautla
 
+# define these on the command line:
+# AUTHN_(HOST|PORT)
+# HTTP_(HOST|PORT)
+# HUAUTLA_([HOST]|PORT)
 .PHONY: run-local
 run-local:
 	(go run ./ingress/http/... >log.json 2>&1 & k=$!; tail -f log.json | jq -a .; kill $k)
@@ -26,12 +30,12 @@ run-web:
 
 .PHONY: tests
 tests: down unit
-	sudo rm -v ./testalbum/*
+	sudo rm -fv ./testalbum/*
 	docker-compose up --build --remove-orphans system-test
 	docker tag jsmit257/cffc:latest jsmit257/cffc:lkg
 
 .PHONY: public
-public: tests
+public: down unit
 	docker-compose up -d cffc-web
 
 vet:

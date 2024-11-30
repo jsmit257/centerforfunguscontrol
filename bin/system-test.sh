@@ -31,4 +31,6 @@ files=(
   ./tests/system/source_test.go
 )
 
+go get net/http
+
 go test "${files[@]}"

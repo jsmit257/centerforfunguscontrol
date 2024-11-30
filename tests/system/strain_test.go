@@ -59,6 +59,7 @@ func Test_HappyStrain(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
 		require.Nil(t, err)
+		req.AddCookie(cookie)
 
 		res, err := http.DefaultClient.Do(req)
 		require.Nil(t, err)
@@ -82,7 +83,7 @@ func createPhoto(t *testing.T, id types.UUID) types.UUID {
 		fmt.Sprintf("%s/%s", url, id),
 		bytes.NewReader(sampledata.Bytes()))
 	require.Nil(t, err)
-
+	req.AddCookie(cookie)
 	req.Header.Set("Content-Type", contentType)
 
 	res, err := http.DefaultClient.Do(req)
@@ -112,6 +113,7 @@ func createNote(t *testing.T, id types.UUID, note string) {
 		fmt.Sprintf("%s/%s", url, id),
 		bytes.NewReader(b))
 	require.Nil(t, err)
+	req.AddCookie(cookie)
 
 	res, err := http.DefaultClient.Do(req)
 	require.Nil(t, err)

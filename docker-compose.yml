@@ -76,12 +76,16 @@ services:
       HUAUTLA_SSL: disable
       HTTP_HOST: *apihost
       HTTP_PORT: *apiport
-      # AUTHN_HOST: *ussrv-host
-      # AUTHN_PORT: *ussrv-port
+      AUTHN_HOST: *ussrv-host
+      AUTHN_PORT: *ussrv-port
 
   system-test:
-    depends_on: [ run-docker ]
-    image: golang:bookworm
+    depends_on:
+      - run-docker
+      - us-srv
+      - us-db
+      - us-authn
+    image: golang:1.23.1
     volumes: [ .:/cffc ]
     environment:
       HUAUTLA_HOST: *pghost
@@ -91,6 +95,8 @@ services:
       HUAUTLA_SSL: disable
       HTTP_HOST: *apihost
       HTTP_PORT: *apiport
+      AUTHN_HOST: *ussrv-host
+      AUTHN_PORT: *ussrv-port
     working_dir: /cffc
     command: ./bin/system-test.sh
 
@@ -101,7 +107,9 @@ services:
     image: jsmit257/cffc-web:lkg
     restart: always
     hostname: cffc-web
-    ports: [ 8080:80 ]
+    ports:
+      - 8080:80
+      - 8443:443
     volumes:
       - ./tests/data/:/www/css/images/background/
       - ./testalbum:/album
@@ -110,3 +118,5 @@ services:
       CFFC_API_PORT: *apiport
       AUTHN_HOST: *ussrv-host
       AUTHN_PORT: *ussrv-port
+      SSL_HOST: 71.229.148.85
+      SSL_PORT: 443

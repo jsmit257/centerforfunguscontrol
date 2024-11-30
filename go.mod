@@ -1,6 +1,6 @@
 module github.com/jsmit257/centerforfunguscontrol
 
-go 1.21.4
+go 1.23.1
 
 replace github.com/jsmit257/huautla => /home/johnny/dev/go/src/github.com/jsmit257/huautla
 
@@ -9,8 +9,8 @@ replace github.com/jsmit257/userservice => /home/johnny/dev/go/src/github.com/js
 require (
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/google/uuid v1.6.0
-	github.com/jsmit257/huautla v0.0.0-20240311050050-5f101f84cc41
-	github.com/jsmit257/userservice v0.0.0-20241108003705-317a096c31d8
+	github.com/jsmit257/huautla v0.0.0-20241111220754-08460da5815b
+	github.com/jsmit257/userservice v0.0.0-20241119014602-e7422fe454fa
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4

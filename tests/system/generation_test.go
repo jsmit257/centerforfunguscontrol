@@ -31,6 +31,7 @@ func Test_HappyGeneration(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
 		require.Nil(t, err)
+		req.AddCookie(cookie)
 
 		res, err := http.DefaultClient.Do(req)
 		require.Nil(t, err)
@@ -58,6 +59,7 @@ func Test_HappyGeneratedStrain(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPatch, url, nil)
 		require.Nil(t, err)
+		req.AddCookie(cookie)
 
 		res, err := http.DefaultClient.Do(req)
 		require.Nil(t, err)

@@ -21,6 +21,7 @@ func init() {
 		fmt.Sprintf(`http://%s:%d/vendors`, cfg.HTTPHost, cfg.HTTPPort),
 		nil); err != nil {
 		panic(err)
+	} else if req.AddCookie(cookie); false {
 	} else if res, err := http.DefaultClient.Do(req); err != nil {
 		panic(err)
 	} else if b, err := io.ReadAll(res.Body); err != nil {
@@ -43,6 +44,7 @@ func Test_HappyVendor(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
 		require.Nil(t, err)
+		req.AddCookie(cookie)
 
 		res, err := http.DefaultClient.Do(req)
 		require.Nil(t, err)

@@ -30,6 +30,7 @@ func init() {
 		url,
 		bytes.NewReader(nil)); err != nil {
 		panic(err)
+	} else if req.AddCookie(cookie); false {
 	} else if res, err := http.DefaultClient.Do(req); err != nil {
 		panic(err)
 	} else if res.StatusCode != http.StatusOK {
@@ -76,6 +77,7 @@ func Test_HappyLifecycleEvent(t *testing.T) {
 				url,
 				bytes.NewReader(b))
 			require.Nil(t, err)
+			req.AddCookie(cookie)
 
 			res, err := http.DefaultClient.Do(req)
 			require.Nil(t, err)
@@ -115,6 +117,7 @@ func Test_HappyGenerationEvent(t *testing.T) {
 				url,
 				bytes.NewReader(b))
 			require.Nil(t, err)
+			req.AddCookie(cookie)
 
 			res, err := http.DefaultClient.Do(req)
 			require.Nil(t, err)
