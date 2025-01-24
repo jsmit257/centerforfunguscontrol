@@ -2,15 +2,14 @@ package main
 
 import (
 	"net/http"
+	"regexp"
 
 	"github.com/go-chi/chi/v5"
-
-	log "github.com/sirupsen/logrus"
-
-	"github.com/jsmit257/huautla/types"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jsmit257/centerforfunguscontrol/internal/config"
 	"github.com/jsmit257/centerforfunguscontrol/internal/data/huautla"
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	us "github.com/jsmit257/userservice/shared/v1"
 )
 
@@ -25,8 +24,29 @@ func authn(host string, port uint16) func(next http.Handler) http.Handler {
 			if c, err := r.Cookie("us-authn"); err == http.ErrNoCookie {
 				loginRedirect(w, r)
 			} else if newc, sc := us.CheckValid(host, port, c); sc != http.StatusFound {
+				r.Context().Value(metrics.Log).(*logrus.Entry).WithFields(logrus.Fields{
+					"sc":     sc,
+					"cookie": newc,
+				}).Info("status")
 				loginRedirect(w, r)
 			} else {
+				resp := r.Response
+				if resp != nil && resp.Request != nil {
+					if found, _ := regexp.Match("/otp/.*", []byte(resp.Request.RequestURI)); !found {
+						r.
+							Context().
+							Value(metrics.Log).(*logrus.Entry).
+							WithField("uri", resp.Request.RequestURI).
+							Warn("uri didn't match")
+						w.Header().Set("Authn-Pad", resp.Header.Get("Authn-Pad"))
+					} else {
+						r.
+							Context().
+							Value(metrics.Log).(*logrus.Entry).
+							Info("setting header")
+						w.Header().Set("Authn-Pad", resp.Header.Get("Authn-Pad"))
+					}
+				}
 				http.SetCookie(w, newc)
 				next.ServeHTTP(w, r)
 			}
@@ -34,20 +54,11 @@ func authn(host string, port uint16) func(next http.Handler) http.Handler {
 	}
 }
 
-func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
-	ha, err := huautla.New(
-		&types.Config{
-			PGHost: cfg.HuautlaHost,
-			PGPort: cfg.HuautlaPort,
-			PGUser: cfg.HuautlaUser,
-			PGPass: cfg.HuautlaPass,
-			PGSSL:  cfg.HuautlaSSL,
-		},
-		l.WithField("database", "huautla"),
-		nil)
-	if err != nil {
-		panic(err)
-	}
+func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry) *chi.Mux {
+	l = l.WithField("database", "huautla")
+	r := chi.NewRouter()
+
+	r.Use(metrics.WrapContext(l))
 
 	if cfg.AuthnHost != "" && cfg.AuthnPort != 0 {
 		r.Use(authn(cfg.AuthnHost, cfg.AuthnPort))
@@ -143,4 +154,8 @@ func newHuautla(cfg *config.Config, r *chi.Mux, l *log.Entry) {
 	r.Get("/reports/substrate/{id}", ha.GetSubstrateReport)
 	r.Get("/reports/eventtype/{id}", ha.GetEventTypeReport)
 	r.Get("/reports/vendor/{id}", ha.GetVendorReport)
+
+	r.Get("/metrics", metrics.NewHandler())
+
+	return r
 }

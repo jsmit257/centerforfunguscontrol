@@ -44,7 +44,7 @@ vet:
 
 fmt:
 	go fmt ./...
-
+ 
 .PHONY: docker-down
 docker-down:
 	docker-compose down --remove-orphans

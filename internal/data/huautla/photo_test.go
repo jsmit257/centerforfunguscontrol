@@ -11,11 +11,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/require"
 
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	"github.com/jsmit257/huautla/types"
 )
 
@@ -50,7 +49,7 @@ func sendPhoto(f func(w http.ResponseWriter, r *http.Request), data []byte, meth
 	reader, contentType := photoHelper(data)
 	r, _ := http.NewRequestWithContext(
 		context.WithValue(
-			context.Background(),
+			metrics.MockServiceContext,
 			chi.RouteCtxKey,
 			rctx),
 		meth,
@@ -97,8 +96,6 @@ func Test_GetPhoto(t *testing.T) {
 					getErr: v.getErr,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetPhotos", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -109,7 +106,7 @@ func Test_GetPhoto(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodGet,
@@ -178,8 +175,6 @@ func Test_PostPhoto(t *testing.T) {
 					getErr: v.getErr,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PostPhoto", "case": k}),
-			mtrcs: nil,
 			filer: func(string, []byte, fs.FileMode) error {
 				return v.writeErr
 			},
@@ -254,8 +249,6 @@ func Test_PatchPhoto(t *testing.T) {
 					getErr:    v.getErr,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PatchPhoto", "case": k}),
-			mtrcs: nil,
 			filer: func(string, []byte, fs.FileMode) error {
 				return v.writeErr
 			},
@@ -321,8 +314,6 @@ func Test_DeletePhoto(t *testing.T) {
 					getErr: v.getErr,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_DeletePhoto", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -336,7 +327,7 @@ func Test_DeletePhoto(t *testing.T) {
 			}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,

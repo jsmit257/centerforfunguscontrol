@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	"github.com/jsmit257/huautla/types"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -61,8 +61,6 @@ func Test_GetLifecycleIndex(t *testing.T) {
 					selectIndexErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetLifecycleIndex", "case": k}),
-			mtrcs: nil,
 		}
 
 		t.Run(k, func(t *testing.T) {
@@ -71,7 +69,7 @@ func Test_GetLifecycleIndex(t *testing.T) {
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					chi.NewRouteContext()),
 				http.MethodGet,
@@ -133,8 +131,7 @@ func Test_GetLifecycleIndex(t *testing.T) {
 // 				},
 // 			},
 // 			log:   log.WithFields(log.Fields{"test": "Test_GetLifecyclesByAttrs2", "case": k}),
-// 			mtrcs: nil,
-// 		}
+// // 		}
 
 // 		t.Run(k, func(t *testing.T) {
 // 			t.Parallel()
@@ -143,7 +140,7 @@ func Test_GetLifecycleIndex(t *testing.T) {
 // 			defer w.Result().Body.Close()
 // 			r, _ := http.NewRequestWithContext(
 // 				context.WithValue(
-// 					context.Background(),
+// 					metrics.MockServiceContext,
 // 					chi.RouteCtxKey,
 // 					chi.NewRouteContext()),
 // 				http.MethodGet,
@@ -200,8 +197,6 @@ func Test_GetLifecycle(t *testing.T) {
 					selectErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetLifecycle", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -212,7 +207,7 @@ func Test_GetLifecycle(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodGet,
@@ -262,8 +257,6 @@ func Test_PostLifecycle(t *testing.T) {
 					insertErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PostLifecycle", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -272,7 +265,7 @@ func Test_PostLifecycle(t *testing.T) {
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					chi.NewRouteContext()),
 				http.MethodGet,
@@ -326,8 +319,6 @@ func Test_PatchLifecycle(t *testing.T) {
 					updateErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PatchLifecycle", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -338,7 +329,7 @@ func Test_PatchLifecycle(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodDelete,
@@ -386,8 +377,6 @@ func Test_DeleteLifecycle(t *testing.T) {
 					deleteErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_DeleteLifecycle", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -398,7 +387,7 @@ func Test_DeleteLifecycle(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodDelete,
@@ -454,8 +443,6 @@ func Test_GetLifecycleReport(t *testing.T) {
 					rptErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetLifecycleReport", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -466,7 +453,7 @@ func Test_GetLifecycleReport(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodGet,

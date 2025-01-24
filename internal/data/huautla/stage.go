@@ -12,19 +12,19 @@ import (
 )
 
 func (ha *HuautlaAdaptor) GetAllStages(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetAllStages")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetAllStages")
 
 	if stages, err := ha.db.SelectAllStages(r.Context(), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch stages")
 	} else {
-		ms.send(w, stages, http.StatusOK)
+		ms.send(w, http.StatusOK, stages)
 	}
 }
 
 func (ha *HuautlaAdaptor) GetStage(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetStage")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetStage")
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -33,13 +33,13 @@ func (ha *HuautlaAdaptor) GetStage(w http.ResponseWriter, r *http.Request) {
 	} else if s, err := ha.db.SelectStage(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch stage")
 	} else {
-		ms.send(w, s, http.StatusOK)
+		ms.send(w, http.StatusOK, s)
 	}
 }
 
 func (ha *HuautlaAdaptor) PostStage(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostStage")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PostStage")
 	defer r.Body.Close()
 
 	var s types.Stage
@@ -51,13 +51,13 @@ func (ha *HuautlaAdaptor) PostStage(w http.ResponseWriter, r *http.Request) {
 	} else if s, err = ha.db.InsertStage(r.Context(), s, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to insert stage")
 	} else {
-		ms.send(w, s, http.StatusCreated)
+		ms.send(w, http.StatusCreated, s)
 	}
 }
 
 func (ha *HuautlaAdaptor) PatchStage(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PatchStage")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchStage")
 	defer r.Body.Close()
 
 	var s types.Stage
@@ -73,13 +73,13 @@ func (ha *HuautlaAdaptor) PatchStage(w http.ResponseWriter, r *http.Request) {
 	} else if err = ha.db.UpdateStage(r.Context(), types.UUID(id), s, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to update stage")
 	} else {
-		ms.send(w, nil, http.StatusNoContent)
+		ms.send(w, http.StatusNoContent, nil)
 	}
 }
 
 func (ha *HuautlaAdaptor) DeleteStage(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("DeleteStage")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "DeleteStage")
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -88,6 +88,6 @@ func (ha *HuautlaAdaptor) DeleteStage(w http.ResponseWriter, r *http.Request) {
 	} else if err := ha.db.DeleteStage(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete stage")
 	} else {
-		ms.send(w, nil, http.StatusNoContent)
+		ms.send(w, http.StatusNoContent, nil)
 	}
 }

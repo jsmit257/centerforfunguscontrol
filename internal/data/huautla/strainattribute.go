@@ -12,19 +12,19 @@ import (
 )
 
 func (ha *HuautlaAdaptor) GetStrainAttributeNames(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetStrainAttributeNames")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetStrainAttributeNames")
 
 	if result, err := ha.db.KnownAttributeNames(r.Context(), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch attribute names")
 	} else {
-		ms.send(w, result, http.StatusOK)
+		ms.send(w, http.StatusOK, result)
 	}
 }
 
 func (ha *HuautlaAdaptor) PostStrainAttribute(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostStrainAttribute")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PostStrainAttribute")
 	defer r.Body.Close()
 
 	a := types.StrainAttribute{}
@@ -46,13 +46,13 @@ func (ha *HuautlaAdaptor) PostStrainAttribute(w http.ResponseWriter, r *http.Req
 	} else if a, err := ha.db.AddAttribute(r.Context(), &s, a, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add strainattribute")
 	} else {
-		ms.send(w, a, http.StatusCreated)
+		ms.send(w, http.StatusCreated, a)
 	}
 }
 
 func (ha *HuautlaAdaptor) PatchStrainAttribute(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PatchStrainAttribute")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchStrainAttribute")
 	defer r.Body.Close()
 
 	a := types.StrainAttribute{}
@@ -74,13 +74,13 @@ func (ha *HuautlaAdaptor) PatchStrainAttribute(w http.ResponseWriter, r *http.Re
 	} else if err := ha.db.ChangeAttribute(r.Context(), &s, a, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to change strainattribute")
 	} else {
-		ms.send(w, s, http.StatusOK)
+		ms.send(w, http.StatusOK, s)
 	}
 }
 
 func (ha *HuautlaAdaptor) DeleteStrainAttribute(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("DeleteStrainAttribute")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "DeleteStrainAttribute")
 
 	if stID := chi.URLParam(r, "st_id"); stID == "" {
 		ms.error(w, fmt.Errorf("missing required strain id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -95,6 +95,6 @@ func (ha *HuautlaAdaptor) DeleteStrainAttribute(w http.ResponseWriter, r *http.R
 	} else if err := ha.db.RemoveAttribute(r.Context(), &s, types.UUID(atID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to remove strainattribute")
 	} else {
-		ms.send(w, s, http.StatusOK)
+		ms.send(w, http.StatusOK, s)
 	}
 }

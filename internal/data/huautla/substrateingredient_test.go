@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	"github.com/jsmit257/huautla/types"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -75,7 +75,6 @@ func Test_PostSubstrateIngredient(t *testing.T) {
 						addErr: v.ingredientErr,
 					},
 				},
-				log: log.WithFields(log.Fields{"test": "Test_PostSubstrateIngredient", "case": k}),
 			}
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -83,7 +82,7 @@ func Test_PostSubstrateIngredient(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.s.UUID)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodDelete,
@@ -167,7 +166,6 @@ func Test_PatchSubstrateIngredient(t *testing.T) {
 						changeErr: v.ingredientErr,
 					},
 				},
-				log: log.WithFields(log.Fields{"test": "Test_PatchSubstrateIngredient", "case": k}),
 			}
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -178,7 +176,7 @@ func Test_PatchSubstrateIngredient(t *testing.T) {
 			}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodDelete,
@@ -250,7 +248,6 @@ func Test_DeleteSubstrateIngredient(t *testing.T) {
 						rmErr: v.ingredientErr,
 					},
 				},
-				log: log.WithFields(log.Fields{"test": "Test_AddIngredient", "case": k}),
 			}
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -261,7 +258,7 @@ func Test_DeleteSubstrateIngredient(t *testing.T) {
 			}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodDelete,

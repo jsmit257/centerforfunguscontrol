@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	"github.com/jsmit257/huautla/types"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,8 +59,6 @@ func Test_GetAllEventTypes(t *testing.T) {
 					selectAllErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetAllStages", "case": k}),
-			mtrcs: nil,
 		}
 
 		t.Run(k, func(t *testing.T) {
@@ -69,7 +67,7 @@ func Test_GetAllEventTypes(t *testing.T) {
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					chi.NewRouteContext()),
 				http.MethodGet,
@@ -121,8 +119,6 @@ func Test_GetEventType(t *testing.T) {
 					selectErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetEventType", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -133,7 +129,7 @@ func Test_GetEventType(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodGet,
@@ -183,8 +179,6 @@ func Test_PostEventType(t *testing.T) {
 					insertErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PostEventType", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -193,7 +187,7 @@ func Test_PostEventType(t *testing.T) {
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					chi.NewRouteContext()),
 				http.MethodGet,
@@ -251,8 +245,6 @@ func Test_PatchEventType(t *testing.T) {
 					updateErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PatchEventType", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -263,7 +255,7 @@ func Test_PatchEventType(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodDelete,
@@ -311,8 +303,6 @@ func Test_DeleteEventType(t *testing.T) {
 					deleteErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_DeleteEventType", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -323,7 +313,7 @@ func Test_DeleteEventType(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodDelete,
@@ -374,8 +364,6 @@ func Test_GetEventTypeReport(t *testing.T) {
 					etrErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetEventTypeReport", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -386,7 +374,7 @@ func Test_GetEventTypeReport(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodGet,

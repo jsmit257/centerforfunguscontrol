@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	"github.com/jsmit257/huautla/types"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -64,8 +64,6 @@ func Test_GetAllStrains(t *testing.T) {
 					selectAllErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetAllStrains", "case": k}),
-			mtrcs: nil,
 		}
 
 		t.Run(k, func(t *testing.T) {
@@ -74,7 +72,7 @@ func Test_GetAllStrains(t *testing.T) {
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					chi.NewRouteContext()),
 				http.MethodGet,
@@ -126,8 +124,6 @@ func Test_GetStrain(t *testing.T) {
 					selectErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetStrain", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -138,7 +134,7 @@ func Test_GetStrain(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodGet,
@@ -188,8 +184,6 @@ func Test_PostStrain(t *testing.T) {
 					insertErr:    v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PostStrain", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -198,7 +192,7 @@ func Test_PostStrain(t *testing.T) {
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					chi.NewRouteContext()),
 				http.MethodGet,
@@ -256,8 +250,6 @@ func Test_PatchStrain(t *testing.T) {
 					updateErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PatchStrain", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -268,7 +260,7 @@ func Test_PatchStrain(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodDelete,
@@ -316,8 +308,6 @@ func Test_DeleteStrain(t *testing.T) {
 					deleteErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_DeleteStrain", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -328,7 +318,7 @@ func Test_DeleteStrain(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodDelete,
@@ -378,8 +368,6 @@ func Test_GetGeneratedStrain(t *testing.T) {
 					strErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetGeneratedStrain", "case": k}),
-			mtrcs: nil,
 		}
 
 		t.Run(k, func(t *testing.T) {
@@ -390,7 +378,7 @@ func Test_GetGeneratedStrain(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodGet,
@@ -447,9 +435,7 @@ func Test_PatchGeneratedStrain(t *testing.T) {
 	for k, v := range set {
 		k, v := k, v
 		ha := &HuautlaAdaptor{
-			db:    &huautlaMock{Strainer: &strainerMock{patchErr: v.err}},
-			log:   log.WithFields(log.Fields{"test": "Test_PatchGeneratedStrain", "case": k}),
-			mtrcs: nil,
+			db: &huautlaMock{Strainer: &strainerMock{patchErr: v.err}},
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -460,7 +446,7 @@ func Test_PatchGeneratedStrain(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"gid", "sid"}, Values: []string{string(v.gid), string(v.sid)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPatch,
@@ -504,9 +490,7 @@ func Test_DeleteGeneratedStrain(t *testing.T) {
 	for k, v := range set {
 		k, v := k, v
 		ha := &HuautlaAdaptor{
-			db:    &huautlaMock{Strainer: &strainerMock{patchErr: v.err}},
-			log:   log.WithFields(log.Fields{"test": "Test_DeleteGeneratedStrain", "case": k}),
-			mtrcs: nil,
+			db: &huautlaMock{Strainer: &strainerMock{patchErr: v.err}},
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -517,7 +501,7 @@ func Test_DeleteGeneratedStrain(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"gid", "sid"}, Values: []string{"1", string(v.sid)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPatch,
@@ -568,8 +552,6 @@ func Test_GetStrainReport(t *testing.T) {
 					rptErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetStrainReport", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -580,7 +562,7 @@ func Test_GetStrainReport(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodGet,

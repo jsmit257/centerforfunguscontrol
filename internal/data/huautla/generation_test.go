@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	"github.com/jsmit257/huautla/types"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -65,8 +65,6 @@ func Test_GetGenerationIndex(t *testing.T) {
 					allErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetGenerationIndex", "case": k}),
-			mtrcs: nil,
 		}
 
 		t.Run(k, func(t *testing.T) {
@@ -75,7 +73,7 @@ func Test_GetGenerationIndex(t *testing.T) {
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					chi.NewRouteContext()),
 				http.MethodGet,
@@ -127,8 +125,6 @@ func Test_GetGeneration(t *testing.T) {
 					selErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetGeneration", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -139,7 +135,7 @@ func Test_GetGeneration(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodGet,
@@ -189,8 +185,6 @@ func Test_PostGeneration(t *testing.T) {
 					insErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PostGeneration", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -199,7 +193,7 @@ func Test_PostGeneration(t *testing.T) {
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					chi.NewRouteContext()),
 				http.MethodGet,
@@ -254,8 +248,6 @@ func Test_PatchGeneration(t *testing.T) {
 					updErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PatchGeneration", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -266,7 +258,7 @@ func Test_PatchGeneration(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPatch,
@@ -312,8 +304,6 @@ func Test_DeleteGeneration(t *testing.T) {
 			db: &huautlaMock{
 				Generationer: &generationerMock{rmErr: v.err},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_DeleteGeneration", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -324,7 +314,7 @@ func Test_DeleteGeneration(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodDelete,
@@ -375,8 +365,6 @@ func Test_GetGenerationReport(t *testing.T) {
 					rptErr: v.err,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetGenerationReport", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -387,7 +375,7 @@ func Test_GetGenerationReport(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodGet,

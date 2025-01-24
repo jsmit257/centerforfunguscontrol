@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	"github.com/jsmit257/huautla/types"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -77,8 +77,6 @@ func Test_PostLifecycleEvent(t *testing.T) {
 				},
 				LifecycleEventer: &eventerMock{addErr: v.evErr},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PostLifecycleEvent", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -89,7 +87,7 @@ func Test_PostLifecycleEvent(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.l.UUID)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,
@@ -167,8 +165,6 @@ func Test_PatchLifecycleEvent(t *testing.T) {
 				},
 				LifecycleEventer: &eventerMock{changeErr: v.evErr},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PatchLifecycleEvent", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -182,7 +178,7 @@ func Test_PatchLifecycleEvent(t *testing.T) {
 			}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,
@@ -247,8 +243,6 @@ func Test_DeleteLifecycleEvent(t *testing.T) {
 				},
 				LifecycleEventer: &eventerMock{rmErr: v.evErr},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_DeleteLifecycleEvent", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -262,7 +256,7 @@ func Test_DeleteLifecycleEvent(t *testing.T) {
 			}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,
@@ -326,8 +320,6 @@ func Test_PostGenerationEvent(t *testing.T) {
 				},
 				GenerationEventer: &eventerMock{addGenerationErr: v.evtErr},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PostGenerationEvent", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -338,7 +330,7 @@ func Test_PostGenerationEvent(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.g.UUID)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,
@@ -406,8 +398,6 @@ func Test_PatchGenerationEvent(t *testing.T) {
 				},
 				GenerationEventer: &eventerMock{changeGenerationErr: v.evtErr},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PatchGenerationEvent", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -418,7 +408,7 @@ func Test_PatchGenerationEvent(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.g.UUID)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,
@@ -483,8 +473,6 @@ func Test_DeleteGenerationEvent(t *testing.T) {
 				},
 				GenerationEventer: &eventerMock{rmGenerationErr: v.evErr},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_DeleteGenerationEvent", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -498,7 +486,7 @@ func Test_DeleteGenerationEvent(t *testing.T) {
 			}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,

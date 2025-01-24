@@ -14,6 +14,8 @@ x-usredis-host: &usredis-host usredis
 x-usredis-port: &usredis-port 6379
 x-ussrv-host: &ussrv-host ussrv
 x-ussrv-port: &ussrv-port 80
+x-maild-host: &maild-host usmail
+x-maild-port: &maild-port 25
 
 services:
 
@@ -38,14 +40,28 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: *usdb-pass
 
+  us-maild:
+    image: bytemark/smtp
+    restart: always
+    hostname: *maild-host
+    env_file:
+      - ./bin/env/template
+      - ./bin/env/system
+
   us-srv:
     depends_on:
       - us-authn
       - us-db
+      - us-maild
     image: jsmit257/us-srv-mysql:lkg
     hostname: *ussrv-host
     restart: always
+    env_file:
+      - ./bin/env/template
+      - ./bin/env/system
     environment:
+      US_MAILD_HOST: *maild-host
+      US_MAILD_PORT: *maild-port
       US_MYSQL_HOST: *usdb-host
       US_MYSQL_PORT: *usdb-port
       US_MYSQL_USER: *usdb-user
@@ -79,31 +95,8 @@ services:
       AUTHN_HOST: *ussrv-host
       AUTHN_PORT: *ussrv-port
 
-  system-test:
-    depends_on:
-      - run-docker
-      - us-srv
-      - us-db
-      - us-authn
-    image: golang:1.23.1
-    volumes: [ .:/cffc ]
-    environment:
-      HUAUTLA_HOST: *pghost
-      HUAUTLA_PORT: *pgport
-      HUAUTLA_USER: *pguser
-      HUAUTLA_PASSWORD: *pgpass
-      HUAUTLA_SSL: disable
-      HTTP_HOST: *apihost
-      HTTP_PORT: *apiport
-      AUTHN_HOST: *ussrv-host
-      AUTHN_PORT: *ussrv-port
-    working_dir: /cffc
-    command: ./bin/system-test.sh
-
   cffc-web:
-    depends_on:
-      - run-docker
-      - us-srv # remove this when authn works in run-docker
+    depends_on: [ run-docker ]
     image: jsmit257/cffc-web:lkg
     restart: always
     hostname: cffc-web
@@ -118,5 +111,23 @@ services:
       CFFC_API_PORT: *apiport
       AUTHN_HOST: *ussrv-host
       AUTHN_PORT: *ussrv-port
-      SSL_HOST: 71.229.148.85
+      SSL_HOST: 174.64.10.247
       SSL_PORT: 443
+
+  system-test:
+    depends_on:
+      - cffc-web
+    image: golang:1.23.1
+    volumes: [ .:/cffc ]
+    environment:
+      HUAUTLA_HOST: *pghost
+      HUAUTLA_PORT: *pgport
+      HUAUTLA_USER: *pguser
+      HUAUTLA_PASSWORD: *pgpass
+      HUAUTLA_SSL: disable
+      HTTP_HOST: *apihost
+      HTTP_PORT: *apiport
+      AUTHN_HOST: *ussrv-host
+      AUTHN_PORT: *ussrv-port
+    working_dir: /cffc
+    command: ./bin/system-test.sh

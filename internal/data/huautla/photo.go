@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/go-chi/chi/v5"
@@ -42,7 +43,8 @@ func (ha *HuautlaAdaptor) writePhoto(r *http.Request) (string, error) {
 		filetype = append(r.Header[http.CanonicalHeaderKey("Content-Type")], "image/x-unknown")[0]
 	}
 
-	ha.log.WithFields(log.Fields{
+	// r.Context().Value(metrics.Log).(*logrus.Entry).WithFields(log.Fields{
+	logrus.WithFields(log.Fields{
 		"from-request": ct,
 		"from-app":     filetype,
 	}).
@@ -65,16 +67,15 @@ func (ha *HuautlaAdaptor) writePhoto(r *http.Request) (string, error) {
 }
 
 func (ha *HuautlaAdaptor) GetPhotos(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetPhotos")
-	defer func() {
-		ms.end()
-		r.Body.Close()
-	}()
+	defer r.Body.Close()
+
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetPhotos")
 
 	if _, photos, err := ha.getPhotos(w, r, ms); err != nil {
 		return
 	} else {
-		ms.send(w, photos, http.StatusOK)
+		ms.send(w, http.StatusOK, photos)
 	}
 }
 
@@ -91,8 +92,8 @@ func (ha *HuautlaAdaptor) getPhotos(w http.ResponseWriter, r *http.Request, ms *
 }
 
 func (ha *HuautlaAdaptor) PostPhoto(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostPhoto")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PostPhoto")
 	defer r.Body.Close()
 
 	var p types.Photo
@@ -104,13 +105,13 @@ func (ha *HuautlaAdaptor) PostPhoto(w http.ResponseWriter, r *http.Request) {
 	} else if photos, err = ha.db.AddPhoto(r.Context(), types.UUID(oID), photos, p, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add photo")
 	} else {
-		ms.send(w, photos, http.StatusOK)
+		ms.send(w, http.StatusOK, photos)
 	}
 }
 
 func (ha *HuautlaAdaptor) PatchPhoto(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PatchPhoto")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchPhoto")
 	defer r.Body.Close()
 
 	var p types.Photo
@@ -124,13 +125,13 @@ func (ha *HuautlaAdaptor) PatchPhoto(w http.ResponseWriter, r *http.Request) {
 	} else if photos, err = ha.db.ChangePhoto(r.Context(), photos, p, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to change photo")
 	} else {
-		ms.send(w, photos, http.StatusOK)
+		ms.send(w, http.StatusOK, photos)
 	}
 }
 
 func (ha *HuautlaAdaptor) DeletePhoto(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("DeletePhoto")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "DeletePhoto")
 
 	if _, photos, err := ha.getPhotos(w, r, ms); err != nil {
 		return
@@ -141,6 +142,6 @@ func (ha *HuautlaAdaptor) DeletePhoto(w http.ResponseWriter, r *http.Request) {
 	} else if photos, err = ha.db.RemovePhoto(r.Context(), photos, types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to remove photo")
 	} else {
-		ms.send(w, photos, http.StatusOK)
+		ms.send(w, http.StatusOK, photos)
 	}
 }

@@ -12,8 +12,8 @@ import (
 )
 
 func (ha *HuautlaAdaptor) PostSubstrateIngredient(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostSubstrateIngredient")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PostSubstrateIngredient")
 	defer r.Body.Close()
 
 	var i types.Ingredient
@@ -31,14 +31,14 @@ func (ha *HuautlaAdaptor) PostSubstrateIngredient(w http.ResponseWriter, r *http
 	} else if err = ha.db.AddIngredient(r.Context(), &s, i, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add substrateingredient")
 	} else {
-		ms.send(w, s, http.StatusCreated)
+		ms.send(w, http.StatusCreated, s)
 	}
 
 }
 
 func (ha *HuautlaAdaptor) PatchSubstrateIngredient(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PatchSubstrateIngredient")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchSubstrateIngredient")
 	defer r.Body.Close()
 
 	var newI types.Ingredient
@@ -60,13 +60,13 @@ func (ha *HuautlaAdaptor) PatchSubstrateIngredient(w http.ResponseWriter, r *htt
 	} else if err = ha.db.ChangeIngredient(r.Context(), &s, types.Ingredient{UUID: types.UUID(igID)}, newI, ms.cid); err != nil {
 		ms.error(w, fmt.Errorf("igID: '%s', newI: '%#q' sub: [%#q] %w", igID, newI, s, err), http.StatusInternalServerError, "failed to change substrateingredient")
 	} else {
-		ms.send(w, s, http.StatusOK)
+		ms.send(w, http.StatusOK, s)
 	}
 }
 
 func (ha *HuautlaAdaptor) DeleteSubstrateIngredient(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("DeleteSubstrateIngredient")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "DeleteSubstrateIngredient")
 
 	// 	RemoveIngredient(ctx context.Context, s *Substrate, i Ingredient, cid CID) error
 	if suID := chi.URLParam(r, "su_id"); suID == "" {
@@ -82,6 +82,6 @@ func (ha *HuautlaAdaptor) DeleteSubstrateIngredient(w http.ResponseWriter, r *ht
 	} else if err = ha.db.RemoveIngredient(r.Context(), &s, types.Ingredient{UUID: types.UUID(igID)}, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to remove substrateingredient")
 	} else {
-		ms.send(w, s, http.StatusOK)
+		ms.send(w, http.StatusOK, s)
 	}
 }

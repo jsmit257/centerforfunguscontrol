@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	"github.com/jsmit257/huautla/types"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -72,8 +72,6 @@ func Test_PostStrainSource(t *testing.T) {
 				},
 				Sourcer: &sourcerMock{addStrainErr: v.srcErr},
 			},
-			log:   log.WithFields(log.Fields{"test": "PostStrainSource", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -84,7 +82,7 @@ func Test_PostStrainSource(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.g.UUID)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,
@@ -148,8 +146,6 @@ func Test_PostEventSource(t *testing.T) {
 				},
 				Sourcer: &sourcerMock{addEventErr: v.evtErr},
 			},
-			log:   log.WithFields(log.Fields{"test": "PostStrainSource", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -160,7 +156,7 @@ func Test_PostEventSource(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.g.UUID)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,
@@ -238,8 +234,6 @@ func Test_PatchSource(t *testing.T) {
 				},
 				Sourcer: &sourcerMock{changeErr: v.srcErr},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PatchSource", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -250,7 +244,7 @@ func Test_PatchSource(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.g.UUID)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,
@@ -315,8 +309,6 @@ func Test_DeleteSource(t *testing.T) {
 				},
 				Sourcer: &sourcerMock{removeErr: v.srcErr},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_DeleteSource", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -330,7 +322,7 @@ func Test_DeleteSource(t *testing.T) {
 			}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,

@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 .PHONY: unit
 unit:
-	go test -cover ./internal/...
+	go test -cover ./ingress/... ./internal/... ./shared/...
 
 .PHONY: postgres
 postgres:
@@ -29,7 +29,7 @@ run-web:
 	docker-compose up --build --remove-orphans -d cffc-web
 
 .PHONY: tests
-tests: down unit
+tests: public #down unit
 	sudo rm -fv ./testalbum/*
 	docker-compose up --build --remove-orphans system-test
 	docker tag jsmit257/cffc:latest jsmit257/cffc:lkg
@@ -53,7 +53,7 @@ deploy: # no hard dependency on `tests/public/etc` for mow
 	docker-compose build run-docker
 	docker tag jsmit257/cffc:latest jsmit257/cffc:lkg
 
-.PHONY: push
+q	.PHONY: push
 push: # just docker, not git
 	docker push jsmit257/cffc:lkg
 

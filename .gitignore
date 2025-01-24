@@ -6,3 +6,6 @@
 
 /tests/data
 !/tests/data/sample.png
+
+/bin/env
+!/bin/env/template

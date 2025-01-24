@@ -12,19 +12,19 @@ import (
 )
 
 func (ha *HuautlaAdaptor) GetAllSubstrates(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetAllSubstrates")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetAllSubstrates")
 
 	if substrates, err := ha.db.SelectAllSubstrates(r.Context(), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch substrates")
 	} else {
-		ms.send(w, substrates, http.StatusOK)
+		ms.send(w, http.StatusOK, substrates)
 	}
 }
 
 func (ha *HuautlaAdaptor) GetSubstrate(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetSubstrate")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetSubstrate")
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -33,13 +33,13 @@ func (ha *HuautlaAdaptor) GetSubstrate(w http.ResponseWriter, r *http.Request) {
 	} else if s, err := ha.db.SelectSubstrate(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch substrate")
 	} else {
-		ms.send(w, s, http.StatusOK)
+		ms.send(w, http.StatusOK, s)
 	}
 }
 
 func (ha *HuautlaAdaptor) PostSubstrate(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostSubstrate")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PostSubstrate")
 	defer r.Body.Close()
 
 	var s types.Substrate
@@ -51,13 +51,13 @@ func (ha *HuautlaAdaptor) PostSubstrate(w http.ResponseWriter, r *http.Request) 
 	} else if s, err = ha.db.InsertSubstrate(r.Context(), s, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to insert substrate")
 	} else {
-		ms.send(w, s, http.StatusCreated)
+		ms.send(w, http.StatusCreated, s)
 	}
 }
 
 func (ha *HuautlaAdaptor) PatchSubstrate(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PatchSubstrate")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchSubstrate")
 	defer r.Body.Close()
 
 	var s types.Substrate
@@ -73,13 +73,13 @@ func (ha *HuautlaAdaptor) PatchSubstrate(w http.ResponseWriter, r *http.Request)
 	} else if err = ha.db.UpdateSubstrate(r.Context(), types.UUID(id), s, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to update substrate")
 	} else {
-		ms.send(w, nil, http.StatusNoContent)
+		ms.send(w, http.StatusNoContent, nil)
 	}
 }
 
 func (ha *HuautlaAdaptor) DeleteSubstrate(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("DeleteSubstrate")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "DeleteSubstrate")
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -88,13 +88,13 @@ func (ha *HuautlaAdaptor) DeleteSubstrate(w http.ResponseWriter, r *http.Request
 	} else if err := ha.db.DeleteSubstrate(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete substrate")
 	} else {
-		ms.send(w, nil, http.StatusNoContent)
+		ms.send(w, http.StatusNoContent, nil)
 	}
 }
 
 func (ha *HuautlaAdaptor) GetSubstrateReport(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetSubstrateReport")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetSubstrateReport")
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -103,6 +103,6 @@ func (ha *HuautlaAdaptor) GetSubstrateReport(w http.ResponseWriter, r *http.Requ
 	} else if s, err := ha.db.SubstrateReport(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch substrate")
 	} else {
-		ms.send(w, s, http.StatusOK)
+		ms.send(w, http.StatusOK, s)
 	}
 }

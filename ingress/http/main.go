@@ -6,14 +6,14 @@ import (
 	"syscall"
 
 	"github.com/jsmit257/centerforfunguscontrol/internal/config"
+	"github.com/jsmit257/centerforfunguscontrol/internal/data/huautla"
+	"github.com/jsmit257/huautla/types"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/go-chi/chi/v5"
 )
 
 var traps = []os.Signal{
-	os.Interrupt,
+	syscall.SIGINT,
 	syscall.SIGHUP,
 	syscall.SIGTERM,
 	syscall.SIGQUIT,
@@ -31,9 +31,19 @@ func main() {
 
 	wg := &sync.WaitGroup{}
 
-	r := chi.NewRouter()
+	ha, err := huautla.New(&types.Config{
+		PGHost: cfg.HuautlaHost,
+		PGPort: cfg.HuautlaPort,
+		PGUser: cfg.HuautlaUser,
+		PGPass: cfg.HuautlaPass,
+		PGSSL:  cfg.HuautlaSSL,
+	},
+		log)
+	if err != nil {
+		panic(err)
+	}
 
-	newHuautla(cfg, r, log)
+	r := newHuautla(cfg, ha, log)
 	newHC(r)
 
 	startServer(cfg, r, wg, log).Wait()

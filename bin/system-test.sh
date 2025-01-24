@@ -3,8 +3,9 @@
 if which psql >/dev/null 2>&1; then
   psql "postgresql://postgres:root@${HUAUTLA_HOST:=localhost}:${HUAUTLA_PORT:=5432}" huautla <<-EOF
     \c huautla
+    update strains set generation_uuid = null;
     delete from notes;
-    delete from event_photos;
+    delete from photos;
     delete from sources;
     delete from generations;
     delete from events;

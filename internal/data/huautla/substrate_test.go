@@ -10,9 +10,10 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jsmit257/huautla/types"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
+	"github.com/jsmit257/huautla/types"
 )
 
 type substraterMock struct {
@@ -59,8 +60,6 @@ func Test_GetAllSubstrates(t *testing.T) {
 					selectAllErr:    v.err,
 				},
 			},
-			log:   logrus.WithFields(logrus.Fields{"test": "Test_GetAllSubstrates", "case": k}),
-			mtrcs: nil,
 		}
 
 		t.Run(k, func(t *testing.T) {
@@ -69,7 +68,7 @@ func Test_GetAllSubstrates(t *testing.T) {
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					chi.NewRouteContext()),
 				http.MethodGet,
@@ -121,8 +120,6 @@ func Test_GetSubstrate(t *testing.T) {
 					selectErr:    v.err,
 				},
 			},
-			log:   logrus.WithFields(logrus.Fields{"test": "Test_GetSubstrate", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -133,7 +130,7 @@ func Test_GetSubstrate(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodGet,
@@ -183,8 +180,6 @@ func Test_PostSubstrate(t *testing.T) {
 					insertErr:    v.err,
 				},
 			},
-			log:   logrus.WithFields(logrus.Fields{"test": "Test_PostSubstrate", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -193,7 +188,7 @@ func Test_PostSubstrate(t *testing.T) {
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					chi.NewRouteContext()),
 				http.MethodGet,
@@ -251,8 +246,6 @@ func Test_PatchSubstrate(t *testing.T) {
 					updateErr: v.err,
 				},
 			},
-			log:   logrus.WithFields(logrus.Fields{"test": "Test_PatchSubstrate", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -263,7 +256,7 @@ func Test_PatchSubstrate(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodDelete,
@@ -311,8 +304,6 @@ func Test_DeleteSubstrate(t *testing.T) {
 					deleteErr: v.err,
 				},
 			},
-			log:   logrus.WithFields(logrus.Fields{"test": "Test_DeleteSubstrate", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -323,7 +314,7 @@ func Test_DeleteSubstrate(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodDelete,
@@ -374,8 +365,6 @@ func Test_GetSubstrateReport(t *testing.T) {
 					rptErr: v.err,
 				},
 			},
-			log:   logrus.WithFields(logrus.Fields{"test": "Test_GetSubstrateReport", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -386,7 +375,7 @@ func Test_GetSubstrateReport(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodGet,

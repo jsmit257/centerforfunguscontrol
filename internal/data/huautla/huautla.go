@@ -1,48 +1,47 @@
 package huautla
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 
-	log "github.com/sirupsen/logrus"
-
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	"github.com/jsmit257/huautla"
 	"github.com/jsmit257/huautla/types"
 )
 
 type (
 	HuautlaAdaptor struct {
-		db    types.DB
-		log   *log.Entry
+		db types.DB
+		// log   *logrus.Entry
 		filer func(string, []byte, fs.FileMode) error
-		mtrcs interface{}
 	}
 
 	methodStats struct {
 		cid types.CID
-		l   *log.Entry
-		m   interface{}
+		l   *logrus.Entry
+		m   *prometheus.CounterVec
 		s   time.Time
 	}
 )
 
-func New(cfg *types.Config, log *log.Entry, mtrcs interface{}) (*HuautlaAdaptor, error) {
+func New(cfg *types.Config, log *logrus.Entry) (*HuautlaAdaptor, error) {
 	if db, err := huautla.New(cfg, log); err != nil {
 		return nil, err
 	} else {
 		log.Info("connected to database")
 		return &HuautlaAdaptor{
 			db:    db,
-			log:   log,
-			mtrcs: mtrcs,
 			filer: os.WriteFile,
 		}, nil
 	}
@@ -61,37 +60,48 @@ func getUUIDByName(name string, _ http.ResponseWriter, r *http.Request, _ *metho
 
 // helper function adds fields `method` and `cid` to all subsequent logs; returns an object
 // that encapsulates various success/error events with appropriate logging/metrics/responses
-func (ha *HuautlaAdaptor) start(method string) *methodStats {
-	result := methodStats{
-		cid: cid(),
-		m:   nil, // later
-		s:   time.Now().UTC(),
+func (ha *HuautlaAdaptor) start(ctx context.Context, method string) *methodStats {
+	cid := ctx.Value(metrics.Cid).(types.CID)
+
+	result := &methodStats{
+		cid: cid,
+		m:   ctx.Value(metrics.Metrics).(*prometheus.CounterVec),
+		l: ctx.Value(metrics.Log).(*logrus.Entry).WithFields(logrus.Fields{
+			"method": method,
+			"cid":    cid,
+		}),
+		s: time.Now().UTC(),
 	}
-	result.l = ha.log.WithFields(log.Fields{
-		"method": method,
-		"cid":    result.cid,
-	})
 
 	result.l.Info("starting work")
 
-	return &result
+	return result
 }
 
-func (ms *methodStats) elapsed() *log.Entry {
-	return ms.l.WithField("elapsed", time.Now().UTC().Sub(ms.s))
+func (ms *methodStats) lap() *methodStats {
+	return &methodStats{
+		cid: ms.cid,
+		l:   ms.l.WithField("elapsed", time.Now().UTC().Sub(ms.s)),
+		m:   ms.m,
+		s:   ms.s,
+	}
+
 }
 
-// simple way to log, emit metrics and respond to the client in a regular way
-func (ms *methodStats) error(w http.ResponseWriter, err error, sc int, msg string) {
-	// ms.m.??? // fit metrics in here eventually
-	w.Header().Add("cid", string(ms.cid))
-	w.WriteHeader(sc)
-	ms.elapsed().WithError(err).Error(msg)
+func (ms *methodStats) err(e error) *methodStats {
+	return &methodStats{
+		cid: ms.cid,
+		l:   ms.l.WithError(e),
+		m:   ms.m,
+		s:   ms.s,
+	}
 }
 
-// assuming noone has called error() on this object, send() is the next likely step,
-// to get the result data to the client
-func (ms *methodStats) send(w http.ResponseWriter, i interface{}, sc int) {
+func (ms *methodStats) error(w http.ResponseWriter, err error, sc int, msg interface{}) {
+	ms.err(err).send(w, sc, msg)
+}
+
+func (ms *methodStats) send(w http.ResponseWriter, sc int, i interface{}) {
 	result, err := json.Marshal(i)
 	if err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to marshal result")
@@ -101,16 +111,8 @@ func (ms *methodStats) send(w http.ResponseWriter, i interface{}, sc int) {
 		if sc == http.StatusNoContent {
 			return
 		}
-		if _, err = w.Write([]byte(result)); err != nil {
-			ms.error(w, err, http.StatusInternalServerError, "failed to send result")
-		}
+		_, _ = w.Write([]byte(result))
 	}
-}
-
-func (ms *methodStats) end() {
-	ms.elapsed().Info("finished work")
-}
-
-func cid() types.CID {
-	return types.CID(uuid.NewString())
+	ms.m.WithLabelValues(strconv.Itoa(sc)).Inc()
+	ms.lap().l.Info("finished work")
 }

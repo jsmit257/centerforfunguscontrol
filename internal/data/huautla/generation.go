@@ -12,32 +12,32 @@ import (
 )
 
 func (ha *HuautlaAdaptor) GetGenerationIndex(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetGenerationIndex")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetGenerationIndex")
 
 	if g, err := ha.db.SelectGenerationIndex(r.Context(), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch generations")
 	} else {
-		ms.send(w, g, http.StatusOK)
+		ms.send(w, http.StatusOK, g)
 	}
 }
 
 func (ha *HuautlaAdaptor) GetGeneration(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetGeneration")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetGeneration")
 
 	if id, err := getUUIDByName("id", w, r, ms); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "failed to fetch uuid")
 	} else if g, err := ha.db.SelectGeneration(r.Context(), id, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch generation")
 	} else {
-		ms.send(w, g, http.StatusOK)
+		ms.send(w, http.StatusOK, g)
 	}
 }
 
 func (ha *HuautlaAdaptor) PostGeneration(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostGeneration")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PostGeneration")
 	defer r.Body.Close()
 
 	var g types.Generation
@@ -49,13 +49,13 @@ func (ha *HuautlaAdaptor) PostGeneration(w http.ResponseWriter, r *http.Request)
 	} else if g, err = ha.db.InsertGeneration(r.Context(), g, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to insert generation")
 	} else {
-		ms.send(w, g, http.StatusCreated)
+		ms.send(w, http.StatusCreated, g)
 	}
 }
 
 func (ha *HuautlaAdaptor) PatchGeneration(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PatchGeneration")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchGeneration")
 	defer r.Body.Close()
 
 	var g types.Generation
@@ -71,32 +71,32 @@ func (ha *HuautlaAdaptor) PatchGeneration(w http.ResponseWriter, r *http.Request
 	} else if g, err = ha.db.UpdateGeneration(r.Context(), g, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to update generation")
 	} else {
-		ms.send(w, g, http.StatusOK)
+		ms.send(w, http.StatusOK, g)
 	}
 }
 
 func (ha *HuautlaAdaptor) DeleteGeneration(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("DeleteGeneration")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "DeleteGeneration")
 
 	if id, err := getUUIDByName("id", w, r, ms); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "failed to fetch uuid")
 	} else if err := ha.db.DeleteGeneration(r.Context(), id, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete generation")
 	} else {
-		ms.send(w, nil, http.StatusNoContent)
+		ms.send(w, http.StatusNoContent, nil)
 	}
 }
 
 func (ha *HuautlaAdaptor) GetGenerationReport(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetGenerationReport")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetGenerationReport")
 
 	if id, err := getUUIDByName("id", w, r, ms); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "failed to fetch uuid")
 	} else if g, err := ha.db.GenerationReport(r.Context(), id, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch generation")
 	} else {
-		ms.send(w, g, http.StatusOK)
+		ms.send(w, http.StatusOK, g)
 	}
 }

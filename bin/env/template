@@ -1,0 +1,7 @@
+#!/bin/sh
+
+MAILD_RELAY_HOST=mail.google.com
+MAILD_RELAY_PORT=587
+MAILD_RELAY_USER=svc
+MAILD_RELAY_PASS=snakeoil
+

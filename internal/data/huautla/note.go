@@ -12,16 +12,15 @@ import (
 )
 
 func (ha *HuautlaAdaptor) GetNotes(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetNotes")
-	defer func() {
-		ms.end()
-		r.Body.Close()
-	}()
+	defer r.Body.Close()
+
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetNotes")
 
 	if _, notes, err := ha.getNotes(w, r, ms); err != nil {
 		return
 	} else {
-		ms.send(w, notes, http.StatusOK)
+		ms.send(w, http.StatusOK, notes)
 	}
 }
 
@@ -37,11 +36,10 @@ func (ha *HuautlaAdaptor) getNotes(w http.ResponseWriter, r *http.Request, ms *m
 }
 
 func (ha *HuautlaAdaptor) PostNote(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostNote")
-	defer func() {
-		ms.end()
-		r.Body.Close()
-	}()
+	defer r.Body.Close()
+
+	ctx := r.Context()
+	ms := ha.start(ctx, "PostNote")
 
 	var n types.Note
 
@@ -51,38 +49,36 @@ func (ha *HuautlaAdaptor) PostNote(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
 	} else if err := json.Unmarshal(body, &n); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
-	} else if notes, err = ha.db.AddNote(r.Context(), types.UUID(oID), notes, n, ms.cid); err != nil {
+	} else if notes, err = ha.db.AddNote(ctx, types.UUID(oID), notes, n, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add note")
 	} else {
-		ms.send(w, notes, http.StatusOK)
+		ms.send(w, http.StatusOK, notes)
 	}
 }
 
 func (ha *HuautlaAdaptor) PatchNote(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PatchNote")
-	defer func() {
-		ms.end()
-		r.Body.Close()
-	}()
+	defer r.Body.Close()
+
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchNote")
 
 	var n types.Note
-
 	if _, notes, err := ha.getNotes(w, r, ms); err != nil {
 		return
 	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
 	} else if err := json.Unmarshal(body, &n); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
-	} else if notes, err = ha.db.ChangeNote(r.Context(), notes, n, ms.cid); err != nil {
+	} else if notes, err = ha.db.ChangeNote(ctx, notes, n, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to change note")
 	} else {
-		ms.send(w, notes, http.StatusOK)
+		ms.send(w, http.StatusOK, notes)
 	}
 }
 
 func (ha *HuautlaAdaptor) DeleteNote(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("DeleteNote")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "DeleteNote")
 
 	if _, notes, err := ha.getNotes(w, r, ms); err != nil {
 		return
@@ -90,9 +86,9 @@ func (ha *HuautlaAdaptor) DeleteNote(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
 	} else if id, err := url.QueryUnescape(id); err != nil {
 		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
-	} else if notes, err = ha.db.RemoveNote(r.Context(), notes, types.UUID(id), ms.cid); err != nil {
+	} else if notes, err = ha.db.RemoveNote(ctx, notes, types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to remove note")
 	} else {
-		ms.send(w, notes, http.StatusOK)
+		ms.send(w, http.StatusOK, notes)
 	}
 }

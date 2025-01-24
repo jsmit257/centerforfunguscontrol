@@ -9,11 +9,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/require"
 
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	"github.com/jsmit257/huautla/types"
 )
 
@@ -63,8 +62,6 @@ func Test_GetNotes(t *testing.T) {
 					getErr: v.getErr,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetNotes", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -75,7 +72,7 @@ func Test_GetNotes(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,
@@ -137,8 +134,6 @@ func Test_PostNote(t *testing.T) {
 					getErr: v.getErr,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PostNote", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -149,7 +144,7 @@ func Test_PostNote(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,
@@ -204,8 +199,6 @@ func Test_ChangeNote(t *testing.T) {
 					getErr:    v.getErr,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_ChangeNote", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -216,7 +209,7 @@ func Test_ChangeNote(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,
@@ -275,8 +268,6 @@ func Test_DeleteNote(t *testing.T) {
 					getErr: v.getErr,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_DeleteNote", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -290,7 +281,7 @@ func Test_DeleteNote(t *testing.T) {
 			}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,

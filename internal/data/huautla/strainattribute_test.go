@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	"github.com/jsmit257/huautla/types"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -52,8 +52,6 @@ func Test_GetStrainAttributeNames(t *testing.T) {
 					namesErr:   v.namesErr,
 				},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_GetStrainAttributeNames", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -62,7 +60,7 @@ func Test_GetStrainAttributeNames(t *testing.T) {
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					chi.NewRouteContext()),
 				http.MethodGet,
@@ -131,8 +129,6 @@ func Test_PostStrainAttribute(t *testing.T) {
 				},
 				StrainAttributer: &strainattributerMock{addErr: v.attrErr},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PostStrainAttribute", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -143,7 +139,7 @@ func Test_PostStrainAttribute(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.s.UUID)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,
@@ -213,8 +209,6 @@ func Test_PatchStrainAttribute(t *testing.T) {
 				},
 				StrainAttributer: &strainattributerMock{changeErr: v.attrErr},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_PostStrainAttribute", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -225,7 +219,7 @@ func Test_PatchStrainAttribute(t *testing.T) {
 			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.s.UUID)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodPost,
@@ -294,8 +288,6 @@ func Test_DeleteStrainAttribute(t *testing.T) {
 				},
 				StrainAttributer: &strainattributerMock{rmErr: v.rmErr},
 			},
-			log:   log.WithFields(log.Fields{"test": "Test_DeleteStrainAttribute", "case": k}),
-			mtrcs: nil,
 		}
 		t.Run(k, func(t *testing.T) {
 			t.Parallel()
@@ -309,7 +301,7 @@ func Test_DeleteStrainAttribute(t *testing.T) {
 			}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
-					context.Background(),
+					metrics.MockServiceContext,
 					chi.RouteCtxKey,
 					rctx),
 				http.MethodDelete,

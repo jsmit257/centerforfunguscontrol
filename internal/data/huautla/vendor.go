@@ -14,19 +14,19 @@ import (
 )
 
 func (ha *HuautlaAdaptor) GetAllVendors(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetAllVendors")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetAllVendors")
 
 	if vendors, err := ha.db.SelectAllVendors(r.Context(), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch vendors")
 	} else {
-		ms.send(w, vendors, http.StatusOK)
+		ms.send(w, http.StatusOK, vendors)
 	}
 }
 
 func (ha *HuautlaAdaptor) GetVendor(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetVendor")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetVendor")
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -35,13 +35,13 @@ func (ha *HuautlaAdaptor) GetVendor(w http.ResponseWriter, r *http.Request) {
 	} else if vendor, err := ha.db.SelectVendor(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch vendor")
 	} else {
-		ms.send(w, vendor, http.StatusOK)
+		ms.send(w, http.StatusOK, vendor)
 	}
 }
 
 func (ha *HuautlaAdaptor) PostVendor(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostVendor")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PostVendor")
 	defer r.Body.Close()
 
 	var v types.Vendor
@@ -54,12 +54,12 @@ func (ha *HuautlaAdaptor) PostVendor(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, err, http.StatusInternalServerError, "failed to insert vendor")
 	}
 
-	ms.send(w, v, http.StatusCreated)
+	ms.send(w, http.StatusCreated, v)
 }
 
 func (ha *HuautlaAdaptor) PatchVendor(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PatchVendor")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchVendor")
 	defer r.Body.Close()
 
 	var v types.Vendor
@@ -76,12 +76,12 @@ func (ha *HuautlaAdaptor) PatchVendor(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, err, http.StatusInternalServerError, "failed to update vendor")
 	}
 
-	ms.send(w, nil, http.StatusNoContent)
+	ms.send(w, http.StatusNoContent, nil)
 }
 
 func (ha *HuautlaAdaptor) DeleteVendor(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("DeleteVendor")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "DeleteVendor")
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -90,13 +90,13 @@ func (ha *HuautlaAdaptor) DeleteVendor(w http.ResponseWriter, r *http.Request) {
 	} else if err := ha.db.DeleteVendor(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete vendor")
 	} else {
-		ms.send(w, nil, http.StatusNoContent)
+		ms.send(w, http.StatusNoContent, nil)
 	}
 }
 
 func (ha *HuautlaAdaptor) GetVendorReport(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetVendorReport")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetVendorReport")
 
 	if id, err := getUUIDByName("id", w, r, ms); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "failed to fetch uuid")
@@ -105,6 +105,6 @@ func (ha *HuautlaAdaptor) GetVendorReport(w http.ResponseWriter, r *http.Request
 	} else if err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch vendor")
 	} else {
-		ms.send(w, v, http.StatusOK)
+		ms.send(w, http.StatusOK, v)
 	}
 }

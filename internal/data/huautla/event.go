@@ -12,8 +12,8 @@ import (
 )
 
 func (ha *HuautlaAdaptor) PostLifecycleEvent(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostEvent")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PostEvent")
 	defer r.Body.Close()
 
 	var e types.Event
@@ -31,13 +31,13 @@ func (ha *HuautlaAdaptor) PostLifecycleEvent(w http.ResponseWriter, r *http.Requ
 	} else if err := ha.db.AddLifecycleEvent(r.Context(), &l, e, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add event")
 	} else {
-		ms.send(w, l, http.StatusCreated)
+		ms.send(w, http.StatusCreated, l)
 	}
 }
 
 func (ha *HuautlaAdaptor) PatchLifecycleEvent(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PatchLifecycleEvent")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchLifecycleEvent")
 	defer r.Body.Close()
 
 	var e types.Event
@@ -55,13 +55,13 @@ func (ha *HuautlaAdaptor) PatchLifecycleEvent(w http.ResponseWriter, r *http.Req
 	} else if _, err := ha.db.ChangeLifecycleEvent(r.Context(), &l, e, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to change event")
 	} else {
-		ms.send(w, l, http.StatusOK)
+		ms.send(w, http.StatusOK, l)
 	}
 }
 
 func (ha *HuautlaAdaptor) DeleteLifecycleEvent(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("DeleteLifecycleEvent")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "DeleteLifecycleEvent")
 
 	if lcID := chi.URLParam(r, "lc_id"); lcID == "" {
 		ms.error(w, fmt.Errorf("missing required lifecycle id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -76,13 +76,13 @@ func (ha *HuautlaAdaptor) DeleteLifecycleEvent(w http.ResponseWriter, r *http.Re
 	} else if err := ha.db.RemoveLifecycleEvent(r.Context(), &l, types.UUID(evID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to remove event")
 	} else {
-		ms.send(w, l, http.StatusOK)
+		ms.send(w, http.StatusOK, l)
 	}
 }
 
 func (ha *HuautlaAdaptor) PostGenerationEvent(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostGenerationEvent")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PostGenerationEvent")
 	defer r.Body.Close()
 
 	var e types.Event
@@ -100,13 +100,13 @@ func (ha *HuautlaAdaptor) PostGenerationEvent(w http.ResponseWriter, r *http.Req
 	} else if err := ha.db.AddGenerationEvent(r.Context(), &g, e, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add event")
 	} else {
-		ms.send(w, g, http.StatusCreated)
+		ms.send(w, http.StatusCreated, g)
 	}
 }
 
 func (ha *HuautlaAdaptor) PatchGenerationEvent(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PatchGenerationEvent")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchGenerationEvent")
 	defer r.Body.Close()
 
 	var e types.Event
@@ -124,13 +124,13 @@ func (ha *HuautlaAdaptor) PatchGenerationEvent(w http.ResponseWriter, r *http.Re
 	} else if _, err := ha.db.ChangeGenerationEvent(r.Context(), &g, e, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to change event")
 	} else {
-		ms.send(w, g, http.StatusOK)
+		ms.send(w, http.StatusOK, g)
 	}
 }
 
 func (ha *HuautlaAdaptor) DeleteGenerationEvent(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("DeleteGenerationEvent")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "DeleteGenerationEvent")
 
 	if gID := chi.URLParam(r, "g_id"); gID == "" {
 		ms.error(w, fmt.Errorf("missing required lifecycle id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -145,6 +145,6 @@ func (ha *HuautlaAdaptor) DeleteGenerationEvent(w http.ResponseWriter, r *http.R
 	} else if err := ha.db.RemoveGenerationEvent(r.Context(), &g, types.UUID(evID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to remove lifecycle")
 	} else {
-		ms.send(w, g, http.StatusOK)
+		ms.send(w, http.StatusOK, g)
 	}
 }

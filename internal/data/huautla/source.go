@@ -12,8 +12,8 @@ import (
 )
 
 func (ha *HuautlaAdaptor) PostStrainSource(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostStrainSource")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PostStrainSource")
 	defer r.Body.Close()
 
 	var s types.Source
@@ -31,13 +31,13 @@ func (ha *HuautlaAdaptor) PostStrainSource(w http.ResponseWriter, r *http.Reques
 	} else if err := ha.db.AddStrainSource(r.Context(), &g, s, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add source")
 	} else {
-		ms.send(w, g, http.StatusCreated)
+		ms.send(w, http.StatusCreated, g)
 	}
 }
 
 func (ha *HuautlaAdaptor) PostEventSource(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostEventSource")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PostEventSource")
 	defer r.Body.Close()
 
 	var e types.Event
@@ -55,13 +55,13 @@ func (ha *HuautlaAdaptor) PostEventSource(w http.ResponseWriter, r *http.Request
 	} else if err := ha.db.AddEventSource(r.Context(), &g, e, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add source")
 	} else {
-		ms.send(w, g, http.StatusCreated)
+		ms.send(w, http.StatusCreated, g)
 	}
 }
 
 func (ha *HuautlaAdaptor) PatchSource(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PatchLifecycleEvent")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchLifecycleEvent")
 	defer r.Body.Close()
 
 	var s types.Source
@@ -79,13 +79,13 @@ func (ha *HuautlaAdaptor) PatchSource(w http.ResponseWriter, r *http.Request) {
 	} else if err := ha.db.ChangeSource(r.Context(), &g, s, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to change source")
 	} else {
-		ms.send(w, g, http.StatusOK)
+		ms.send(w, http.StatusOK, g)
 	}
 }
 
 func (ha *HuautlaAdaptor) DeleteSource(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("DeleteSource")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "DeleteSource")
 
 	if gID := chi.URLParam(r, "g_id"); gID == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -100,6 +100,6 @@ func (ha *HuautlaAdaptor) DeleteSource(w http.ResponseWriter, r *http.Request) {
 	} else if err := ha.db.RemoveSource(r.Context(), &g, types.UUID(sID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to remove source")
 	} else {
-		ms.send(w, g, http.StatusOK)
+		ms.send(w, http.StatusOK, g)
 	}
 }

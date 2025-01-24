@@ -14,19 +14,19 @@ import (
 )
 
 func (ha *HuautlaAdaptor) GetAllEventTypes(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetAllEventTypes")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetAllEventTypes")
 
 	if stages, err := ha.db.SelectAllEventTypes(r.Context(), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch eventtypes")
 	} else {
-		ms.send(w, stages, http.StatusOK)
+		ms.send(w, http.StatusOK, stages)
 	}
 }
 
 func (ha *HuautlaAdaptor) GetEventType(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetEventType")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetEventType")
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -35,13 +35,13 @@ func (ha *HuautlaAdaptor) GetEventType(w http.ResponseWriter, r *http.Request) {
 	} else if eventtype, err := ha.db.SelectEventType(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch eventtype")
 	} else {
-		ms.send(w, eventtype, http.StatusOK)
+		ms.send(w, http.StatusOK, eventtype)
 	}
 }
 
 func (ha *HuautlaAdaptor) PostEventType(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PostEventType")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PostEventType")
 	defer r.Body.Close()
 
 	var et types.EventType
@@ -53,13 +53,13 @@ func (ha *HuautlaAdaptor) PostEventType(w http.ResponseWriter, r *http.Request) 
 	} else if et, err = ha.db.InsertEventType(r.Context(), et, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to insert eventtype")
 	} else {
-		ms.send(w, et, http.StatusCreated)
+		ms.send(w, http.StatusCreated, et)
 	}
 }
 
 func (ha *HuautlaAdaptor) PatchEventType(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("PatchEventType")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchEventType")
 	defer r.Body.Close()
 
 	var et types.EventType
@@ -75,13 +75,13 @@ func (ha *HuautlaAdaptor) PatchEventType(w http.ResponseWriter, r *http.Request)
 	} else if err = ha.db.UpdateEventType(r.Context(), types.UUID(id), et, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to update eventtype")
 	} else {
-		ms.send(w, nil, http.StatusNoContent)
+		ms.send(w, http.StatusNoContent, nil)
 	}
 }
 
 func (ha *HuautlaAdaptor) DeleteEventType(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("DeleteEventType")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "DeleteEventType")
 
 	if id := chi.URLParam(r, "id"); id == "" {
 		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
@@ -90,13 +90,13 @@ func (ha *HuautlaAdaptor) DeleteEventType(w http.ResponseWriter, r *http.Request
 	} else if err := ha.db.DeleteEventType(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete eventtype")
 	} else {
-		ms.send(w, nil, http.StatusNoContent)
+		ms.send(w, http.StatusNoContent, nil)
 	}
 }
 
 func (ha *HuautlaAdaptor) GetEventTypeReport(w http.ResponseWriter, r *http.Request) {
-	ms := ha.start("GetEventTypeReport")
-	defer ms.end()
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetEventTypeReport")
 
 	if id, err := getUUIDByName("id", w, r, ms); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "failed to fetch uuid")
@@ -105,6 +105,6 @@ func (ha *HuautlaAdaptor) GetEventTypeReport(w http.ResponseWriter, r *http.Requ
 	} else if err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch eventtype")
 	} else {
-		ms.send(w, v, http.StatusOK)
+		ms.send(w, http.StatusOK, v)
 	}
 }
