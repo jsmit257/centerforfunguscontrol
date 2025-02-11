@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if which psql >/dev/null 2>&1; then
-  psql "postgresql://postgres:root@${HUAUTLA_HOST:=localhost}:${HUAUTLA_PORT:=5432}" huautla <<-EOF
+  psql "postgresql://postgres:root@${HUAUTLA_HOST:=NOTlocalhost}:${HUAUTLA_PORT:=5432}" huautla <<-EOF
     \c huautla
     update strains set generation_uuid = null;
     delete from notes;

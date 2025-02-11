@@ -65,8 +65,8 @@ func (ha *HuautlaAdaptor) start(ctx context.Context, method string) *methodStats
 
 	result := &methodStats{
 		cid: cid,
-		m:   ctx.Value(metrics.Metrics).(*prometheus.CounterVec),
-		l: ctx.Value(metrics.Log).(*logrus.Entry).WithFields(logrus.Fields{
+		m:   metrics.GetContextMetrics(ctx),
+		l: metrics.GetContextLog(ctx).WithFields(logrus.Fields{
 			"method": method,
 			"cid":    cid,
 		}),

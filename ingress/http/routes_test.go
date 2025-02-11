@@ -44,8 +44,8 @@ func Test_authn(t *testing.T) {
 					"Authn-Pad": []string{"123"},
 				},
 			},
-			pad: "123",
-			sc:  http.StatusFound,
+			// pad: "123",
+			sc: http.StatusFound,
 		},
 		"missing_uri": {
 			host:   "Test_authn",
@@ -56,7 +56,8 @@ func Test_authn(t *testing.T) {
 			},
 			sc: http.StatusFound,
 		},
-		"response_nil": { // this just covers some temporary logging i want to remove
+		// this just covers some temporary logging i want to remove
+		"response_nil": {
 			host: "Test_authn",
 			port: 1313,
 			cookie: http.Cookie{
@@ -119,6 +120,7 @@ func Test_authn(t *testing.T) {
 }
 
 func Test_newHuautla(t *testing.T) {
+	// TODO: give it a whirl
 	newHuautla(&config.Config{
 		AuthnHost: "Test_newHuautla",
 		AuthnPort: 12000,

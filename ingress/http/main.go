@@ -9,10 +9,11 @@ import (
 	"github.com/jsmit257/centerforfunguscontrol/internal/data/huautla"
 	"github.com/jsmit257/huautla/types"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var traps = []os.Signal{
+	syscall.SIGPIPE, // why not this?
 	syscall.SIGINT,
 	syscall.SIGHUP,
 	syscall.SIGTERM,
@@ -21,15 +22,14 @@ var traps = []os.Signal{
 
 func main() {
 	cfg := config.NewConfig()
-	log.SetLevel(log.DebugLevel) // TODO: grab this from the config
-	log.SetFormatter(&log.JSONFormatter{})
+	logger := logrus.New()
+	logger.SetLevel(logrus.DebugLevel) // TODO: grab this from the config
+	logger.SetFormatter(&logrus.JSONFormatter{})
 
-	log := log.WithFields(log.Fields{
+	log := logger.WithFields(logrus.Fields{
 		"app":     "cffc",
 		"ingress": "http",
 	})
-
-	wg := &sync.WaitGroup{}
 
 	ha, err := huautla.New(&types.Config{
 		PGHost: cfg.HuautlaHost,
@@ -46,9 +46,12 @@ func main() {
 	r := newHuautla(cfg, ha, log)
 	newHC(r)
 
-	startServer(cfg, r, wg, log).Wait()
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go startServer(cfg, r, wg, log)
+	wg.Wait()
 
-	log.Info("done")
+	log.Info("done, really?")
 
 	os.Exit(0)
 }

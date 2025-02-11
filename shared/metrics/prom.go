@@ -2,13 +2,19 @@ package metrics
 
 import (
 	"context"
+	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/jsmit257/userservice/shared/v1"
+	"github.com/jsmit257/huautla/types"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	Cid     ctxkey = "cid"
+	Metrics ctxkey = "metrics"
+	Log     ctxkey = "log"
 )
 
 var (
@@ -38,19 +44,38 @@ func NewHandler() http.HandlerFunc {
 	return promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}).ServeHTTP
 }
 
-func (v *core) NewDataTracker(ctx context.Context, fn string) Tracker {
-	cid := ctx.Value(Cid).(shared.CID)
-
-	l := v.log.WithFields(logrus.Fields{
-		"function": fn,
-		"cid":      cid,
-	})
-	l.Info("starting work")
-
-	return &track{
-		l: l,
-		m: v.metrics.MustCurryWith(prometheus.Labels{"function": fn}),
-		r: &trackresults{},
-		s: time.Now().UTC(),
+func GetContextCID(ctx context.Context) types.CID {
+	if result, ok := ctx.Value(Cid).(types.CID); ok {
+		return result
 	}
+	return types.CID(fmt.Sprintf("context has no cid attribute: %#v", ctx))
+}
+
+func GetContextLog(ctx context.Context) *logrus.Entry {
+	if result, ok := ctx.Value(Log).(*logrus.Entry); ok {
+		return result
+	}
+
+	l := logrus.WithFields(logrus.Fields{
+		"ctx":   ctx,
+		"bogus": true,
+	})
+
+	l.
+		WithError(fmt.Errorf("context has no log attribute: %#v", ctx)).
+		Error("getting context")
+
+	return l
+}
+
+func GetContextMetrics(ctx context.Context) *prometheus.CounterVec {
+	if result, ok := ctx.Value(Metrics).(*prometheus.CounterVec); ok {
+		return result
+	}
+
+	return ServiceMetrics.MustCurryWith(prometheus.Labels{
+		"url":    "/missing/metrics/context/attribute",
+		"proto":  "ERROR",
+		"method": "metrics.GetContextMetrics",
+	})
 }

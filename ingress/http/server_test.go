@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"math"
 	"math/rand/v2"
 	"net/http"
@@ -22,18 +23,10 @@ func Test_startServer(t *testing.T) {
 	router := chi.NewMux()
 	router.Get("/test", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
 	})
 
-	wg := &sync.WaitGroup{}
-
 	host, port := "localhost", rand.IntN(math.MaxUint16)
-	go startServer(&config.Config{
-		HTTPHost: host,
-		HTTPPort: port,
-	},
-		router,
-		wg,
-		logrus.WithField("test", "Test_startServer"))
 
 	req, err := http.NewRequest(
 		http.MethodGet,
@@ -41,9 +34,21 @@ func Test_startServer(t *testing.T) {
 		nil)
 	require.Nil(t, err)
 
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go startServer(&config.Config{
+		HTTPHost: host,
+		HTTPPort: port},
+		router,
+		wg,
+		logrus.WithField("test", "Test_startServer"))
+
 	resp, err := http.DefaultClient.Do(req)
 	require.Nilf(t, err, "%q", err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
+	body, err := io.ReadAll(resp.Body)
+	require.Nil(t, err)
+	require.Equal(t, "OK", string(body))
 
 	c := make(chan struct{})
 	go func() {

@@ -17,7 +17,6 @@ import (
 )
 
 func startServer(cfg *config.Config, r *chi.Mux, wg *sync.WaitGroup, log *log.Entry) *sync.WaitGroup {
-	wg.Add(1)
 	defer wg.Done()
 
 	srv := &http.Server{

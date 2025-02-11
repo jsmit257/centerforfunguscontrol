@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-	"regexp"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
@@ -21,32 +20,28 @@ func loginRedirect(w http.ResponseWriter, _ *http.Request) {
 func authn(host string, port uint16) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			l := metrics.GetContextLog(r.Context())
 			if c, err := r.Cookie("us-authn"); err == http.ErrNoCookie {
 				loginRedirect(w, r)
 			} else if newc, sc := us.CheckValid(host, port, c); sc != http.StatusFound {
-				r.Context().Value(metrics.Log).(*logrus.Entry).WithFields(logrus.Fields{
+				l.WithFields(logrus.Fields{
 					"sc":     sc,
 					"cookie": newc,
 				}).Info("status")
 				loginRedirect(w, r)
 			} else {
-				resp := r.Response
-				if resp != nil && resp.Request != nil {
-					if found, _ := regexp.Match("/otp/.*", []byte(resp.Request.RequestURI)); !found {
-						r.
-							Context().
-							Value(metrics.Log).(*logrus.Entry).
-							WithField("uri", resp.Request.RequestURI).
-							Warn("uri didn't match")
-						w.Header().Set("Authn-Pad", resp.Header.Get("Authn-Pad"))
-					} else {
-						r.
-							Context().
-							Value(metrics.Log).(*logrus.Entry).
-							Info("setting header")
-						w.Header().Set("Authn-Pad", resp.Header.Get("Authn-Pad"))
-					}
-				}
+				// resp := r.Response
+				// if resp != nil && resp.Request != nil {
+				// 	if found, _ := regexp.Match("/otp/.*", []byte(resp.Request.RequestURI)); !found {
+				// 		l.
+				// 			WithField("uri", resp.Request.RequestURI).
+				// 			Warn("uri didn't match")
+				// 		w.Header().Set("Authn-Pad", resp.Header.Get("Authn-Pad"))
+				// 	} else {
+				// 		l.Info("setting header")
+				// 		w.Header().Set("Authn-Pad", resp.Header.Get("Authn-Pad"))
+				// 	}
+				// }
 				http.SetCookie(w, newc)
 				next.ServeHTTP(w, r)
 			}

@@ -1,17 +1,12 @@
 package metrics
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	Cid     ctxkey = "cid"
-	Metrics ctxkey = "metrics"
-	Log     ctxkey = "log"
 )
 
 type (
@@ -46,16 +41,24 @@ type (
 		s time.Time
 	}
 
-	core struct {
-		metrics *prometheus.CounterVec
-		log     *logrus.Entry
-	}
-
-	datatracker    track
-	servicetracker track
-
 	ctxkey string
 )
+
+func NewDataTracker(ctx context.Context, fn string) Tracker {
+
+	l := GetContextLog(ctx).WithFields(logrus.Fields{
+		"function": fn,
+		"cid":      GetContextCID(ctx),
+	})
+	l.Info("starting work")
+
+	return &track{
+		l: l,
+		m: GetContextMetrics(ctx).MustCurryWith(prometheus.Labels{"function": fn}),
+		r: &trackresults{},
+		s: time.Now().UTC(),
+	}
+}
 
 func (t *track) Lap() Tracker {
 	return t.Field("duration", time.Since(t.s).String())
@@ -95,7 +98,6 @@ func (t *track) Err(e error) Tracker {
 func (t *track) Done(msg string) resulter {
 	var status []string
 	var closer = t.Lap().(*track).l.Info
-	// var closer = t.l.WithField("duration", time.Since(t.s).String()).Info
 	if t.r.e == nil {
 		status = []string{"ok"}
 	} else {
@@ -112,6 +114,7 @@ func (t *track) OK() resulter {
 
 func (t *track) Debug(msg string, args ...any) Tracker {
 	t.l.Debugf(msg, args...)
+	logrus.WithFields(logrus.Fields{"msg": msg, "args": args}).Warn("called debug")
 	return t
 }
 

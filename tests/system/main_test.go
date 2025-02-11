@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	cookie *http.Cookie
+	cookie *http.Cookie = &http.Cookie{}
 
 	cfg = config.NewConfig()
 )
@@ -22,8 +22,12 @@ func init() {
 		return
 	}
 
+	addr := shared.Email("foobar@example.com")
 	auth := shared.BasicAuth{Name: "testuser"}
-	b, _ := json.Marshal(auth)
+	b, _ := json.Marshal(shared.User{
+		Name:  auth.Name,
+		Email: &addr,
+	})
 	url := fmt.Sprintf("http://%s:%d/user", cfg.AuthnHost, cfg.AuthnPort)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
 	if err != nil {
@@ -46,7 +50,7 @@ func init() {
 	} else if resp, err := http.DefaultClient.Do(req); err != nil {
 		panic(err)
 	} else if resp.StatusCode != http.StatusOK {
-		panic(fmt.Errorf("code isn't OK: %s, %s, %v", url, resp.Status, auth))
+		panic(fmt.Errorf("code isn't OK: %s, %d, %v", url, resp.StatusCode, auth))
 	} else if header := resp.Header.Get("Set-Cookie"); len(header) == 0 {
 		panic("no Set-Cookie header found")
 	} else if cookie, err = http.ParseSetCookie(header); err != nil {

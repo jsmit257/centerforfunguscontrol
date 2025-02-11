@@ -21,6 +21,8 @@ func init() {
 		fmt.Sprintf(`http://%s:%d/vendors`, cfg.HTTPHost, cfg.HTTPPort),
 		nil); err != nil {
 		panic(err)
+	} else if req == nil {
+		panic("wtf?")
 	} else if req.AddCookie(cookie); false {
 	} else if res, err := http.DefaultClient.Do(req); err != nil {
 		panic(err)
