@@ -19,7 +19,7 @@ func (ha *HuautlaAdaptor) writePhoto(r *http.Request) (string, error) {
 	var data []byte
 	var ct string
 
-	if err = r.ParseMultipartForm(1 << 23); err != nil {
+	if err = r.ParseMultipartForm(1 << 16); err != nil {
 		return "", err
 	} else if f, fh, err := r.FormFile("file"); err != nil {
 		return "", err

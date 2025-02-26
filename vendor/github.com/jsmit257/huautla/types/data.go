@@ -21,6 +21,15 @@ type (
 		PGSSL  string
 	}
 
+	Timestamp struct {
+		Fields []string `json:"fields,omitempty"` // ['mtime', 'ctime', 'dtime']
+		Factor []struct {
+			Delta    int    `json:"delta,omitempty"`
+			Interval string `json:"interval,omitempty"`
+		} `json:"factors,omitempty"`
+		Origin *time.Time `json:"utc,omitempty"`
+	}
+
 	Event struct {
 		UUID        `json:"id"`
 		Temperature float32   `json:"temperature"`
