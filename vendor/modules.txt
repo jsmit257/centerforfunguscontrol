@@ -27,6 +27,7 @@ github.com/jarcoal/httpmock/internal
 ## explicit; go 1.20
 github.com/jsmit257/huautla
 github.com/jsmit257/huautla/internal/data
+github.com/jsmit257/huautla/internal/metrics
 github.com/jsmit257/huautla/types
 # github.com/jsmit257/userservice v0.0.0-20241119014602-e7422fe454fa => /home/johnny/dev/go/src/github.com/jsmit257/userservice
 ## explicit; go 1.20

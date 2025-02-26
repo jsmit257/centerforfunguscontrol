@@ -6,11 +6,11 @@ import (
 
 type (
 	DB interface {
-		LifecycleEventer
 		EventTyper
 		Generationer
 		GenerationEventer
 		Ingredienter
+		LifecycleEventer
 		Lifecycler
 		Noter
 		Observer
@@ -21,6 +21,7 @@ type (
 		Strainer
 		SubstrateIngredienter
 		Substrater
+		Timestamper
 		Vendorer
 	}
 
@@ -147,6 +148,11 @@ type (
 		UpdateSubstrate(ctx context.Context, id UUID, s Substrate, cid CID) error
 		DeleteSubstrate(ctx context.Context, id UUID, cid CID) error
 		SubstrateReport(context.Context, UUID, CID) (Entity, error)
+	}
+
+	Timestamper interface {
+		Undelete(context.Context, string, UUID) error
+		UpdateTimestamps(context.Context, string, UUID, Timestamp) error
 	}
 
 	Vendorer interface {

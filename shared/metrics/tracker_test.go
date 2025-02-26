@@ -44,6 +44,7 @@ func (l *logwriter) Audit() ([]map[string]interface{}, error) {
 	}
 	return result, nil
 }
+
 func (l *logwriter) Clear() {
 	l.msgs = nil
 }

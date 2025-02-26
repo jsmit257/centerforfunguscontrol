@@ -509,8 +509,10 @@ var psqls = sqlMap{
 		"delete": `delete from lifecycles where uuid = $1`,
 	},
 
-	"mtime": {
-		"touch": `update %s set mtime = $1 where uuid = $2`,
+	"timestamp": {
+		"touch":    `update %s set mtime = $1 where uuid = $2`,
+		"update":   `update %s set %s where uuid = $1`,
+		"undelete": `update %s set dtime = null where uuid = $1`,
 	},
 
 	"note": {

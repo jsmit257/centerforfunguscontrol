@@ -150,6 +150,9 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Get("/reports/eventtype/{id}", ha.GetEventTypeReport)
 	r.Get("/reports/vendor/{id}", ha.GetVendorReport)
 
+	r.Patch("/ts/{table}/{id}", ha.PatchTS)
+	r.Patch("/undel/{table}/{id}", ha.Undel)
+
 	r.Get("/metrics", metrics.NewHandler())
 
 	return r
