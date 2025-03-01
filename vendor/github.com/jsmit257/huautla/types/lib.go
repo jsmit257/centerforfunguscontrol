@@ -91,22 +91,13 @@ func (ts *Timestamp) UpdateString() (string, error) {
 
 	temp := []string{}
 	for _, fact := range ts.Factor {
-		temp = append(temp, fmt.Sprintf("+ interval '%d %s'", // six of one ...
-			fact.Delta,
-			fact.Interval))
-		// temp = append(temp, fmt.Sprintf("+ %d * interval '1 %s'", // ... 6/12 the other
-		// 	fact.Delta,
-		// 	fact.Interval))
-		// either way, it only works for postgres, alternative is to do it ourselves
+		temp = append(temp, fmt.Sprintf("+ interval '%d %s'", fact.Delta, fact.Interval))
 	}
 
-	eq := fmt.Sprintf(" = %s %s",
-		fmt.Sprintf("timestamp '%s'", ts.Origin.Format(time.RFC3339)),
+	eq := fmt.Sprintf(" = timestamp '%s' %s",
+		ts.Origin.Format(time.RFC3339),
 		append([]byte{}, strings.Join(temp, " ")...),
 	)
 
-	return string(append([]byte(
-			strings.Join(ts.Fields, string(append([]byte(eq), ",\n"...)))),
-			eq...)),
-		nil
+	return strings.Join(ts.Fields, string(append([]byte(eq), ", "...))) + eq, nil
 }

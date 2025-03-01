@@ -30,8 +30,6 @@ func (db *Conn) updateMTime(ctx context.Context, table string, modified time.Tim
 func (db *Conn) UpdateTimestamps(ctx context.Context, table string, id types.UUID, data types.Timestamp) error {
 	var rows int64
 
-	tmp, _ := data.UpdateString()
-	db.logger.WithField("sql", fmt.Sprintf(psqls["timestamp"]["update"]+"%s", "uuids" /*table*/, tmp, id)).Error("should've done this in system testing")
 	if updt, err := data.UpdateString(); err != nil {
 		return err
 	} else if result, err := db.ExecContext(
