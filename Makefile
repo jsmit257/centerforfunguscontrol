@@ -18,7 +18,7 @@ inspect:
 # HUAUTLA_([HOST]|PORT)
 .PHONY: run-local
 run-local: unit
-	(go run ./ingress/http/... >log.json 2>&1 & k=$!; tail -f log.json | jq -a .; kill $k)
+	(go run ./ingress/http/... >log.json 2>&1 & k=$!; tail -f log.json-$$$ | jq -a .; kill $k)
 
 .PHONY: run-docker
 run-docker:
@@ -50,12 +50,13 @@ down:
 
 .PHONY: deploy
 deploy: # no hard dependency on `tests/public/etc` for mow
-	docker-compose build run-docker
+	docker-compose build --remove-orphans run-docker
 	docker tag jsmit257/cffc:latest jsmit257/cffc:lkg
 
-q	.PHONY: push
-push: # just docker, not git
+.PHONY: push
+push:
 	docker push jsmit257/cffc:lkg
+	git push origin stable:stable
 
 .PHONY: push-all
 push-all: push
@@ -64,3 +65,11 @@ push-all: push
 	docker push jsmit257/us-srv-mysql:lkg
 	docker push jsmit257/cffc-web:lkg
 	
+# unsecure, test database
+# HTTP_HOST=0.0.0.0 HTTP_PORT=7777 HUAUTLA_PORT=5433 make run-local
+
+# unsecure, prod database
+# HTTP_HOST=0.0.0.0 HTTP_PORT=7777 HUAUTLA_PORT=5432 make run-local
+
+# secure, prod database
+# AUTHN_HOST=localhost AUTHN_PORT=3000 HTTP_HOST=0.0.0.0 HTTP_PORT=7777 HUAUTLA_PORT=5432 make run-local

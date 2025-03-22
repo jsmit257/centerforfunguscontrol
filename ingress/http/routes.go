@@ -125,8 +125,12 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Delete("/generation/{id}", ha.DeleteGeneration)
 
 	r.Post("/generation/{id}/events", ha.PostGenerationEvent)
+	// XXX: add ev_id to make the pattern like other child tables
 	r.Patch("/generation/{id}/events", ha.PatchGenerationEvent)
 	r.Delete("/generation/{g_id}/events/{ev_id}", ha.DeleteGenerationEvent)
+
+	r.Post("/generation/{id}/sources", ha.PostSource)
+	r.Patch("/generation/{g_id}/sources/{s_id}", ha.PatchSourceNew)
 
 	r.Post("/generation/{id}/sources/strain", ha.PostStrainSource)
 	r.Post("/generation/{id}/sources/event", ha.PostEventSource)

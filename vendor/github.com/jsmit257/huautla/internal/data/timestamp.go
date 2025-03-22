@@ -34,7 +34,9 @@ func (db *Conn) UpdateTimestamps(ctx context.Context, table string, id types.UUI
 		return err
 	} else if result, err := db.ExecContext(
 		ctx,
-		fmt.Sprintf(psqls["timestamp"]["update"], "uuids" /*table*/, updt),
+		fmt.Sprintf(psqls["timestamp"]["update"],
+			"uuids", /*table -- scrub for sql injection first*/
+			updt),
 		id,
 	); err != nil {
 		return err
@@ -52,7 +54,7 @@ func (db *Conn) Undelete(ctx context.Context, table string, id types.UUID) error
 
 	if result, err := db.ExecContext(
 		ctx,
-		fmt.Sprintf(psqls["timestamp"]["undelete"], "uuids" /*table*/),
+		fmt.Sprintf(psqls["timestamp"]["undelete"], "uuids" /*table -- scrub for sql injection first*/),
 		id,
 	); err != nil {
 		return err

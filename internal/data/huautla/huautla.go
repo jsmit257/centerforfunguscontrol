@@ -33,6 +33,8 @@ type (
 		m   *prometheus.CounterVec
 		s   time.Time
 	}
+
+	ParamError error
 )
 
 func New(cfg *types.Config, log *logrus.Entry) (*HuautlaAdaptor, error) {
@@ -49,9 +51,9 @@ func New(cfg *types.Config, log *logrus.Entry) (*HuautlaAdaptor, error) {
 
 func getUUIDByName(name string, _ http.ResponseWriter, r *http.Request, _ *methodStats) (uuid types.UUID, err error) {
 	if id := chi.URLParam(r, name); id == "" {
-		err = fmt.Errorf("missing required id parameter")
+		err = ParamError(fmt.Errorf("missing required parameter"))
 	} else if id, err = url.QueryUnescape(id); err != nil {
-		err = fmt.Errorf("malformed id parameter")
+		err = ParamError(fmt.Errorf("malformed parameter"))
 	} else {
 		uuid = types.UUID(id)
 	}
