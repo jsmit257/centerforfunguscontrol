@@ -125,12 +125,12 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Delete("/generation/{id}", ha.DeleteGeneration)
 
 	r.Post("/generation/{id}/events", ha.PostGenerationEvent)
+	// XXX: add ev_id to make the pattern like other child tables
 	r.Patch("/generation/{id}/events", ha.PatchGenerationEvent)
 	r.Delete("/generation/{g_id}/events/{ev_id}", ha.DeleteGenerationEvent)
 
-	r.Post("/generation/{id}/sources/strain", ha.PostStrainSource)
-	r.Post("/generation/{id}/sources/event", ha.PostEventSource)
-	r.Patch("/generation/{id}/sources", ha.PatchSource)
+	r.Post("/generation/{id}/sources/{origin}", ha.PostSource)
+	r.Patch("/generation/{g_id}/sources/{origin}/{s_id}", ha.PatchSource)
 	r.Delete("/generation/{g_id}/sources/{s_id}", ha.DeleteSource)
 
 	r.Get("/notes/{o_id}", ha.GetNotes)
@@ -149,6 +149,9 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Get("/reports/substrate/{id}", ha.GetSubstrateReport)
 	r.Get("/reports/eventtype/{id}", ha.GetEventTypeReport)
 	r.Get("/reports/vendor/{id}", ha.GetVendorReport)
+
+	r.Patch("/ts/{table}/{id}", ha.PatchTS)
+	r.Patch("/undel/{table}/{id}", ha.Undel)
 
 	r.Get("/metrics", metrics.NewHandler())
 

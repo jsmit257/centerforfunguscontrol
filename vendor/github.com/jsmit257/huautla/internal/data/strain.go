@@ -126,7 +126,7 @@ func (db *Conn) InsertStrain(ctx context.Context, s types.Strain, cid types.CID)
 	result, err := db.ExecContext(ctx, psqls["strain"]["insert"], s.UUID, s.Species, s.Name, s.CTime, s.Vendor.UUID)
 	if err != nil {
 		if isPrimaryKeyViolation(err) {
-			return db.InsertStrain(ctx, s, cid) // FIXME: infinite loop?
+			return db.InsertStrain(ctx, s, cid)
 		}
 		return s, err
 	} else if rows, err = result.RowsAffected(); err != nil {

@@ -13,7 +13,7 @@ import (
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	log "github.com/sirupsen/logrus"
 
-	_ "github.com/lib/pq"
+	pq "github.com/lib/pq"
 )
 
 type (
@@ -99,6 +99,18 @@ func initAccessFuncs(fn string, l *log.Entry, id any, cid types.CID) (deferred, 
 	}, l
 }
 
-func isPrimaryKeyViolation(error) bool {
-	return false
+func isPrimaryKeyViolation(err error) bool {
+	pqErr, ok := err.(*pq.Error)
+
+	// FIXME: can't tell the difference between primary key and other
+	//  unique constraints; searching for `_pkey` seems too clumsy to
+	//  be the right solution; is there another? until then, the result
+	//  is always false
+	return false && ok && pqErr.Code == "23505"
+}
+
+func isForeignKeyViolation(err error) bool {
+	pqErr, ok := err.(*pq.Error)
+
+	return ok && pqErr.Code == "23503" // FIXME: should be right
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/jsmit257/centerforfunguscontrol/internal/config"
 	"github.com/jsmit257/userservice/shared/v1"
@@ -42,6 +43,8 @@ func init() {
 		panic(fmt.Errorf("no userid returned"))
 	}
 
+	<-time.After(time.Second)
+
 	b, _ = json.Marshal(auth)
 	url = fmt.Sprintf("http://%s:%d/auth", cfg.AuthnHost, cfg.AuthnPort)
 	req, err = http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
@@ -51,6 +54,22 @@ func init() {
 		panic(err)
 	} else if resp.StatusCode != http.StatusOK {
 		panic(fmt.Errorf("code isn't OK: %s, %d, %v", url, resp.StatusCode, auth))
+
+		// // b, _ = json.Marshal(auth)
+		// // url = fmt.Sprintf("http://%s:%d/auth", cfg.AuthnHost, cfg.AuthnPort)
+		// req, err = http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
+		// if err != nil {
+		// 	panic(err)
+		// } else if resp, err := http.DefaultClient.Do(req); err != nil {
+		// 	panic(err)
+		// } else if resp.StatusCode != http.StatusOK {
+		// 	panic(fmt.Errorf("code isn't OK: %s, %d, %v", url, resp.StatusCode, auth))
+		// } else if header := resp.Header.Get("Set-Cookie"); len(header) == 0 {
+		// 	panic("no Set-Cookie header found")
+		// } else if cookie, err = http.ParseSetCookie(header); err != nil {
+		// 	panic(fmt.Errorf("cookie was unparseable %s", header))
+		// }
+
 	} else if header := resp.Header.Get("Set-Cookie"); len(header) == 0 {
 		panic("no Set-Cookie header found")
 	} else if cookie, err = http.ParseSetCookie(header); err != nil {

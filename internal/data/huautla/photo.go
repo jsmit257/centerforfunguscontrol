@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	"github.com/jsmit257/huautla/types"
 )
 
@@ -19,7 +20,7 @@ func (ha *HuautlaAdaptor) writePhoto(r *http.Request) (string, error) {
 	var data []byte
 	var ct string
 
-	if err = r.ParseMultipartForm(1 << 23); err != nil {
+	if err = r.ParseMultipartForm(1 << 16); err != nil {
 		return "", err
 	} else if f, fh, err := r.FormFile("file"); err != nil {
 		return "", err
@@ -43,8 +44,7 @@ func (ha *HuautlaAdaptor) writePhoto(r *http.Request) (string, error) {
 		filetype = append(r.Header[http.CanonicalHeaderKey("Content-Type")], "image/x-unknown")[0]
 	}
 
-	// r.Context().Value(metrics.Log).(*logrus.Entry).WithFields(log.Fields{
-	logrus.WithFields(log.Fields{
+	r.Context().Value(metrics.Log).(*logrus.Entry).WithFields(log.Fields{
 		"from-request": ct,
 		"from-app":     filetype,
 	}).

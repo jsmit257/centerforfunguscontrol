@@ -54,6 +54,7 @@ func (db *Conn) InsertVendor(ctx context.Context, v types.Vendor, cid types.CID)
 	result, err := db.ExecContext(ctx, psqls["vendor"]["insert"], v.UUID, v.Name, v.Website)
 	if err != nil {
 		if isPrimaryKeyViolation(err) {
+			l.WithField("id", v.UUID).WithError(err).Error("da fuck?")
 			return db.InsertVendor(ctx, v, cid) // FIXME: infinite loop?
 		}
 		return v, err

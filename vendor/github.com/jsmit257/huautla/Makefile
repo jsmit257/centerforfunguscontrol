@@ -6,7 +6,7 @@ build:
 
 .PHONY: unit
 unit:
-	go test -v -cover ./. ./types/... ./internal/...
+	go test -cover ./. ./types/... ./internal/...
 
 .PHONY: tag-dockerfile
 tag-dockerfile:
@@ -44,16 +44,19 @@ vet:
 
 fmt:
 	go fmt ./...
- 
+
 .PHONY: docker-down
 docker-down:
 	docker-compose down --remove-orphans
 
 .PHONY: deploy
-deploy: # no hard dependency on `tests/public/etc` for mow
+deploy: # no hard dependency on `tests/public/etc` for now
 	docker-compose build postgres
 	docker tag jsmit257/huautla:latest jsmit257/huautla:lkg
+	git tag -f stable
 
 .PHONY: push
-push: # just docker, not git
+push: # docker lkg and a stable tag for dependents
 	docker push jsmit257/cffc:lkg
+	# this should push the current commit; need `git ref ...`
+	git push origin stable:stable

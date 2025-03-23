@@ -6,11 +6,11 @@ import (
 
 type (
 	DB interface {
-		LifecycleEventer
 		EventTyper
 		Generationer
 		GenerationEventer
 		Ingredienter
+		LifecycleEventer
 		Lifecycler
 		Noter
 		Observer
@@ -21,6 +21,7 @@ type (
 		Strainer
 		SubstrateIngredienter
 		Substrater
+		Timestamper
 		Vendorer
 	}
 
@@ -100,10 +101,9 @@ type (
 
 	Sourcer interface {
 		// GetSources(ctx context.Context, g *Generation, cid CID) error
-		AddStrainSource(ctx context.Context, g *Generation, s Source, cid CID) error
-		AddEventSource(ctx context.Context, g *Generation, e Event, cid CID) error
-		ChangeSource(ctx context.Context, g *Generation, s Source, cid CID) error
-		RemoveSource(ctx context.Context, g *Generation, id UUID, cid CID) error
+		InsertSource(context.Context, UUID, string, Source, CID) (Source, error)
+		UpdateSource(context.Context, string, Source, CID) error
+		RemoveSource(context.Context, *Generation, UUID, CID) error
 	}
 
 	Stager interface {
@@ -147,6 +147,11 @@ type (
 		UpdateSubstrate(ctx context.Context, id UUID, s Substrate, cid CID) error
 		DeleteSubstrate(ctx context.Context, id UUID, cid CID) error
 		SubstrateReport(context.Context, UUID, CID) (Entity, error)
+	}
+
+	Timestamper interface {
+		Undelete(context.Context, string, UUID) error
+		UpdateTimestamps(context.Context, string, UUID, Timestamp) error
 	}
 
 	Vendorer interface {

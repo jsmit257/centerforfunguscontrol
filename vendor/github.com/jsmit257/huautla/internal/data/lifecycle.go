@@ -215,7 +215,7 @@ func (db *Conn) InsertLifecycle(ctx context.Context, lc types.Lifecycle, cid typ
 
 	if err != nil {
 		if isPrimaryKeyViolation(err) {
-			return db.InsertLifecycle(ctx, lc, cid) // FIXME: infinite loop?
+			return db.InsertLifecycle(ctx, lc, cid)
 		}
 		return lc, err
 	} else if rows, err = result.RowsAffected(); err != nil {
@@ -255,7 +255,7 @@ func (db *Conn) UpdateLifecycle(ctx context.Context, lc types.Lifecycle, cid typ
 	} else if rows, err = result.RowsAffected(); err != nil {
 		return lc, err
 	} else if rows != 1 {
-		err = fmt.Errorf("lifecycle was not updated")
+		err = fmt.Errorf("one of strain, grain or bulk is not the right type")
 	}
 
 	return lc, err
