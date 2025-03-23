@@ -7,7 +7,7 @@ replace github.com/jsmit257/userservice => /home/johnny/dev/go/src/github.com/js
 require (
 	github.com/go-chi/chi/v5 v5.2.0
 	github.com/google/uuid v1.6.0
-	github.com/jsmit257/huautla v0.0.0-20250302211601-36c6f83b3748
+	github.com/jsmit257/huautla v0.0.0-20250323003513-94bd57438747
 	github.com/jsmit257/userservice v0.0.0-20250211202823-2e593d67bed3
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.20.5

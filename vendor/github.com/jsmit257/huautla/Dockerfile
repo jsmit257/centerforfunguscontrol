@@ -1,4 +1,4 @@
-FROM postgres:bookworm as build
+FROM postgres:bookworm AS build
 
 COPY ./sql/create.sql /docker-entrypoint-initdb.d/01-create.sql
 COPY ./sql/init.sql /docker-entrypoint-initdb.d/02-init.sql

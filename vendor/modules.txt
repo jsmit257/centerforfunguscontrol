@@ -23,7 +23,7 @@ github.com/google/uuid
 ## explicit; go 1.18
 github.com/jarcoal/httpmock
 github.com/jarcoal/httpmock/internal
-# github.com/jsmit257/huautla v0.0.0-20250302211601-36c6f83b3748
+# github.com/jsmit257/huautla v0.0.0-20250323003513-94bd57438747
 ## explicit; go 1.20
 github.com/jsmit257/huautla
 github.com/jsmit257/huautla/internal/data

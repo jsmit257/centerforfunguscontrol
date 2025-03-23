@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/jsmit257/huautla/types"
 )
@@ -67,88 +66,51 @@ func (db *Conn) GetSources(ctx context.Context, g *types.Generation, cid types.C
 	return err
 }
 
-func (db *Conn) AddStrainSource(ctx context.Context, g *types.Generation, s types.Source, cid types.CID) error {
+func (db *Conn) InsertSource(ctx context.Context, genid types.UUID, origin string, s types.Source, cid types.CID) (types.Source, error) {
 	var err error
-	deferred, l := initAccessFuncs("AddStrainSource", db.logger, g.UUID, cid)
+	deferred, l := initAccessFuncs("InsertSource", db.logger, genid, cid)
 	defer deferred(&err, l)
 
 	s.UUID = types.UUID(db.generateUUID().String())
-	s.CTime = time.Now().UTC()
 
-	g.Sources, err = db.addSource(ctx, g.Sources, s, s.Strain.UUID, g.UUID, cid)
-
-	return err
-}
-
-func (db *Conn) AddEventSource(ctx context.Context, g *types.Generation, e types.Event, cid types.CID) error {
-	var err error
-
-	deferred, l := initAccessFuncs("AddEventSource", db.logger, g.UUID, cid)
-	defer deferred(&err, l)
-
-	s := types.Source{
-		UUID: types.UUID(db.generateUUID().String()),
-		Type: "Spore",
+	progenitor := s.Strain.UUID
+	if origin == "event" {
+		progenitor = s.Lifecycle.Events[0].UUID
+	} else if origin != "strain" {
+		return types.Source{}, fmt.Errorf("only origins of type 'strain' and 'event' are allowed: '%s'", origin)
 	}
 
-	if s.Strain.UUID, err = db.getEventStrainID(ctx, e.UUID, cid); err != nil {
-		return fmt.Errorf("couldn't get strain for AddEventSource (%#v)", e)
-	} else if e, err = db.SelectEvent(ctx, e.UUID, cid); err != nil {
-		return fmt.Errorf("couldn't get eventtype for AddEventSource")
-	} else if e.EventType.Name == "Clone" {
-		s.Type = "Clone"
-	}
-
-	g.Sources, err = db.addSource(ctx, g.Sources, s, e.UUID, g.UUID, cid)
-
-	return err
-}
-
-func (db *Conn) getEventStrainID(ctx context.Context, id types.UUID, cid types.CID) (types.UUID, error) {
-	var err error
-	deferred, l := initAccessFuncs("getEventStrainID", db.logger, id, cid)
-	defer deferred(&err, l)
-
-	var result types.UUID
-
-	err = db.
-		QueryRowContext(ctx, psqls["source"]["strain-from-event"], id).
-		Scan(&result)
-
-	return result, err
-}
-
-func (db *Conn) addSource(ctx context.Context, sources []types.Source, s types.Source, progenitor, generation types.UUID, cid types.CID) ([]types.Source, error) {
-	var err error
 	var result sql.Result
-
 	if result, err = db.ExecContext(ctx, psqls["source"]["add"],
 		s.UUID,
 		s.Type,
 		progenitor,
-		generation,
+		genid,
 	); err != nil {
 		if isPrimaryKeyViolation(err) {
-			return db.addSource(ctx, sources, s, progenitor, generation, cid)
+			return db.InsertSource(ctx, genid, origin, s, cid)
 		}
-		return sources, err
+		return types.Source{}, err
 	} else if rows, err := result.RowsAffected(); err != nil {
-		return sources, err
-	} else if rows != 1 { // most likely cause is a bad eventtype.uuid
-		return sources, fmt.Errorf("source was not added")
+		return types.Source{}, err
+	} else if rows != 1 {
+		return types.Source{}, fmt.Errorf("source was not added")
 	}
 
-	if s.Strain, err = db.SelectStrain(ctx, s.Strain.UUID, cid); err != nil {
-		return sources, fmt.Errorf("couldn't fetch strain")
-	}
-
-	return append([]types.Source{s}, sources...), err
+	return s, nil
 }
 
-func (db *Conn) ChangeSource(ctx context.Context, g *types.Generation, s types.Source, cid types.CID) error {
+func (db *Conn) UpdateSource(ctx context.Context, origin string, s types.Source, cid types.CID) error {
 	var err error
-	deferred, l := initAccessFuncs("ChangeSource", db.logger, g.UUID, cid)
+	deferred, l := initAccessFuncs("UpdateSource", db.logger, nil, cid)
 	defer deferred(&err, l)
+
+	_ = s.Strain.UUID
+	if origin == "event" {
+		_ = s.Lifecycle.Events[0].UUID
+	} else if origin != "strain" {
+		return fmt.Errorf("only origins of type 'strain' and 'event' are allowed: '%s'", origin)
+	}
 
 	var result sql.Result
 
@@ -160,13 +122,6 @@ func (db *Conn) ChangeSource(ctx context.Context, g *types.Generation, s types.S
 	} else if rows != 1 { // most likely cause is a bad eventtype.uuid
 		return fmt.Errorf("source was not changed")
 	}
-
-	i, j := 0, len(g.Sources)
-	for i < j && g.Sources[i].UUID != s.UUID {
-		i++
-	}
-
-	g.Sources = append(append([]types.Source{s}, g.Sources[:i]...), g.Sources[i+1:]...)
 
 	return err
 }

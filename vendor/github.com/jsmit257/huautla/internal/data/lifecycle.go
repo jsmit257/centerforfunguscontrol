@@ -215,7 +215,7 @@ func (db *Conn) InsertLifecycle(ctx context.Context, lc types.Lifecycle, cid typ
 
 	if err != nil {
 		if isPrimaryKeyViolation(err) {
-			return db.InsertLifecycle(ctx, lc, cid) // FIXME: infinite loop?
+			return db.InsertLifecycle(ctx, lc, cid)
 		}
 		return lc, err
 	} else if rows, err = result.RowsAffected(); err != nil {

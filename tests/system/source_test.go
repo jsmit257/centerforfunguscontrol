@@ -75,7 +75,14 @@ func Test_HappyEventSource(t *testing.T) {
 		for _, e := range v {
 			url := fmt.Sprintf(urlfmt, generations[k].UUID)
 
-			b, err := json.Marshal(e)
+			b, err := json.Marshal(types.Source{
+				Lifecycle: &types.Lifecycle{
+					Events: []types.Event{e},
+				},
+				Type: func(s string) string {
+					return s[0:5]
+				}(e.EventType.Name),
+			})
 			require.Nil(t, err)
 
 			req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
@@ -84,7 +91,7 @@ func Test_HappyEventSource(t *testing.T) {
 
 			res, err := http.DefaultClient.Do(req)
 			require.Nil(t, err)
-			require.Equal(t, http.StatusCreated, res.StatusCode, "%#v", e)
+			require.Equal(t, http.StatusCreated, res.StatusCode, "%d, %s", k, b)
 
 			b, err = io.ReadAll(res.Body)
 			require.Nil(t, err)

@@ -118,3 +118,7 @@ func (ms *methodStats) send(w http.ResponseWriter, sc int, i interface{}) {
 	ms.m.WithLabelValues(strconv.Itoa(sc)).Inc()
 	ms.lap().l.Info("finished work")
 }
+
+func (ms *methodStats) empty(w http.ResponseWriter) {
+	ms.send(w, http.StatusNoContent, nil)
+}

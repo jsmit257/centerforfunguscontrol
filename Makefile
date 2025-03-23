@@ -18,7 +18,7 @@ inspect:
 # HUAUTLA_([HOST]|PORT)
 .PHONY: run-local
 run-local: unit
-	(go run ./ingress/http/... >log.json 2>&1 & k=$!; tail -f log.json-$$$ | jq -a .; kill $k)
+	(go run ./ingress/http/... >log.json-$$HTTP_PORT 2>&1 & k=$!; tail -f log.json-$$HTTP_PORT | jq -a .; kill $k)
 
 .PHONY: run-docker
 run-docker:
