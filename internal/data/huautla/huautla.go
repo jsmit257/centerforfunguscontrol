@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"net/http"
 	"net/url"
@@ -58,6 +59,15 @@ func getUUIDByName(name string, _ http.ResponseWriter, r *http.Request, _ *metho
 		uuid = types.UUID(id)
 	}
 	return uuid, err
+}
+
+func bodyHelper(r *http.Request, box any) error {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(body, &box)
 }
 
 // helper function adds fields `method` and `cid` to all subsequent logs; returns an object
@@ -121,4 +131,12 @@ func (ms *methodStats) send(w http.ResponseWriter, sc int, i interface{}) {
 
 func (ms *methodStats) empty(w http.ResponseWriter) {
 	ms.send(w, http.StatusNoContent, nil)
+}
+
+func (ms *methodStats) created(w http.ResponseWriter, i interface{}) {
+	ms.send(w, http.StatusCreated, i)
+}
+
+func (ms *methodStats) ok(w http.ResponseWriter, i interface{}) {
+	ms.send(w, http.StatusOK, i)
 }

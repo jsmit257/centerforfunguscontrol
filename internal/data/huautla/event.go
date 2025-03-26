@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/jsmit257/huautla/types"
 )
 
@@ -18,21 +16,39 @@ func (ha *HuautlaAdaptor) PostLifecycleEvent(w http.ResponseWriter, r *http.Requ
 
 	var e types.Event
 
-	if id := chi.URLParam(r, "id"); id == "" {
-		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
-	} else if id, err := url.QueryUnescape(id); err != nil {
-		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
-	} else if body, err := io.ReadAll(r.Body); err != nil {
+	if id, err := getUUIDByName("id", w, r, ms); err != nil {
+		ms.error(w, fmt.Errorf("%w: event id", err), http.StatusBadRequest, err)
+	} else if err = bodyHelper(r, e); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
-	} else if err := json.Unmarshal(body, &e); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
 	} else if l, err := ha.db.SelectLifecycle(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycle")
 	} else if err := ha.db.AddLifecycleEvent(r.Context(), &l, e, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add event")
 	} else {
-		ms.send(w, http.StatusCreated, l)
+		ms.created(w, l)
 	}
+}
+
+func (ha *HuautlaAdaptor) PatchEvent(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchEvent")
+	defer r.Body.Close()
+
+	ms.error(w, fmt.Errorf("not implemented"), http.StatusNotImplemented, "events really need to be simpler")
+
+	// var e types.Event
+
+	// if _, err := getUUIDByName("ev_id", w, r, ms); err != nil {
+	// 	ms.error(w, fmt.Errorf("%w: event id", err), http.StatusBadRequest, err)
+	// } else if body, err := io.ReadAll(r.Body); err != nil {
+	// 	ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
+	// } else if err := json.Unmarshal(body, &e); err != nil {
+	// 	ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
+	// } else if _, err := ha.db.UpdateEvent(r.Context(), e, ms.cid); err != nil {
+	// 	ms.error(w, err, http.StatusInternalServerError, "failed to change event")
+	// } else {
+	// 	ms.empty(w)
+	// }
 }
 
 func (ha *HuautlaAdaptor) PatchLifecycleEvent(w http.ResponseWriter, r *http.Request) {
@@ -42,10 +58,8 @@ func (ha *HuautlaAdaptor) PatchLifecycleEvent(w http.ResponseWriter, r *http.Req
 
 	var e types.Event
 
-	if lcID := chi.URLParam(r, "lc_id"); lcID == "" {
-		ms.error(w, fmt.Errorf("missing required lifecycle id parameter"), http.StatusBadRequest, "missing required id parameter")
-	} else if lcID, err := url.QueryUnescape(lcID); err != nil {
-		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
+	if lcID, err := getUUIDByName("lc_id", w, r, ms); err != nil {
+		ms.error(w, fmt.Errorf("%w: lifecycle id", err), http.StatusBadRequest, err)
 	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
 	} else if err := json.Unmarshal(body, &e); err != nil {
@@ -63,14 +77,10 @@ func (ha *HuautlaAdaptor) DeleteLifecycleEvent(w http.ResponseWriter, r *http.Re
 	ctx := r.Context()
 	ms := ha.start(ctx, "DeleteLifecycleEvent")
 
-	if lcID := chi.URLParam(r, "lc_id"); lcID == "" {
-		ms.error(w, fmt.Errorf("missing required lifecycle id parameter"), http.StatusBadRequest, "missing required id parameter")
-	} else if lcID, err := url.QueryUnescape(lcID); err != nil {
-		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
-	} else if evID := chi.URLParam(r, "ev_id"); evID == "" {
-		ms.error(w, fmt.Errorf("missing required event id parameter"), http.StatusBadRequest, "missing required id parameter")
-	} else if evID, err := url.QueryUnescape(evID); err != nil {
-		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
+	if lcID, err := getUUIDByName("lc_id", w, r, ms); err != nil {
+		ms.error(w, fmt.Errorf("%w: lifecycle id", err), http.StatusBadRequest, err)
+	} else if evID, err := getUUIDByName("ev_id", w, r, ms); err != nil {
+		ms.error(w, fmt.Errorf("%w: event id", err), http.StatusBadRequest, err)
 	} else if l, err := ha.db.SelectLifecycle(r.Context(), types.UUID(lcID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycle")
 	} else if err := ha.db.RemoveLifecycleEvent(r.Context(), &l, types.UUID(evID), ms.cid); err != nil {
@@ -87,15 +97,13 @@ func (ha *HuautlaAdaptor) PostGenerationEvent(w http.ResponseWriter, r *http.Req
 
 	var e types.Event
 
-	if id := chi.URLParam(r, "id"); id == "" {
-		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
-	} else if id, err := url.QueryUnescape(id); err != nil {
-		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
+	if genID, err := getUUIDByName("id", w, r, ms); err != nil {
+		ms.error(w, fmt.Errorf("%w: generation id", err), http.StatusBadRequest, err)
 	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
 	} else if err := json.Unmarshal(body, &e); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
-	} else if g, err := ha.db.SelectGeneration(r.Context(), types.UUID(id), ms.cid); err != nil {
+	} else if g, err := ha.db.SelectGeneration(r.Context(), types.UUID(genID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycle")
 	} else if err := ha.db.AddGenerationEvent(r.Context(), &g, e, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add event")
@@ -111,15 +119,13 @@ func (ha *HuautlaAdaptor) PatchGenerationEvent(w http.ResponseWriter, r *http.Re
 
 	var e types.Event
 
-	if gID := chi.URLParam(r, "id"); gID == "" {
-		ms.error(w, fmt.Errorf("missing required lifecycle id parameter"), http.StatusBadRequest, "missing required id parameter")
-	} else if gID, err := url.QueryUnescape(gID); err != nil {
-		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
+	if genID, err := getUUIDByName("id", w, r, ms); err != nil {
+		ms.error(w, fmt.Errorf("%w: generation id", err), http.StatusBadRequest, err)
 	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
 	} else if err := json.Unmarshal(body, &e); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
-	} else if g, err := ha.db.SelectGeneration(r.Context(), types.UUID(gID), ms.cid); err != nil {
+	} else if g, err := ha.db.SelectGeneration(r.Context(), types.UUID(genID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycle")
 	} else if _, err := ha.db.ChangeGenerationEvent(r.Context(), &g, e, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to change event")
@@ -132,14 +138,10 @@ func (ha *HuautlaAdaptor) DeleteGenerationEvent(w http.ResponseWriter, r *http.R
 	ctx := r.Context()
 	ms := ha.start(ctx, "DeleteGenerationEvent")
 
-	if gID := chi.URLParam(r, "g_id"); gID == "" {
-		ms.error(w, fmt.Errorf("missing required lifecycle id parameter"), http.StatusBadRequest, "missing required id parameter")
-	} else if gID, err := url.QueryUnescape(gID); err != nil {
-		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
-	} else if evID := chi.URLParam(r, "ev_id"); evID == "" {
-		ms.error(w, fmt.Errorf("missing required event id parameter"), http.StatusBadRequest, "missing required id parameter")
-	} else if evID, err := url.QueryUnescape(evID); err != nil {
-		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
+	if gID, err := getUUIDByName("g_id", w, r, ms); err != nil {
+		ms.error(w, fmt.Errorf("%w: generation id", err), http.StatusBadRequest, err)
+	} else if evID, err := getUUIDByName("ev_id", w, r, ms); err != nil {
+		ms.error(w, fmt.Errorf("%w: generation id", err), http.StatusBadRequest, err)
 	} else if g, err := ha.db.SelectGeneration(r.Context(), types.UUID(gID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycle")
 	} else if err := ha.db.RemoveGenerationEvent(r.Context(), &g, types.UUID(evID), ms.cid); err != nil {

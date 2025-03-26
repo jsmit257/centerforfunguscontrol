@@ -101,7 +101,7 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 
 	r.Get("/strainattributenames", ha.GetStrainAttributeNames)
 	r.Post("/strain/{id}/attribute", ha.PostStrainAttribute)
-	r.Patch("/strain/{id}/attribute", ha.PatchStrainAttribute)
+	r.Patch("/strain/{st_id}/attribute/{at_id}", ha.PatchStrainAttribute)
 	r.Delete("/strain/{st_id}/attribute/{at_id}", ha.DeleteStrainAttribute)
 
 	r.Get("/strain/{id}/generation", ha.GetGeneratedStrain)
@@ -114,6 +114,8 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Patch("/lifecycle/{id}", ha.PatchLifecycle)
 	r.Delete("/lifecycle/{id}", ha.DeleteLifecycle)
 
+	r.Patch("/events/{ev_id}", ha.PatchEvent)
+
 	r.Post("/lifecycle/{id}/events", ha.PostLifecycleEvent)
 	r.Patch("/lifecycle/{lc_id}/events", ha.PatchLifecycleEvent)
 	r.Delete("/lifecycle/{lc_id}/events/{ev_id}", ha.DeleteLifecycleEvent)
@@ -125,7 +127,7 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Delete("/generation/{id}", ha.DeleteGeneration)
 
 	r.Post("/generation/{id}/events", ha.PostGenerationEvent)
-	// XXX: add ev_id to make the pattern like other child tables
+	// r.Patch("/generation/{g_id}/events/{ev_id}", ha.PatchEvent)
 	r.Patch("/generation/{id}/events", ha.PatchGenerationEvent)
 	r.Delete("/generation/{g_id}/events/{ev_id}", ha.DeleteGenerationEvent)
 
