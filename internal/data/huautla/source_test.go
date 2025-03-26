@@ -78,13 +78,13 @@ func Test_PostSource(t *testing.T) {
 			sc:     http.StatusBadRequest,
 		},
 		"unmarshal_fails": {
-			gid:    "unmarshal_body",
+			gid:    "unmarshal_fails",
 			origin: "event",
 			s:      &types.Source{},
 			sc:     http.StatusBadRequest,
 		},
 		"add_fails": {
-			gid:    "missing_body",
+			gid:    "add_fails",
 			origin: "event",
 			s:      &types.Source{UUID: "happy_path"},
 			addErr: fmt.Errorf("some error"),

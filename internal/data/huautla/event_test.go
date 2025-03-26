@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -65,26 +66,46 @@ func Test_PostLifecycleEvent(t *testing.T) {
 			l:  types.Lifecycle{UUID: "%zzz"},
 			sc: http.StatusBadRequest,
 		},
+		"read_fails": {
+			l:  types.Lifecycle{UUID: "read_fails"},
+			sc: http.StatusBadRequest,
+		},
+		"unmarshal_fails": {
+			l:  types.Lifecycle{UUID: "unmarshal_fails"},
+			e:  &types.Event{UUID: "unmarshal_fails"},
+			sc: http.StatusBadRequest,
+		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Lifecycler: &lifecyclerMock{
-					selectResult: v.l,
-					selectErr:    v.lcErr,
+					selectResult: tc.l,
+					selectErr:    tc.lcErr,
 				},
-				LifecycleEventer: &eventerMock{addErr: v.evErr},
+				LifecycleEventer: &eventerMock{addErr: tc.evErr},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.l.UUID)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.l.UUID)}}
+
+			body := serializeEvent(tc.e)
+			if name == "unmarshal_fails" {
+				body = body[1:]
+			}
+
+			bodyreader := io.Reader(bytes.NewReader([]byte(body)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
+
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -92,11 +113,11 @@ func Test_PostLifecycleEvent(t *testing.T) {
 					rctx),
 				http.MethodPost,
 				"url",
-				bytes.NewReader(serializeEvent(v.e)))
+				bodyreader)
 
 			ha.PostLifecycleEvent(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -153,29 +174,50 @@ func Test_PatchLifecycleEvent(t *testing.T) {
 			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
+		"read_fails": {
+			l:  types.Lifecycle{UUID: "read_fails"},
+			sc: http.StatusBadRequest,
+		},
+		"unmarshal_fails": {
+			l:  types.Lifecycle{UUID: "unmarshal_fails"},
+			e:  &types.Event{UUID: "unmarshal_fails"},
+			sc: http.StatusBadRequest,
+		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
-		ha := &HuautlaAdaptor{
-			db: &huautlaMock{
-				Lifecycler: &lifecyclerMock{
-					selectResult: v.l,
-					selectErr:    v.lcErr,
-				},
-				LifecycleEventer: &eventerMock{changeErr: v.evErr},
-			},
-		}
-		t.Run(k, func(t *testing.T) {
+	for name, tc := range set {
+		name, tc := name, tc
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			ha := &HuautlaAdaptor{
+				db: &huautlaMock{
+					Lifecycler: &lifecyclerMock{
+						selectResult: tc.l,
+						selectErr:    tc.lcErr,
+					},
+					LifecycleEventer: &eventerMock{changeErr: tc.evErr},
+				},
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
 			rctx.URLParams = chi.RouteParams{Keys: []string{"lc_id", "ev_id"}, Values: []string{
-				string(v.l.UUID),
-				v.id,
+				string(tc.l.UUID),
+				tc.id,
 			}}
+
+			body := serializeEvent(tc.e)
+			if name == "unmarshal_fails" {
+				body = body[1:]
+			}
+
+			bodyreader := io.Reader(bytes.NewReader([]byte(body)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
+
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -183,11 +225,11 @@ func Test_PatchLifecycleEvent(t *testing.T) {
 					rctx),
 				http.MethodPost,
 				"url",
-				bytes.NewReader(serializeEvent(v.e)))
+				bodyreader)
 
 			ha.PatchLifecycleEvent(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -270,6 +312,62 @@ func Test_DeleteLifecycleEvent(t *testing.T) {
 	}
 }
 
+func Test_PatchEvent(t *testing.T) {
+	t.Parallel()
+
+	tcs := map[string]struct {
+		id types.UUID
+		e  *types.Event
+		sc int
+	}{
+		"happy_path": {
+			id: "happy_path",
+			sc: http.StatusNotImplemented,
+		},
+	}
+
+	for name, tc := range tcs {
+		name, tc := name, tc
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			ha := &HuautlaAdaptor{
+				db: &huautlaMock{},
+			}
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"ev_id"}, Values: []string{string(tc.id)}}
+
+			body := serializeEvent(tc.e)
+			if name == "unmarshal_fails" {
+				body = body[1:]
+			}
+
+			bodyreader := io.Reader(bytes.NewReader([]byte(body)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
+
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					metrics.MockServiceContext,
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodPost,
+				"url",
+				bodyreader)
+
+			ha.PatchEvent(w, r)
+
+			require.Equal(t, tc.sc, w.Code)
+
+		})
+	}
+}
+
 func Test_PostGenerationEvent(t *testing.T) {
 	t.Parallel()
 
@@ -308,26 +406,46 @@ func Test_PostGenerationEvent(t *testing.T) {
 			g:  types.Generation{UUID: "%zzz"},
 			sc: http.StatusBadRequest,
 		},
+		"read_fails": {
+			g:  types.Generation{UUID: "read_fails"},
+			sc: http.StatusBadRequest,
+		},
+		"unmarshal_fails": {
+			g:  types.Generation{UUID: "unmarshal_fails"},
+			e:  &types.Event{UUID: "unmarshal_fails"},
+			sc: http.StatusBadRequest,
+		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Generationer: &generationerMock{
-					sel:    v.g,
-					selErr: v.genErr,
+					sel:    tc.g,
+					selErr: tc.genErr,
 				},
-				GenerationEventer: &eventerMock{addGenerationErr: v.evtErr},
+				GenerationEventer: &eventerMock{addGenerationErr: tc.evtErr},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.g.UUID)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.g.UUID)}}
+
+			body := serializeEvent(tc.e)
+			if name == "unmarshal_fails" {
+				body = body[1:]
+			}
+
+			bodyreader := io.Reader(bytes.NewReader([]byte(body)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
+
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -335,11 +453,11 @@ func Test_PostGenerationEvent(t *testing.T) {
 					rctx),
 				http.MethodPost,
 				"url",
-				bytes.NewReader(serializeEvent(v.e)))
+				bodyreader)
 
 			ha.PostGenerationEvent(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -386,26 +504,46 @@ func Test_PatchGenerationEvent(t *testing.T) {
 			g:  types.Generation{UUID: "%zzz"},
 			sc: http.StatusBadRequest,
 		},
+		"read_fails": {
+			g:  types.Generation{UUID: "read_fails"},
+			sc: http.StatusBadRequest,
+		},
+		"unmarshal_fails": {
+			g:  types.Generation{UUID: "unmarshal_fails"},
+			e:  &types.Event{UUID: "unmarshal_fails"},
+			sc: http.StatusBadRequest,
+		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Generationer: &generationerMock{
-					sel:    v.g,
-					selErr: v.genErr,
+					sel:    tc.g,
+					selErr: tc.genErr,
 				},
-				GenerationEventer: &eventerMock{changeGenerationErr: v.evtErr},
+				GenerationEventer: &eventerMock{changeGenerationErr: tc.evtErr},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.g.UUID)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.g.UUID)}}
+
+			body := serializeEvent(tc.e)
+			if name == "unmarshal_fails" {
+				body = body[1:]
+			}
+
+			bodyreader := io.Reader(bytes.NewReader([]byte(body)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
+
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -413,11 +551,11 @@ func Test_PatchGenerationEvent(t *testing.T) {
 					rctx),
 				http.MethodPost,
 				"url",
-				bytes.NewReader(serializeEvent(v.e)))
+				bodyreader)
 
 			ha.PatchGenerationEvent(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }

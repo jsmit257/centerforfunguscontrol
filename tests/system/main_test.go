@@ -29,6 +29,7 @@ func init() {
 		Name:  auth.Name,
 		Email: &addr,
 	})
+	// create a user
 	url := fmt.Sprintf("http://%s:%d/user", cfg.AuthnHost, cfg.AuthnPort)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
 	if err != nil {
@@ -46,6 +47,7 @@ func init() {
 	<-time.After(time.Second)
 
 	b, _ = json.Marshal(auth)
+	// log new user in to get cookie for all subsequent requests
 	url = fmt.Sprintf("http://%s:%d/auth", cfg.AuthnHost, cfg.AuthnPort)
 	req, err = http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
 	if err != nil {
