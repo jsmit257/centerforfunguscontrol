@@ -35,8 +35,15 @@ func (ha *HuautlaAdaptor) PostSource(w http.ResponseWriter, r *http.Request) {
 		ms.error(w, fmt.Errorf("malformed parameter: origin"), http.StatusBadRequest, "malformed parameter")
 	} else if _, ok := origins[origin]; !ok {
 		ms.error(w, fmt.Errorf("origin value not allowed: %s", origin), http.StatusBadRequest, "origin value not allowed")
-	} else if err := bodyHelper(r, s); err != nil {
+
+		// } else if err := bodyHelper(r, s); err != nil {
+		// 	ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
+
+	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
+	} else if err := json.Unmarshal(body, &s); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
+
 	} else if s, err := ha.db.InsertSource(r.Context(), genID, origin, s, ms.cid); err != nil {
 		ms.error(w, fmt.Errorf("%w: %s", err, fmtSource(s)), http.StatusInternalServerError, err)
 	} else {

@@ -18,8 +18,14 @@ func (ha *HuautlaAdaptor) PostLifecycleEvent(w http.ResponseWriter, r *http.Requ
 
 	if id, err := getUUIDByName("id", w, r, ms); err != nil {
 		ms.error(w, fmt.Errorf("%w: event id", err), http.StatusBadRequest, err)
-	} else if err = bodyHelper(r, e); err != nil {
+		// } else if err = bodyHelper(r, e); err != nil {
+		// 	ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
+
+	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
+	} else if err := json.Unmarshal(body, &e); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
+
 	} else if l, err := ha.db.SelectLifecycle(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycle")
 	} else if err := ha.db.AddLifecycleEvent(r.Context(), &l, e, ms.cid); err != nil {
