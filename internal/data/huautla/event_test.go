@@ -316,13 +316,34 @@ func Test_PatchEvent(t *testing.T) {
 	t.Parallel()
 
 	tcs := map[string]struct {
-		id types.UUID
-		e  *types.Event
-		sc int
+		id     types.UUID
+		e      *types.Event
+		result types.Event
+		err    error
+		sc     int
 	}{
 		"happy_path": {
 			id: "happy_path",
-			sc: http.StatusNotImplemented,
+			e:  &types.Event{UUID: "happy_path"},
+			sc: http.StatusOK,
+		},
+		"missing_eventid": {
+			sc: http.StatusBadRequest,
+		},
+		"read_fails": {
+			id: "read_fails",
+			sc: http.StatusBadRequest,
+		},
+		"unmarshal_fails": {
+			id: "unmarshal_fails",
+			e:  &types.Event{UUID: "unmarshal_fails"},
+			sc: http.StatusBadRequest,
+		},
+		"update_fails": {
+			id:  "update_fails",
+			e:   &types.Event{UUID: "update_fails"},
+			err: fmt.Errorf("some error"),
+			sc:  http.StatusInternalServerError,
 		},
 	}
 
@@ -333,7 +354,12 @@ func Test_PatchEvent(t *testing.T) {
 			t.Parallel()
 
 			ha := &HuautlaAdaptor{
-				db: &huautlaMock{},
+				db: &huautlaMock{
+					Observer: &eventerMock{
+						changeResult: tc.result,
+						changeErr:    tc.err,
+					},
+				},
 			}
 
 			w := httptest.NewRecorder()
@@ -646,28 +672,38 @@ func serializeEvent(e *types.Event) []byte {
 	return result
 }
 
-func (em *eventerMock) GetLifecycleEvents(ctx context.Context, lc *types.Lifecycle, cid types.CID) error {
+func (em *eventerMock) GetLifecycleEvents(context.Context, *types.Lifecycle, types.CID) error {
 	return nil
 }
-func (em *eventerMock) AddLifecycleEvent(ctx context.Context, lc *types.Lifecycle, e types.Event, cid types.CID) error {
+func (em *eventerMock) AddLifecycleEvent(context.Context, *types.Lifecycle, types.Event, types.CID) error {
 	return em.addErr
 }
-func (em *eventerMock) ChangeLifecycleEvent(ctx context.Context, lc *types.Lifecycle, e types.Event, cid types.CID) (types.Event, error) {
+func (em *eventerMock) ChangeLifecycleEvent(context.Context, *types.Lifecycle, types.Event, types.CID) (types.Event, error) {
 	return em.changeResult, em.changeErr
 }
-func (em *eventerMock) RemoveLifecycleEvent(ctx context.Context, lc *types.Lifecycle, id types.UUID, cid types.CID) error {
+func (em *eventerMock) RemoveLifecycleEvent(context.Context, *types.Lifecycle, types.UUID, types.CID) error {
 	return em.rmErr
 }
 
-func (em *eventerMock) GetGenerationEvents(ctx context.Context, g *types.Generation, cid types.CID) error {
+func (em *eventerMock) GetGenerationEvents(context.Context, *types.Generation, types.CID) error {
 	return nil
 }
-func (em *eventerMock) AddGenerationEvent(ctx context.Context, g *types.Generation, e types.Event, cid types.CID) error {
+func (em *eventerMock) AddGenerationEvent(context.Context, *types.Generation, types.Event, types.CID) error {
 	return em.addGenerationErr
 }
-func (em *eventerMock) ChangeGenerationEvent(ctx context.Context, g *types.Generation, e types.Event, cid types.CID) (types.Event, error) {
+func (em *eventerMock) ChangeGenerationEvent(context.Context, *types.Generation, types.Event, types.CID) (types.Event, error) {
 	return em.changeGenerationResult, em.changeGenerationErr
 }
-func (em *eventerMock) RemoveGenerationEvent(ctx context.Context, g *types.Generation, id types.UUID, cid types.CID) error {
+func (em *eventerMock) RemoveGenerationEvent(context.Context, *types.Generation, types.UUID, types.CID) error {
 	return em.rmGenerationErr
+}
+
+func (em *eventerMock) SelectByEventType(context.Context, types.EventType, types.CID) ([]types.Event, error) {
+	return nil, nil
+}
+func (em *eventerMock) SelectEvent(context.Context, types.UUID, types.CID) (types.Event, error) {
+	return types.Event{}, nil
+}
+func (em *eventerMock) UpdateEvent(context.Context, types.Event, types.CID) (types.Event, error) {
+	return em.changeResult, em.changeErr
 }

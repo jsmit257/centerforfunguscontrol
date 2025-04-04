@@ -114,7 +114,7 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Patch("/lifecycle/{id}", ha.PatchLifecycle)
 	r.Delete("/lifecycle/{id}", ha.DeleteLifecycle)
 
-	r.Patch("/events/{ev_id}", ha.PatchEvent)
+	// r.Patch("/events/{ev_id}", ha.PatchEvent)
 
 	r.Post("/lifecycle/{id}/events", ha.PostLifecycleEvent)
 	r.Patch("/lifecycle/{lc_id}/events", ha.PatchLifecycleEvent)
@@ -127,7 +127,10 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Delete("/generation/{id}", ha.DeleteGeneration)
 
 	r.Post("/generation/{id}/events", ha.PostGenerationEvent)
-	// r.Patch("/generation/{g_id}/events/{ev_id}", ha.PatchEvent)
+	// keeping the /generation/{g_id} prefix b/c it matches the pattern used
+	// by the front end post/patch pattern; not sure if that's the best idea;
+	// either way the generation part is ignored
+	r.Patch("/generation/{g_id}/events/{ev_id}", ha.PatchEvent)
 	r.Patch("/generation/{id}/events", ha.PatchGenerationEvent)
 	r.Delete("/generation/{g_id}/events/{ev_id}", ha.DeleteGenerationEvent)
 
@@ -137,7 +140,7 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 
 	r.Get("/notes/{o_id}", ha.GetNotes)
 	r.Post("/notes/{o_id}", ha.PostNote)
-	r.Patch("/notes/{o_id}", ha.PatchNote)
+	r.Patch("/notes/{o_id}/{n_id}", ha.PatchNote)
 	r.Delete("/notes/{o_id}/{id}", ha.DeleteNote)
 
 	r.Get("/photos/{o_id}", ha.GetPhotos)

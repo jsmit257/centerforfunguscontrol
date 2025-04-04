@@ -33,7 +33,7 @@ func (ha *HuautlaAdaptor) PatchTS(w http.ResponseWriter, r *http.Request) {
 	} else if err := ha.db.UpdateTimestamps(r.Context(), table, types.UUID(id), patch); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to delete vendor")
 	} else {
-		ms.send(w, http.StatusNoContent, nil)
+		ms.empty(w)
 	}
 }
 

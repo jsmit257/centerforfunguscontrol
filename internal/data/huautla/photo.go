@@ -7,13 +7,49 @@ import (
 	"net/url"
 
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
 	"github.com/jsmit257/huautla/types"
 )
+
+type format string
+
+var formats = map[format]struct {
+	magic  []byte
+	sparse uint64
+}{
+	"image/png":         {magic: []byte{0x89, 'P', 'N', 'G'}},
+	"image/jpeg":        {magic: []byte{0xff, 0xd8, 0xff, 0xe0}},
+	"image/jpeg-old":    {magic: []byte{0xff, 0xd8, 0xff, 0xe1}},
+	"image/gif":         {magic: []byte("GIF8")},
+	"image/tiff-big":    {magic: []byte{'M', 'M', 0, '*'}},
+	"image/tiff-little": {magic: []byte{'M', 'M', '*', 0}},
+	"image/avif":        {magic: []byte{0, 0, 0, 0x1c, 'f', 't', 'y', 'p', 'a', 'v', 'i', 'f', 0, 0, 0, 0, 'a', 'v', 'i', 'f', 'm', 'i', 'f', '1', 'm', 'i', 'a', 'f', 0, 0, 4, 0x1d}},
+	"image/webp": {
+		magic:  []byte("RIFF----WEBPVP8X"),
+		sparse: 0xf0,
+	},
+}
+
+func getFormat(b []byte) format {
+
+outer:
+	for frmt, head := range formats {
+		for i, v := range head.magic {
+			if head.sparse&(1<<i) != 0 {
+				continue
+			} else if v != b[i] {
+				continue outer
+			}
+		}
+
+		return frmt
+	}
+
+	return "unknown"
+}
 
 func (ha *HuautlaAdaptor) writePhoto(r *http.Request) (string, error) {
 	var err error
@@ -32,30 +68,32 @@ func (ha *HuautlaAdaptor) writePhoto(r *http.Request) (string, error) {
 		ct = fh.Header.Get("Content-Type")
 	}
 
-	filetype := map[[4]byte]string{
-		{0x89, 'P', 'N', 'G'}:    "image/png",
-		{0xff, 0xd8, 0xff, 0xe0}: "image/jpeg",
-		{0xff, 0xd8, 0xff, 0xe1}: "image/jpeg", // old format??
-		{'G', 'I', 'F', '8'}:     "image/gif",
-		{'M', 'M', 0, '*'}:       "image/tiff",
-		{'I', 'I', '*', 0}:       "image/tiff",
-	}[[4]byte(data[:4])]
-	if filetype == "" {
+	filetype := string(getFormat(data))
+	if filetype == "unknown" {
 		filetype = append(r.Header[http.CanonicalHeaderKey("Content-Type")], "image/x-unknown")[0]
 	}
 
-	r.Context().Value(metrics.Log).(*logrus.Entry).WithFields(log.Fields{
-		"from-request": ct,
-		"from-app":     filetype,
-	}).
+	// FIXME: this should come from huautla shared types, but the change has
+	//  to happen everywhere
+	metrics.GetContextLog(r.Context()).
+		WithFields(log.Fields{
+			"from-request": ct,
+			"from-app":     filetype,
+			"magic":        fmt.Sprintf("%v", data[:32]),
+		}).
 		Warn("comparing types")
 
 	ext := map[string]string{
-		"image/jpeg": "jpg",
-		"image/jpg":  "jpg",
-		"image/png":  "png",
-		"image/gif":  "gif",
-		"image/tiff": "tiff",
+		"image/jpeg":        "jpg",
+		"image/jpeg-old":    "jpg",
+		"image/jpg":         "jpg",
+		"image/png":         "png",
+		"image/gif":         "gif",
+		"image/tiff":        "tiff",
+		"image/tiff-big":    "tiff",
+		"image/tiff-little": "tiff",
+		"image/avif":        "avif",
+		"image/webp":        "webp",
 	}[filetype]
 	if ext == "" {
 		ext = "unk"
@@ -63,7 +101,7 @@ func (ha *HuautlaAdaptor) writePhoto(r *http.Request) (string, error) {
 
 	name := fmt.Sprintf("%s.%s", uuid.New().String(), ext)
 
-	return name, ha.filer("album/"+name, data, 0644)
+	return name, ha.filer(ha.photoloc+name, data, 0644)
 }
 
 func (ha *HuautlaAdaptor) GetPhotos(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +143,7 @@ func (ha *HuautlaAdaptor) PostPhoto(w http.ResponseWriter, r *http.Request) {
 	} else if photos, err = ha.db.AddPhoto(r.Context(), types.UUID(oID), photos, p, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to add photo")
 	} else {
-		ms.send(w, http.StatusOK, photos)
+		ms.send(w, http.StatusCreated, photos)
 	}
 }
 

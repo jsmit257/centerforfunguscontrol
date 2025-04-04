@@ -30,7 +30,7 @@ run-web:
 
 .PHONY: tests
 tests: public #down unit
-	sudo rm -fv ./testalbum/*
+	sudo rm -fv ./tests/data/album/*
 	docker-compose up --build --remove-orphans system-test
 	docker tag jsmit257/cffc:latest jsmit257/cffc:lkg
 

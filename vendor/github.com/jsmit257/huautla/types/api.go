@@ -82,8 +82,9 @@ type (
 	}
 
 	Observer interface {
-		SelectByEventType(ctx context.Context, et EventType, cid CID) ([]Event, error)
-		SelectEvent(ctx context.Context, id UUID, cid CID) (Event, error)
+		SelectByEventType(context.Context, EventType, CID) ([]Event, error)
+		SelectEvent(context.Context, UUID, CID) (Event, error)
+		UpdateEvent(context.Context, Event, CID) (Event, error)
 	}
 
 	Photoer interface {
