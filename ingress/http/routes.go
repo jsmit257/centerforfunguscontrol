@@ -12,8 +12,8 @@ import (
 	us "github.com/jsmit257/userservice/shared/v1"
 )
 
-func loginRedirect(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Add("Location", "/")
+func loginRedirect(w http.ResponseWriter, header http.Header, _ *http.Request) {
+	w.Header().Add("Location", header.Get("Location"))
 	w.WriteHeader(http.StatusForbidden)
 }
 
@@ -22,13 +22,13 @@ func authn(host string, port uint16) func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			l := metrics.GetContextLog(r.Context())
 			if c, err := r.Cookie("us-authn"); err == http.ErrNoCookie {
-				loginRedirect(w, r)
-			} else if newc, sc := us.CheckValid(host, port, c); sc != http.StatusFound {
+				loginRedirect(w, http.Header{"Location": []string{"/authnz/login.html"}}, r)
+			} else if newc, header, sc := us.CheckValid(host, port, c); sc != http.StatusFound {
 				l.WithFields(logrus.Fields{
 					"sc":     sc,
 					"cookie": newc,
 				}).Info("status")
-				loginRedirect(w, r)
+				loginRedirect(w, header, r)
 			} else {
 				// resp := r.Response
 				// if resp != nil && resp.Request != nil {
