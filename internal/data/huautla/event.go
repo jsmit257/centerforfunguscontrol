@@ -40,19 +40,21 @@ func (ha *HuautlaAdaptor) PatchEvent(w http.ResponseWriter, r *http.Request) {
 	ms := ha.start(ctx, "PatchEvent")
 	defer r.Body.Close()
 
-	var e types.Event
+	ms.error(w, fmt.Errorf("not implemented"), http.StatusNotImplemented, "events really need to be simpler")
 
-	if _, err := getUUIDByName("ev_id", w, r, ms); err != nil {
-		ms.error(w, fmt.Errorf("%w: event id", err), http.StatusBadRequest, err)
-	} else if body, err := io.ReadAll(r.Body); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
-	} else if err := json.Unmarshal(body, &e); err != nil {
-		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
-	} else if result, err := ha.db.UpdateEvent(r.Context(), e, ms.cid); err != nil {
-		ms.error(w, err, http.StatusInternalServerError, "failed to change event")
-	} else {
-		ms.ok(w, result)
-	}
+	// var e types.Event
+
+	// if _, err := getUUIDByName("ev_id", w, r, ms); err != nil {
+	// 	ms.error(w, fmt.Errorf("%w: event id", err), http.StatusBadRequest, err)
+	// } else if body, err := io.ReadAll(r.Body); err != nil {
+	// 	ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
+	// } else if err := json.Unmarshal(body, &e); err != nil {
+	// 	ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
+	// } else if _, err := ha.db.UpdateEvent(r.Context(), e, ms.cid); err != nil {
+	// 	ms.error(w, err, http.StatusInternalServerError, "failed to change event")
+	// } else {
+	// 	ms.empty(w)
+	// }
 }
 
 func (ha *HuautlaAdaptor) PatchLifecycleEvent(w http.ResponseWriter, r *http.Request) {
