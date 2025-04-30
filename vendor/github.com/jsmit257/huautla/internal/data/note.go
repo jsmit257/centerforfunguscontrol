@@ -11,11 +11,12 @@ import (
 
 func (db *Conn) GetNotes(ctx context.Context, id types.UUID, cid types.CID) ([]types.Note, error) {
 	var err error
-	var rows *sql.Rows
-	var result []types.Note
 
 	deferred, l := initAccessFuncs("GetNotes", db.logger, id, cid)
 	defer deferred(&err, l)
+
+	var rows *sql.Rows
+	result := []types.Note{}
 
 	rows, err = db.query.QueryContext(ctx, psqls["note"]["get"], id)
 	if err != nil {

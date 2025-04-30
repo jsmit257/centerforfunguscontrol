@@ -62,6 +62,19 @@ func sendPhoto(f func(w http.ResponseWriter, r *http.Request), data []byte, meth
 	return w
 }
 
+func Test_getFormat(t *testing.T) {
+	for frmt, head := range formats {
+		result := getFormat(head.magic)
+		require.Equal(t, frmt, result, fmt.Sprintf("test_%s", frmt))
+	}
+
+	result := getFormat([]byte("RIFF****WEBPVP8X"))
+	require.Equal(t, format("image/webp"), result, "test_sparse")
+
+	result = getFormat([]byte("head.magic"))
+	require.Equal(t, format("unknown"), result, "test_random")
+}
+
 func Test_GetPhoto(t *testing.T) {
 	t.Parallel()
 
@@ -134,7 +147,7 @@ func Test_PostPhoto(t *testing.T) {
 		"happy_path": {
 			id:   "happy path",
 			data: []byte{0x89, 0x50, 0x4e, 0x47},
-			sc:   http.StatusOK,
+			sc:   http.StatusCreated,
 		},
 		"missing_id": {
 			sc: http.StatusBadRequest,

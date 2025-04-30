@@ -26,7 +26,7 @@ func (ha *HuautlaAdaptor) GetNotes(w http.ResponseWriter, r *http.Request) {
 
 func (ha *HuautlaAdaptor) getNotes(w http.ResponseWriter, r *http.Request, ms *methodStats) (oID string, notes []types.Note, err error) {
 	if oID = chi.URLParam(r, "o_id"); oID == "" {
-		ms.error(w, fmt.Errorf("missing required id parameter"), http.StatusBadRequest, "missing required id parameter")
+		ms.error(w, fmt.Errorf("missing required owner_id parameter"), http.StatusBadRequest, "missing required id parameter")
 	} else if oID, err = url.QueryUnescape(oID); err != nil {
 		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
 	} else if notes, err = ha.db.GetNotes(r.Context(), types.UUID(oID), ms.cid); err != nil {
@@ -65,6 +65,8 @@ func (ha *HuautlaAdaptor) PatchNote(w http.ResponseWriter, r *http.Request) {
 	var n types.Note
 	if _, notes, err := ha.getNotes(w, r, ms); err != nil {
 		return
+	} else if n.UUID, err = getUUIDByName("n_id", w, r, ms); err != nil {
+		ms.error(w, fmt.Errorf("%w: note_id", err), http.StatusBadRequest, err)
 	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
 	} else if err := json.Unmarshal(body, &n); err != nil {

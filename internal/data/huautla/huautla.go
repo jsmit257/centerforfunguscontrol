@@ -25,7 +25,8 @@ type (
 	HuautlaAdaptor struct {
 		db types.DB
 		// log   *logrus.Entry
-		filer func(string, []byte, fs.FileMode) error
+		photoloc string
+		filer    func(string, []byte, fs.FileMode) error
 	}
 
 	methodStats struct {
@@ -38,14 +39,15 @@ type (
 	ParamError error
 )
 
-func New(cfg *types.Config, log *logrus.Entry) (*HuautlaAdaptor, error) {
+func New(cfg *types.Config, log *logrus.Entry, photoloc string) (*HuautlaAdaptor, error) {
 	if db, err := huautla.New(cfg, log); err != nil {
 		return nil, err
 	} else {
 		log.Info("connected to database")
 		return &HuautlaAdaptor{
-			db:    db,
-			filer: os.WriteFile,
+			db:       db,
+			photoloc: photoloc,
+			filer:    os.WriteFile,
 		}, nil
 	}
 }

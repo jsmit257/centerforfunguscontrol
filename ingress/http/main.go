@@ -38,7 +38,8 @@ func main() {
 		PGPass: cfg.HuautlaPass,
 		PGSSL:  cfg.HuautlaSSL,
 	},
-		log)
+		log,
+		cfg.PhotoDir)
 	if err != nil {
 		panic(err)
 	}

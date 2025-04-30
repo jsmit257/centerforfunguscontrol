@@ -74,7 +74,7 @@ func (ha *HuautlaAdaptor) PatchStrainAttribute(w http.ResponseWriter, r *http.Re
 	} else if err := ha.db.ChangeAttribute(r.Context(), &s, a, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to change strainattribute")
 	} else {
-		ms.send(w, http.StatusOK, s)
+		ms.send(w, http.StatusOK, a)
 	}
 }
 

@@ -163,15 +163,17 @@ func Test_ChangeNote(t *testing.T) {
 
 	set := map[string]struct {
 		id     types.UUID
-		p      *types.Note
+		noteID types.UUID
+		n      *types.Note
 		getErr error
 		updErr error
 		sc     int
 	}{
 		"happy_path": {
-			id: "happy path",
-			p:  &types.Note{},
-			sc: http.StatusOK,
+			id:     "happy path",
+			noteID: "happy path",
+			n:      &types.Note{},
+			sc:     http.StatusOK,
 		},
 		"get_error": {
 			id:     "get error",
@@ -183,30 +185,37 @@ func Test_ChangeNote(t *testing.T) {
 			sc: http.StatusBadRequest,
 		},
 		"patch_error": {
-			id:     "post error",
-			p:      &types.Note{},
+			id:     "patch_error",
+			noteID: "patch_error",
+			n:      &types.Note{},
 			updErr: fmt.Errorf("some error"),
 			sc:     http.StatusInternalServerError,
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Noter: &noterMock{
-					changeErr: v.updErr,
-					getErr:    v.getErr,
+					changeErr: tc.updErr,
+					getErr:    tc.getErr,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{
+				"o_id",
+				"n_id",
+			}, Values: []string{
+				string(tc.id),
+				string(tc.noteID),
+			}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -214,11 +223,11 @@ func Test_ChangeNote(t *testing.T) {
 					rctx),
 				http.MethodPost,
 				"url",
-				bytes.NewReader(serializeNote(v.p)))
+				bytes.NewReader(serializeNote(tc.n)))
 
 			ha.PatchNote(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }

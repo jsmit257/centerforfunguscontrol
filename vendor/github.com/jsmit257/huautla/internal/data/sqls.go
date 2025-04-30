@@ -94,13 +94,13 @@ var psqls = sqlMap{
       where  et.uuid = $7`,
 		"change": `
       update  events e
-        set  temperature = $1,
+         set  temperature = $1,
               humidity = $2,
               mtime = $3,
               eventtype_uuid = et.uuid
         from  event_types et
-      where  e.uuid = $4
-        and  et.uuid = $5`,
+       where  e.uuid = $4
+         and  et.uuid = $5`,
 		"remove": `delete from events where uuid = $1`,
 	},
 
@@ -198,7 +198,7 @@ var psqls = sqlMap{
         join  vendors stv
           on  st.vendor_uuid = stv.uuid
        order
-          by  g.uuid`,
+          by  g.mtime`,
 		// just goes to show you can solve every problem with a union
 		"select": `
         with  strain_sources as (
