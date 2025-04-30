@@ -12,6 +12,11 @@ postgres:
 inspect:
 	docker-compose exec -it postgres psql -Upostgres huautla
 
+.PHONY: dep
+dep:
+	go get github.com/jsmit257/huautla@latest github.com/jsmit257/userservice@latest
+	go mod vendor 
+
 # define these on the command line:
 # AUTHN_(HOST|PORT)
 # HTTP_(HOST|PORT)
@@ -50,13 +55,13 @@ down:
 
 .PHONY: deploy
 deploy: # no hard dependency on `tests/public/etc` for mow
-	docker-compose build --remove-orphans run-docker
+	docker-compose build run-docker
 	docker tag jsmit257/cffc:latest jsmit257/cffc:lkg
 
 .PHONY: push
 push:
 	docker push jsmit257/cffc:lkg
-	git push origin stable:stable
+	git push --force origin stable:stable
 
 .PHONY: push-all
 push-all: push

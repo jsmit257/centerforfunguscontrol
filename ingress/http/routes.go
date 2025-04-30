@@ -114,9 +114,14 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Patch("/lifecycle/{id}", ha.PatchLifecycle)
 	r.Delete("/lifecycle/{id}", ha.DeleteLifecycle)
 
+	// don't know if this will ever go live
 	// r.Patch("/events/{ev_id}", ha.PatchEvent)
+	// FIXME: implement this
+	// r.Delete("/events/{ev_id}", ha.DeleteEvent)
 
 	r.Post("/lifecycle/{id}/events", ha.PostLifecycleEvent)
+	// same note as the generations version of patch-events below
+	r.Patch("/lifecycle/{lc_id}/events/{ev_id}", ha.PatchEvent)
 	r.Patch("/lifecycle/{lc_id}/events", ha.PatchLifecycleEvent)
 	r.Delete("/lifecycle/{lc_id}/events/{ev_id}", ha.DeleteLifecycleEvent)
 

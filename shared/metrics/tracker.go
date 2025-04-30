@@ -44,7 +44,7 @@ type (
 	ctxkey string
 )
 
-func NewDataTracker(ctx context.Context, fn string) Tracker {
+func NewTracker(ctx context.Context, fn string) Tracker {
 
 	l := GetContextLog(ctx).WithFields(logrus.Fields{
 		"function": fn,

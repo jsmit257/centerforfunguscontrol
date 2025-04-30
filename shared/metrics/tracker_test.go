@@ -69,7 +69,7 @@ func Test_NewTracker(t *testing.T) {
 			"db":  "test",
 		}),
 	)
-	tracker := NewDataTracker(ctx, "Test_NewTracker")
+	tracker := NewTracker(ctx, "Test_NewTracker")
 	w.Clear()
 
 	err := tracker.Lap().Done("testing Lap() (and Field(), Done(), Err())").Err()

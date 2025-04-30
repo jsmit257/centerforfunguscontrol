@@ -57,7 +57,7 @@ func (db *Conn) InsertVendor(ctx context.Context, v types.Vendor, cid types.CID)
 			l.WithField("id", v.UUID).WithError(err).Error("da fuck?")
 			return db.InsertVendor(ctx, v, cid) // FIXME: infinite loop?
 		}
-		return v, err
+		return v, pqerr(err)
 	} else if rows, err = result.RowsAffected(); err != nil {
 		return v, err
 	} else if rows != 1 {
@@ -74,7 +74,7 @@ func (db *Conn) UpdateVendor(ctx context.Context, id types.UUID, v types.Vendor,
 
 	result, err := db.ExecContext(ctx, psqls["vendor"]["update"], v.Name, v.Website, id)
 	if err != nil {
-		return err
+		return pqerr(err)
 	} else if rows, err := result.RowsAffected(); err != nil {
 		return err
 	} else if rows != 1 {

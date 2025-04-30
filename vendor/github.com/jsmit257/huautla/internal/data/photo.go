@@ -14,13 +14,15 @@ func (db *Conn) GetPhotos(ctx context.Context, id types.UUID, cid types.CID) ([]
 	deferred, l := initAccessFuncs("GetPhotos", db.logger, id, cid)
 	defer deferred(&err, l)
 
-	rows, err := db.query.QueryContext(ctx, psqls["photo"]["get"], id)
+	var rows *sql.Rows
+	result := []types.Photo{}
+
+	rows, err = db.query.QueryContext(ctx, psqls["photo"]["get"], id)
 	if err != nil {
-		return nil /*[]types.Photo*/, err
+		return result, err
 	}
 	defer rows.Close()
 
-	var result []types.Photo
 	for rows.Next() {
 		var p types.Photo
 		var noteid *types.UUID
@@ -80,7 +82,7 @@ func (db *Conn) AddPhoto(ctx context.Context, id types.UUID, photos []types.Phot
 		if isPrimaryKeyViolation(err) {
 			return db.AddPhoto(ctx, id, photos, p, cid)
 		}
-		return photos, err
+		return photos, pqerr(err)
 	} else if rows, err = result.RowsAffected(); err != nil {
 		return photos, err
 	} else if rows != 1 {
