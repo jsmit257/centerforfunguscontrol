@@ -57,10 +57,10 @@ func (ha *HuautlaAdaptor) PatchStrainAttribute(w http.ResponseWriter, r *http.Re
 
 	a := types.StrainAttribute{}
 
-	if id := chi.URLParam(r, "id"); id == "" {
-		ms.error(w, fmt.Errorf("missing required strain id parameter"), http.StatusBadRequest, "missing required id parameter")
-	} else if id, err := url.QueryUnescape(id); err != nil {
-		ms.error(w, fmt.Errorf("malformed id parameter"), http.StatusBadRequest, "malformed id parameter")
+	if stID, err := getUUIDByName("st_id", w, r, ms); err != nil {
+		ms.error(w, fmt.Errorf("%w: strain id", err), http.StatusBadRequest, err)
+	} else if _, err := getUUIDByName("at_id", w, r, ms); err != nil {
+		ms.error(w, fmt.Errorf("%w: attribute id", err), http.StatusBadRequest, err)
 	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
 	} else if err := json.Unmarshal([]byte(body), &a); err != nil {
@@ -69,7 +69,7 @@ func (ha *HuautlaAdaptor) PatchStrainAttribute(w http.ResponseWriter, r *http.Re
 		ms.error(w, fmt.Errorf("incomplete strainattribute body"), http.StatusBadRequest, "incomplete strainattribute body")
 	} else if a.Value == "" {
 		ms.error(w, fmt.Errorf("incomplete strainattribute body"), http.StatusBadRequest, "incomplete strainattribute body")
-	} else if s, err := ha.db.SelectStrain(r.Context(), types.UUID(id), ms.cid); err != nil {
+	} else if s, err := ha.db.SelectStrain(r.Context(), types.UUID(stID), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch strain")
 	} else if err := ha.db.ChangeAttribute(r.Context(), &s, a, ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to change strainattribute")
