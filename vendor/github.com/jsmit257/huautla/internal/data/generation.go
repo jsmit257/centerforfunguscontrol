@@ -226,7 +226,7 @@ func (db *Conn) InsertGeneration(ctx context.Context, g types.Generation, cid ty
 		g.CTime,
 	); err != nil {
 		if isPrimaryKeyViolation(err) {
-			return db.InsertGeneration(ctx, g, cid) // FIXME: infinite loop?
+			return db.InsertGeneration(ctx, g, cid)
 		}
 		return g, err
 	} else if rows, err = result.RowsAffected(); err != nil {

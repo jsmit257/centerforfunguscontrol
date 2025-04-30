@@ -61,13 +61,12 @@ func (ha *HuautlaAdaptor) PatchLifecycle(w http.ResponseWriter, r *http.Request)
 
 	var l types.Lifecycle
 
-	// id := getID(w, r, ms)
 	if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body") // XXX: better status code??
 	} else if err := json.Unmarshal(body, &l); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body") // XXX: better status code??
 	} else if l, err = ha.db.UpdateLifecycle(r.Context(), l, ms.cid); err != nil {
-		ms.error(w, err, http.StatusInternalServerError, "failed to update lifecycle")
+		ms.error(w, err, http.StatusInternalServerError, err.Error())
 	} else {
 		ms.send(w, http.StatusOK, l)
 	}

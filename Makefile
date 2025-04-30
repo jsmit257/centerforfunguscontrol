@@ -12,13 +12,18 @@ postgres:
 inspect:
 	docker-compose exec -it postgres psql -Upostgres huautla
 
+.PHONY: dep
+dep:
+	go get github.com/jsmit257/huautla@latest github.com/jsmit257/userservice@latest
+	go mod vendor 
+
 # define these on the command line:
 # AUTHN_(HOST|PORT)
 # HTTP_(HOST|PORT)
 # HUAUTLA_([HOST]|PORT)
 .PHONY: run-local
 run-local: unit
-	(go run ./ingress/http/... >log.json 2>&1 & k=$!; tail -f log.json | jq -a .; kill $k)
+	(go run ./ingress/http/... >log.json-$$HTTP_PORT 2>&1 & k=$!; tail -f log.json-$$HTTP_PORT | jq -a .; kill $k)
 
 .PHONY: run-docker
 run-docker:
@@ -30,7 +35,7 @@ run-web:
 
 .PHONY: tests
 tests: public #down unit
-	sudo rm -fv ./testalbum/*
+	sudo rm -fv ./tests/data/album/*
 	docker-compose up --build --remove-orphans system-test
 	docker tag jsmit257/cffc:latest jsmit257/cffc:lkg
 
@@ -53,9 +58,10 @@ deploy: # no hard dependency on `tests/public/etc` for mow
 	docker-compose build run-docker
 	docker tag jsmit257/cffc:latest jsmit257/cffc:lkg
 
-q	.PHONY: push
-push: # just docker, not git
+.PHONY: push
+push:
 	docker push jsmit257/cffc:lkg
+	git push --force origin stable:stable
 
 .PHONY: push-all
 push-all: push
@@ -64,3 +70,11 @@ push-all: push
 	docker push jsmit257/us-srv-mysql:lkg
 	docker push jsmit257/cffc-web:lkg
 	
+# unsecure, test database
+# HTTP_HOST=0.0.0.0 HTTP_PORT=7777 HUAUTLA_PORT=5433 make run-local
+
+# unsecure, prod database
+# HTTP_HOST=0.0.0.0 HTTP_PORT=7777 HUAUTLA_PORT=5432 make run-local
+
+# secure, prod database
+# AUTHN_HOST=localhost AUTHN_PORT=3000 HTTP_HOST=0.0.0.0 HTTP_PORT=7777 HUAUTLA_PORT=5432 make run-local

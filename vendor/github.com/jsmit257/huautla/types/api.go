@@ -82,8 +82,9 @@ type (
 	}
 
 	Observer interface {
-		SelectByEventType(ctx context.Context, et EventType, cid CID) ([]Event, error)
-		SelectEvent(ctx context.Context, id UUID, cid CID) (Event, error)
+		SelectByEventType(context.Context, EventType, CID) ([]Event, error)
+		SelectEvent(context.Context, UUID, CID) (Event, error)
+		UpdateEvent(context.Context, Event, CID) (Event, error)
 	}
 
 	Photoer interface {
@@ -101,10 +102,9 @@ type (
 
 	Sourcer interface {
 		// GetSources(ctx context.Context, g *Generation, cid CID) error
-		AddStrainSource(ctx context.Context, g *Generation, s Source, cid CID) error
-		AddEventSource(ctx context.Context, g *Generation, e Event, cid CID) error
-		ChangeSource(ctx context.Context, g *Generation, s Source, cid CID) error
-		RemoveSource(ctx context.Context, g *Generation, id UUID, cid CID) error
+		InsertSource(context.Context, UUID, string, Source, CID) (Source, error)
+		UpdateSource(context.Context, string, Source, CID) error
+		RemoveSource(context.Context, *Generation, UUID, CID) error
 	}
 
 	Stager interface {

@@ -106,7 +106,7 @@ func (ha *HuautlaAdaptor) GetGeneratedStrain(w http.ResponseWriter, r *http.Requ
 	} else if err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch generations")
 	} else {
-		ms.send(w, http.StatusOK, s)
+		ms.ok(w, s)
 	}
 }
 
@@ -138,7 +138,7 @@ func (ha *HuautlaAdaptor) updateGeneratedStrain(w http.ResponseWriter, r *http.R
 	} else if err := ha.db.UpdateGeneratedStrain(r.Context(), gid, types.UUID(sid), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to update generation")
 	} else {
-		ms.send(w, http.StatusNoContent, nil)
+		ms.empty(w)
 	}
 }
 

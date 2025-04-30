@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jsmit257/huautla/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
@@ -43,12 +42,12 @@ func GetContextLog(ctx context.Context) *logrus.Entry {
 	return l
 }
 
-func GetContextMetrics(ctx context.Context) *prometheus.CounterVec {
+func GetContextDataMetrics(ctx context.Context) *prometheus.CounterVec {
 	if result, ok := ctx.Value(Metrics).(*prometheus.CounterVec); ok {
 		return result
 	}
 
-	return metrics.DataMetrics.MustCurryWith(prometheus.Labels{
+	return DataMetrics.MustCurryWith(prometheus.Labels{
 		"pkg":      "data",
 		"function": "ERROR",
 		"status":   "no data metrics set",

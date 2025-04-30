@@ -65,7 +65,7 @@ func (db *Conn) SelectSubstrate(ctx context.Context, id types.UUID, cid types.CI
 
 func (db *Conn) selectSubstrates(ctx context.Context, param types.ReportAttrs, cid types.CID) ([]types.Substrate, error) {
 	var err error
-	deferred, l := initAccessFuncs("SelectSubstrateByAttrs", db.logger, "nil", cid)
+	deferred, l := initAccessFuncs("selectSubstrates", db.logger, "nil", cid)
 	defer deferred(&err, l)
 
 	if !param.Contains("substrate-id", "vendor-id") {
@@ -92,7 +92,7 @@ func (db *Conn) selectSubstrates(ctx context.Context, param types.ReportAttrs, c
 			&row.Vendor.Website,
 		); err != nil {
 			break
-		} else if err = db.GetAllIngredients(ctx, &row, "SelectSubstrate"); err != nil {
+		} else if err = db.GetAllIngredients(ctx, &row, "selectSubstrates"); err != nil {
 			break
 		}
 		result = append(result, row)

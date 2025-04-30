@@ -42,6 +42,6 @@ func (er errReader) Read([]byte) (int, error) {
 func checkResult(t *testing.T, b *bytes.Buffer, rx any, expected any) {
 	body, err := io.ReadAll(b)
 	require.Nil(t, err)
-	require.Nil(t, json.Unmarshal(body, rx))
+	require.Nil(t, json.Unmarshal(body, rx), string(body))
 	require.Equal(t, expected, rx)
 }

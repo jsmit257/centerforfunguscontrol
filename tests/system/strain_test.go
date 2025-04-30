@@ -88,7 +88,7 @@ func createPhoto(t *testing.T, id types.UUID) types.UUID {
 
 	res, err := http.DefaultClient.Do(req)
 	require.Nil(t, err)
-	require.Equal(t, http.StatusOK, res.StatusCode, "strain: %v", id)
+	require.Equal(t, http.StatusCreated, res.StatusCode, "strain: %v", id)
 
 	var b []byte
 	b, err = io.ReadAll(res.Body)

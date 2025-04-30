@@ -12,8 +12,8 @@ import (
 	us "github.com/jsmit257/userservice/shared/v1"
 )
 
-func loginRedirect(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Add("Location", "/")
+func loginRedirect(w http.ResponseWriter, header http.Header, _ *http.Request) {
+	w.Header().Add("Location", header.Get("Location"))
 	w.WriteHeader(http.StatusForbidden)
 }
 
@@ -22,13 +22,13 @@ func authn(host string, port uint16) func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			l := metrics.GetContextLog(r.Context())
 			if c, err := r.Cookie("us-authn"); err == http.ErrNoCookie {
-				loginRedirect(w, r)
-			} else if newc, sc := us.CheckValid(host, port, c); sc != http.StatusFound {
+				loginRedirect(w, http.Header{"Location": []string{"/authnz/login.html"}}, r)
+			} else if newc, header, sc := us.CheckValid(host, port, c); sc != http.StatusFound {
 				l.WithFields(logrus.Fields{
 					"sc":     sc,
 					"cookie": newc,
 				}).Info("status")
-				loginRedirect(w, r)
+				loginRedirect(w, header, r)
 			} else {
 				// resp := r.Response
 				// if resp != nil && resp.Request != nil {
@@ -101,7 +101,7 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 
 	r.Get("/strainattributenames", ha.GetStrainAttributeNames)
 	r.Post("/strain/{id}/attribute", ha.PostStrainAttribute)
-	r.Patch("/strain/{id}/attribute", ha.PatchStrainAttribute)
+	r.Patch("/strain/{st_id}/attribute/{at_id}", ha.PatchStrainAttribute)
 	r.Delete("/strain/{st_id}/attribute/{at_id}", ha.DeleteStrainAttribute)
 
 	r.Get("/strain/{id}/generation", ha.GetGeneratedStrain)
@@ -114,7 +114,14 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Patch("/lifecycle/{id}", ha.PatchLifecycle)
 	r.Delete("/lifecycle/{id}", ha.DeleteLifecycle)
 
+	// don't know if this will ever go live
+	// r.Patch("/events/{ev_id}", ha.PatchEvent)
+	// FIXME: implement this
+	// r.Delete("/events/{ev_id}", ha.DeleteEvent)
+
 	r.Post("/lifecycle/{id}/events", ha.PostLifecycleEvent)
+	// same note as the generations version of patch-events below
+	r.Patch("/lifecycle/{lc_id}/events/{ev_id}", ha.PatchEvent)
 	r.Patch("/lifecycle/{lc_id}/events", ha.PatchLifecycleEvent)
 	r.Delete("/lifecycle/{lc_id}/events/{ev_id}", ha.DeleteLifecycleEvent)
 
@@ -125,17 +132,20 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Delete("/generation/{id}", ha.DeleteGeneration)
 
 	r.Post("/generation/{id}/events", ha.PostGenerationEvent)
+	// keeping the /generation/{g_id} prefix b/c it matches the pattern used
+	// by the front end post/patch pattern; not sure if that's the best idea;
+	// either way the generation part is ignored
+	r.Patch("/generation/{g_id}/events/{ev_id}", ha.PatchEvent)
 	r.Patch("/generation/{id}/events", ha.PatchGenerationEvent)
 	r.Delete("/generation/{g_id}/events/{ev_id}", ha.DeleteGenerationEvent)
 
-	r.Post("/generation/{id}/sources/strain", ha.PostStrainSource)
-	r.Post("/generation/{id}/sources/event", ha.PostEventSource)
-	r.Patch("/generation/{id}/sources", ha.PatchSource)
+	r.Post("/generation/{id}/sources/{origin}", ha.PostSource)
+	r.Patch("/generation/{g_id}/sources/{origin}/{s_id}", ha.PatchSource)
 	r.Delete("/generation/{g_id}/sources/{s_id}", ha.DeleteSource)
 
 	r.Get("/notes/{o_id}", ha.GetNotes)
 	r.Post("/notes/{o_id}", ha.PostNote)
-	r.Patch("/notes/{o_id}", ha.PatchNote)
+	r.Patch("/notes/{o_id}/{n_id}", ha.PatchNote)
 	r.Delete("/notes/{o_id}/{id}", ha.DeleteNote)
 
 	r.Get("/photos/{o_id}", ha.GetPhotos)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"net/http"
 	"net/url"
@@ -24,7 +25,8 @@ type (
 	HuautlaAdaptor struct {
 		db types.DB
 		// log   *logrus.Entry
-		filer func(string, []byte, fs.FileMode) error
+		photoloc string
+		filer    func(string, []byte, fs.FileMode) error
 	}
 
 	methodStats struct {
@@ -33,29 +35,41 @@ type (
 		m   *prometheus.CounterVec
 		s   time.Time
 	}
+
+	ParamError error
 )
 
-func New(cfg *types.Config, log *logrus.Entry) (*HuautlaAdaptor, error) {
+func New(cfg *types.Config, log *logrus.Entry, photoloc string) (*HuautlaAdaptor, error) {
 	if db, err := huautla.New(cfg, log); err != nil {
 		return nil, err
 	} else {
 		log.Info("connected to database")
 		return &HuautlaAdaptor{
-			db:    db,
-			filer: os.WriteFile,
+			db:       db,
+			photoloc: photoloc,
+			filer:    os.WriteFile,
 		}, nil
 	}
 }
 
 func getUUIDByName(name string, _ http.ResponseWriter, r *http.Request, _ *methodStats) (uuid types.UUID, err error) {
 	if id := chi.URLParam(r, name); id == "" {
-		err = fmt.Errorf("missing required id parameter")
+		err = ParamError(fmt.Errorf("missing required parameter"))
 	} else if id, err = url.QueryUnescape(id); err != nil {
-		err = fmt.Errorf("malformed id parameter")
+		err = ParamError(fmt.Errorf("malformed parameter"))
 	} else {
 		uuid = types.UUID(id)
 	}
 	return uuid, err
+}
+
+func bodyHelper(r *http.Request, box any) error {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(body, &box)
 }
 
 // helper function adds fields `method` and `cid` to all subsequent logs; returns an object
@@ -115,4 +129,16 @@ func (ms *methodStats) send(w http.ResponseWriter, sc int, i interface{}) {
 	}
 	ms.m.WithLabelValues(strconv.Itoa(sc)).Inc()
 	ms.lap().l.Info("finished work")
+}
+
+func (ms *methodStats) empty(w http.ResponseWriter) {
+	ms.send(w, http.StatusNoContent, nil)
+}
+
+func (ms *methodStats) created(w http.ResponseWriter, i interface{}) {
+	ms.send(w, http.StatusCreated, i)
+}
+
+func (ms *methodStats) ok(w http.ResponseWriter, i interface{}) {
+	ms.send(w, http.StatusOK, i)
 }

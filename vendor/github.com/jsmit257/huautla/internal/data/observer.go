@@ -221,6 +221,29 @@ func (db *Conn) addEvent(ctx context.Context, oID types.UUID, events []types.Eve
 	return append([]types.Event{*e}, events...), err
 }
 
+func (db *Conn) UpdateEvent(ctx context.Context, e types.Event, cid types.CID) (types.Event, error) {
+	e.MTime = time.Now().UTC()
+
+	if result, err := db.ExecContext(ctx, psqls["event"]["change"],
+		e.Temperature,
+		e.Humidity,
+		e.MTime,
+		e.UUID,
+		e.EventType.UUID,
+	); err != nil {
+		return e, err
+	} else if rows, err := result.RowsAffected(); err != nil {
+		return e, err
+	} else if rows != 1 { // most likely cause is a bad eventtype.uuid
+		return e, fmt.Errorf("event was not changed")
+	}
+
+	return e, nil
+}
+
+// DEPREACTED: use UpdateEvent instead, but there's some effort decoupling events
+//
+//	from their parents throughout all the tiers, so we're leaving them for now
 func (db *Conn) changeEvent(ctx context.Context, events []types.Event, e *types.Event, cid types.CID) ([]types.Event, error) {
 	var err error
 

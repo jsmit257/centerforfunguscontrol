@@ -1,6 +1,10 @@
 package config
 
-import "github.com/kelseyhightower/envconfig"
+import (
+	"os"
+
+	"github.com/kelseyhightower/envconfig"
+)
 
 type Config struct {
 	HuautlaHost string `envconfig:"HUAUTLA_HOST" default:"localhost"`
@@ -16,6 +20,8 @@ type Config struct {
 	HTTPPort int    `envconfig:"HTTP_PORT" default:"8080"`
 
 	LogLevel string `envconfig:"LOG_LEVEL" default:"INFO"`
+
+	PhotoDir string `envconfig:"PHOTO_ROOT" default:"album/"`
 }
 
 func NewConfig() *Config {
@@ -23,5 +29,10 @@ func NewConfig() *Config {
 	if err := envconfig.Process("CFFC", result); err != nil {
 		panic(err)
 	}
+
+	if result.PhotoDir[len(result.PhotoDir)-1] != os.PathSeparator {
+		result.PhotoDir = string(append(([]byte)(result.PhotoDir), os.PathSeparator))
+	}
+
 	return result
 }
