@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/jsmit257/centerforfunguscontrol/internal/config"
 	"github.com/jsmit257/huautla/types"
 
 	"github.com/stretchr/testify/require"
@@ -16,6 +17,14 @@ import (
 var vendors []types.Vendor
 
 func init() {
+	var err error
+	if cfg == nil {
+		cfg, err = config.NewConfig()
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	if req, err := http.NewRequest(
 		http.MethodGet,
 		fmt.Sprintf(`http://%s:%d/vendors`, cfg.HTTPHost, cfg.HTTPPort),
