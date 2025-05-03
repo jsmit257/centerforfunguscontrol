@@ -21,7 +21,11 @@ var traps = []os.Signal{
 }
 
 func main() {
-	cfg := config.NewConfig()
+	cfg, err := config.NewConfig()
+	if err != nil {
+		panic(err)
+	}
+
 	logger := logrus.New()
 	logger.SetLevel(logrus.DebugLevel) // TODO: grab this from the config
 	logger.SetFormatter(&logrus.JSONFormatter{})

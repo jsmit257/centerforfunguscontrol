@@ -1,49 +1,78 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
 
+	us "github.com/jsmit257/userservice/shared/v1"
+
 	"github.com/jsmit257/centerforfunguscontrol/internal/config"
 	"github.com/jsmit257/centerforfunguscontrol/internal/data/huautla"
 	"github.com/jsmit257/centerforfunguscontrol/shared/metrics"
-	us "github.com/jsmit257/userservice/shared/v1"
 )
 
-func loginRedirect(w http.ResponseWriter, header http.Header, _ *http.Request) {
-	w.Header().Add("Location", header.Get("Location"))
-	w.WriteHeader(http.StatusForbidden)
-}
+func authn(host string, port uint16, logon string) func(next http.Handler) http.Handler {
+	noCookie := http.Header{}
+	noCookie.Set("Location", logon)
 
-func authn(host string, port uint16) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			l := metrics.GetContextLog(r.Context())
-			if c, err := r.Cookie("us-authn"); err == http.ErrNoCookie {
-				loginRedirect(w, http.Header{"Location": []string{"/authnz/login.html"}}, r)
-			} else if newc, header, sc := us.CheckValid(host, port, c); sc != http.StatusFound {
+
+			c, _ := r.Cookie("us-authn") // only err is ErrNoCookie and we don't care
+			if newc, header, sc := us.CheckValid(host, port, c); sc == http.StatusNoContent {
+				http.SetCookie(w, newc)
+				next.ServeHTTP(w, r)
+			} else if sc == http.StatusTemporaryRedirect {
 				l.WithFields(logrus.Fields{
 					"sc":     sc,
 					"cookie": newc,
-				}).Info("status")
-				loginRedirect(w, header, r)
-			} else {
-				// resp := r.Response
-				// if resp != nil && resp.Request != nil {
-				// 	if found, _ := regexp.Match("/otp/.*", []byte(resp.Request.RequestURI)); !found {
-				// 		l.
-				// 			WithField("uri", resp.Request.RequestURI).
-				// 			Warn("uri didn't match")
-				// 		w.Header().Set("Authn-Pad", resp.Header.Get("Authn-Pad"))
-				// 	} else {
-				// 		l.Info("setting header")
-				// 		w.Header().Set("Authn-Pad", resp.Header.Get("Authn-Pad"))
-				// 	}
-				// }
+					"header": header,
+				}).Warn("cookie isn't valid, redirecting")
+
+				if newc != nil {
+					http.SetCookie(w, newc)
+				}
+
+				for key, values := range header {
+					for _, value := range values {
+						w.Header().Add(key, value)
+					}
+				}
+				w.WriteHeader(http.StatusForbidden)
+			} else if sc == http.StatusInternalServerError {
+				l.WithFields(logrus.Fields{
+					"sc":     sc,
+					"cookie": newc,
+					"header": header,
+				}).Error("userservice internal error")
+
+				// happens when:
+				// - a new request can't be created (bad host/port?)
+				// - or sent (lots of reasons)
+				// - or if the returned cookie is absent or couldn't be parsed
+				// - also, redis errors
+				// most of these come from userservice itself, and none of them
+				// are likely to get better if we try again, so ???
 				http.SetCookie(w, newc)
-				next.ServeHTTP(w, r)
+				w.WriteHeader(sc)
+				// here's a strong argument for including err in the return from CheckValid
+				_, _ = w.Write([]byte("userservice internal error, probably"))
+			} else {
+				// is there any reason not to let 500s fall through to this case?
+				l.WithFields(logrus.Fields{
+					"sc":     sc,
+					"cookie": newc,
+					"header": header,
+				}).Error("unexpected error")
+
+				http.SetCookie(w, newc)
+				w.WriteHeader(sc)
+				_, _ = w.Write([]byte("unexpected error"))
 			}
 		})
 	}
@@ -56,7 +85,7 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Use(metrics.WrapContext(l))
 
 	if cfg.AuthnHost != "" && cfg.AuthnPort != 0 {
-		r.Use(authn(cfg.AuthnHost, cfg.AuthnPort))
+		r.Use(authn(cfg.AuthnHost, cfg.AuthnPort, cfg.AuthnPath))
 	}
 
 	r.Get("/vendors", ha.GetAllVendors)
@@ -163,7 +192,47 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Patch("/ts/{table}/{id}", ha.PatchTS)
 	r.Patch("/undel/{table}/{id}", ha.Undel)
 
+	// units save copies of config values when they're initialized, so there's no
+	// POST /settings; it would be a bad idea anyway
+	r.Get("/settings/{name}", settings(cfg))
+
 	r.Get("/metrics", metrics.NewHandler())
 
 	return r
+}
+
+func settings(cfg *config.Config) http.HandlerFunc {
+	temp, err := json.Marshal(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	var result map[string]any
+	err = json.Unmarshal(temp, &result)
+	if err != nil {
+		panic(err)
+	}
+
+	all, err := json.Marshal(result)
+	if err != nil {
+		panic(err)
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		var s string
+		if key := chi.URLParam(r, "name"); key == "*" {
+			w.WriteHeader(http.StatusOK)
+			s = string(all)
+		} else if body, ok := result[key]; !ok {
+			w.WriteHeader(http.StatusNotFound) // dicey: NoContent or NotFound?
+			s = fmt.Sprintf(`{"error": "no value for key: %s"}`, key)
+		} else if value, err := json.Marshal(body); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			s = fmt.Sprintf(`{"error": "%q"}`, err)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			s = fmt.Sprintf(`{"value": %s}`, value)
+		}
+		_, _ = w.Write([]byte(s))
+	}
 }

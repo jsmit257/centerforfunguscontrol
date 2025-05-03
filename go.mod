@@ -6,7 +6,7 @@ require (
 	github.com/go-chi/chi/v5 v5.2.0
 	github.com/google/uuid v1.6.0
 	github.com/jsmit257/huautla v0.0.0-20250411031051-4408a74c392b
-	github.com/jsmit257/userservice v0.0.0-20250430015402-13961c2f3b15
+	github.com/jsmit257/userservice v0.0.0-20250503171321-10e0985f5f90
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/sirupsen/logrus v1.9.3

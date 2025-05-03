@@ -4,16 +4,25 @@ x-pg-port: &pgport 5432
 x-pg-user: &pguser postgres
 x-pg-pass: &pgpass root
 x-pg-ssl: &pgssl disable
+
 x-api-host: &apihost cffc
 x-api-port: &apiport 8080
+
 x-usdb-host: &usdb-host usdb
 x-usdb-port: &usdb-port 3306
 x-usdb-user: &usdb-user root
 x-usdb-pass: &usdb-pass root
+
 x-usredis-host: &usredis-host usredis
 x-usredis-port: &usredis-port 6379
+
 x-ussrv-host: &ussrv-host ussrv
 x-ussrv-port: &ussrv-port 80
+x-authn-path: &authn-path /authnz/valid
+
+x-usweb-host: &usweb-host usweb
+x-usweb-port: &usweb-port 80
+
 x-maild-host: &maild-host usmail
 x-maild-port: &maild-port 25
 
@@ -72,6 +81,20 @@ services:
       # US_REDIS_PASS: *usredis-pass
       US_REDIS_HOST: *usredis-host
       US_REDIS_PORT: *usredis-port
+      US_EMAIL_TEST_SEND: true
+      US_SMS_TEST_MODE: true
+
+  us-web:
+    depends_on:
+      - us-srv
+    image: jsmit257/us-web:lkg
+    hostname: *usweb-host
+    restart: always
+    volumes:
+      - ./nginx/custom:/www/css
+    environment:
+      US_HTTP_HOST: *ussrv-host
+      US_HTTP_PORT: *ussrv-port
 
   run-docker:
     depends_on:
@@ -94,9 +117,12 @@ services:
       HTTP_PORT: *apiport
       AUTHN_HOST: *ussrv-host
       AUTHN_PORT: *ussrv-port
+      AUTHN_PATH: *authn-path
 
   cffc-web:
-    depends_on: [ run-docker ]
+    depends_on:
+      - run-docker
+      - us-web
     image: jsmit257/cffc-web:lkg
     restart: always
     hostname: cffc-web
@@ -111,6 +137,8 @@ services:
       CFFC_API_PORT: *apiport
       AUTHN_HOST: *ussrv-host
       AUTHN_PORT: *ussrv-port
+      US_WEB_HOST: *usweb-host
+      US_WEB_PORT: *usweb-port
       SSL_HOST: 174.64.12.114
       SSL_PORT: 443
 
@@ -129,5 +157,6 @@ services:
       HTTP_PORT: *apiport
       AUTHN_HOST: *ussrv-host
       AUTHN_PORT: *ussrv-port
+      AUTHN_PATH: *authn-path
     working_dir: /cffc
     command: ./bin/system-test.sh
