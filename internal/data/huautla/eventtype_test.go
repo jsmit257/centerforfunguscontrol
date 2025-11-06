@@ -3,8 +3,10 @@ package huautla
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -50,18 +52,18 @@ func Test_GetAllEventTypes(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				EventTyper: &eventtyperMock{
-					selectAllResult: v.result,
-					selectAllErr:    v.err,
+					selectAllResult: tc.result,
+					selectAllErr:    tc.err,
 				},
 			},
 		}
 
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -74,9 +76,9 @@ func Test_GetAllEventTypes(t *testing.T) {
 				"url",
 				bytes.NewReader([]byte("")))
 			ha.GetAllEventTypes(w, r)
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &[]types.EventType{}, &v.result)
+				checkResult(t, w.Body, &[]types.EventType{}, &tc.result)
 			}
 		})
 	}
@@ -110,23 +112,23 @@ func Test_GetEventType(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				EventTyper: &eventtyperMock{
-					selectResult: v.result,
-					selectErr:    v.err,
+					selectResult: tc.result,
+					selectErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -138,9 +140,9 @@ func Test_GetEventType(t *testing.T) {
 
 			ha.GetEventType(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.EventType{}, &v.result)
+				checkResult(t, w.Body, &types.EventType{}, &tc.result)
 			}
 		})
 	}
@@ -160,6 +162,9 @@ func Test_PostEventType(t *testing.T) {
 			result: types.EventType{},
 			sc:     http.StatusCreated,
 		},
+		"read_fails": {
+			sc: http.StatusBadRequest,
+		},
 		"missing_evnttype": {
 			sc: http.StatusBadRequest,
 		},
@@ -170,18 +175,23 @@ func Test_PostEventType(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				EventTyper: &eventtyperMock{
-					insertResult: v.result,
-					insertErr:    v.err,
+					insertResult: tc.result,
+					insertErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeEventType(tc.et)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -192,13 +202,13 @@ func Test_PostEventType(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader(serializeEventType(v.et)))
+				bodyreader)
 
 			ha.PostEventType(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.EventType{}, &v.result)
+				checkResult(t, w.Body, &types.EventType{}, &tc.result)
 			}
 		})
 	}
@@ -217,6 +227,10 @@ func Test_PatchEventType(t *testing.T) {
 			id: "1",
 			et: &types.EventType{},
 			sc: http.StatusNoContent,
+		},
+		"read_fails": {
+			id: "1",
+			sc: http.StatusBadRequest,
 		},
 		"missing_id": {
 			sc: http.StatusBadRequest,
@@ -237,22 +251,27 @@ func Test_PatchEventType(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				EventTyper: &eventtyperMock{
-					updateErr: v.err,
+					updateErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeEventType(tc.et)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.id)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -260,11 +279,11 @@ func Test_PatchEventType(t *testing.T) {
 					rctx),
 				http.MethodDelete,
 				"url",
-				bytes.NewReader(serializeEventType(v.et)))
+				bodyreader)
 
 			ha.PatchEventType(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -295,22 +314,22 @@ func Test_DeleteEventType(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				EventTyper: &eventtyperMock{
-					deleteErr: v.err,
+					deleteErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -322,7 +341,7 @@ func Test_DeleteEventType(t *testing.T) {
 
 			ha.DeleteEventType(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -348,6 +367,11 @@ func Test_GetEventTypeReport(t *testing.T) {
 			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
+		"no_rows": {
+			id:  "1",
+			err: sql.ErrNoRows,
+			sc:  http.StatusBadRequest,
+		},
 		"db_error": {
 			id:  "1",
 			err: fmt.Errorf("db error"),
@@ -355,23 +379,23 @@ func Test_GetEventTypeReport(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				EventTyper: &eventtyperMock{
-					etr:    v.result,
-					etrErr: v.err,
+					etr:    tc.result,
+					etrErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -383,9 +407,9 @@ func Test_GetEventTypeReport(t *testing.T) {
 
 			ha.GetEventTypeReport(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Entity{}, &v.result)
+				checkResult(t, w.Body, &types.Entity{}, &tc.result)
 			}
 		})
 	}

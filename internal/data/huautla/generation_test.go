@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -56,18 +57,18 @@ func Test_GetGenerationIndex(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Generationer: &generationerMock{
-					all:    v.result,
-					allErr: v.err,
+					all:    tc.result,
+					allErr: tc.err,
 				},
 			},
 		}
 
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -80,9 +81,9 @@ func Test_GetGenerationIndex(t *testing.T) {
 				"url",
 				nil)
 			ha.GetGenerationIndex(w, r)
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &[]types.Generation{}, &v.result)
+				checkResult(t, w.Body, &[]types.Generation{}, &tc.result)
 			}
 		})
 	}
@@ -116,23 +117,23 @@ func Test_GetGeneration(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Generationer: &generationerMock{
-					sel:    v.result,
-					selErr: v.err,
+					sel:    tc.result,
+					selErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -144,9 +145,9 @@ func Test_GetGeneration(t *testing.T) {
 
 			ha.GetGeneration(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Generation{}, &v.result)
+				checkResult(t, w.Body, &types.Generation{}, &tc.result)
 			}
 		})
 	}
@@ -156,38 +157,46 @@ func Test_PostGeneration(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
-		stage  *types.Generation
+		gen    *types.Generation
 		result types.Generation
 		err    error
 		sc     int
 	}{
 		"happy_path": {
-			stage:  &types.Generation{},
+			gen:    &types.Generation{},
 			result: types.Generation{},
 			sc:     http.StatusCreated,
+		},
+		"read_fails": {
+			sc: http.StatusBadRequest,
 		},
 		"missing_stage": {
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
-			stage: &types.Generation{},
-			err:   fmt.Errorf("db error"),
-			sc:    http.StatusInternalServerError,
+			gen: &types.Generation{},
+			err: fmt.Errorf("db error"),
+			sc:  http.StatusInternalServerError,
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Generationer: &generationerMock{
-					ins:    v.result,
-					insErr: v.err,
+					ins:    tc.result,
+					insErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeGeneration(tc.gen)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -198,13 +207,13 @@ func Test_PostGeneration(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader(serializeGeneration(v.stage)))
+				bodyreader)
 
 			ha.PostGeneration(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Generation{}, &v.result)
+				checkResult(t, w.Body, &types.Generation{}, &tc.result)
 			}
 		})
 	}
@@ -214,17 +223,25 @@ func Test_PatchGeneration(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
-		id    types.UUID
-		stage *types.Generation
-		err   error
-		sc    int
+		id  types.UUID
+		gen *types.Generation
+		err error
+		sc  int
 	}{
 		"happy_path": {
-			id:    "1",
-			stage: &types.Generation{},
-			sc:    http.StatusOK,
+			id:  "1",
+			gen: &types.Generation{},
+			sc:  http.StatusOK,
 		},
 		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"malformed_id": {
+			id: "%zzz",
+			sc: http.StatusBadRequest,
+		},
+		"read_fails": {
+			id: "1",
 			sc: http.StatusBadRequest,
 		},
 		"missing_stage": {
@@ -232,30 +249,35 @@ func Test_PatchGeneration(t *testing.T) {
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
-			id:    "1",
-			stage: &types.Generation{},
-			err:   fmt.Errorf("db error"),
-			sc:    http.StatusInternalServerError,
+			id:  "1",
+			gen: &types.Generation{},
+			err: fmt.Errorf("db error"),
+			sc:  http.StatusInternalServerError,
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Generationer: &generationerMock{
 					upd:    types.Generation{},
-					updErr: v.err,
+					updErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeGeneration(tc.gen)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.id)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -263,11 +285,11 @@ func Test_PatchGeneration(t *testing.T) {
 					rctx),
 				http.MethodPatch,
 				"url",
-				bytes.NewReader(serializeGeneration(v.stage)))
+				bodyreader)
 
 			ha.PatchGeneration(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -298,20 +320,20 @@ func Test_DeleteGeneration(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
-				Generationer: &generationerMock{rmErr: v.err},
+				Generationer: &generationerMock{rmErr: tc.err},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -323,7 +345,7 @@ func Test_DeleteGeneration(t *testing.T) {
 
 			ha.DeleteGeneration(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }

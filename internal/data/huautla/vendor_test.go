@@ -3,8 +3,10 @@ package huautla
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -53,17 +55,17 @@ func Test_GetAllVendors(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Vendorer: &vendorerMock{
-					selectAllResult: v.result,
-					selectAllErr:    v.err,
+					selectAllResult: tc.result,
+					selectAllErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
@@ -75,13 +77,13 @@ func Test_GetAllVendors(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader([]byte("")))
+				nil)
 
 			ha.GetAllVendors(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &[]types.Vendor{}, &v.result)
+				checkResult(t, w.Body, &[]types.Vendor{}, &tc.result)
 			}
 		})
 	}
@@ -115,23 +117,23 @@ func Test_GetVendor(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Vendorer: &vendorerMock{
-					selectResult: v.result,
-					selectErr:    v.err,
+					selectResult: tc.result,
+					selectErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -139,13 +141,13 @@ func Test_GetVendor(t *testing.T) {
 					rctx),
 				http.MethodGet,
 				"url",
-				bytes.NewReader([]byte("")))
+				nil)
 
 			ha.GetVendor(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Vendor{}, &v.result)
+				checkResult(t, w.Body, &types.Vendor{}, &tc.result)
 			}
 		})
 	}
@@ -165,6 +167,9 @@ func Test_PostVendor(t *testing.T) {
 			result: types.Vendor{},
 			sc:     http.StatusCreated,
 		},
+		"read_fails": {
+			sc: http.StatusBadRequest,
+		},
 		"missing_vendor": {
 			sc: http.StatusBadRequest,
 		},
@@ -175,18 +180,23 @@ func Test_PostVendor(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Vendorer: &vendorerMock{
-					insertResult: v.result,
-					insertErr:    v.err,
+					insertResult: tc.result,
+					insertErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeVendor(tc.vendor)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -197,13 +207,13 @@ func Test_PostVendor(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader(serializeVendor(v.vendor)))
+				bodyreader)
 
 			ha.PostVendor(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Vendor{}, &v.result)
+				checkResult(t, w.Body, &types.Vendor{}, &tc.result)
 			}
 		})
 	}
@@ -230,6 +240,10 @@ func Test_PatchVendor(t *testing.T) {
 			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
+		"read_fails": {
+			id: "1",
+			sc: http.StatusBadRequest,
+		},
 		"missing_vendor": {
 			id: "1",
 			sc: http.StatusBadRequest,
@@ -242,22 +256,27 @@ func Test_PatchVendor(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Vendorer: &vendorerMock{
-					updateErr: v.err,
+					updateErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeVendor(tc.vendor)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.id)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -265,11 +284,11 @@ func Test_PatchVendor(t *testing.T) {
 					rctx),
 				http.MethodDelete,
 				"url",
-				bytes.NewReader(serializeVendor(v.vendor)))
+				bodyreader)
 
 			ha.PatchVendor(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -300,22 +319,22 @@ func Test_DeleteVendor(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Vendorer: &vendorerMock{
-					deleteErr: v.err,
+					deleteErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -327,7 +346,7 @@ func Test_DeleteVendor(t *testing.T) {
 
 			ha.DeleteVendor(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -353,6 +372,11 @@ func Test_GetVendorReport(t *testing.T) {
 			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
+		"no_rows": {
+			id:  "1",
+			err: sql.ErrNoRows,
+			sc:  http.StatusBadRequest,
+		},
 		"db_error": {
 			id:  "1",
 			err: fmt.Errorf("db error"),
@@ -360,23 +384,23 @@ func Test_GetVendorReport(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Vendorer: &vendorerMock{
-					vr:    v.result,
-					vrErr: v.err,
+					vr:    tc.result,
+					vrErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -388,9 +412,9 @@ func Test_GetVendorReport(t *testing.T) {
 
 			ha.GetVendorReport(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Entity{}, &v.result)
+				checkResult(t, w.Body, &types.Entity{}, &tc.result)
 			}
 		})
 	}

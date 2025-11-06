@@ -148,7 +148,7 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	// FIXME: implement this
 	// r.Delete("/events/{ev_id}", ha.DeleteEvent)
 
-	r.Post("/lifecycle/{id}/events", ha.PostLifecycleEvent)
+	r.Post("/lifecycle/{lc_id}/events", ha.PostLifecycleEvent)
 	// same note as the generations version of patch-events below
 	r.Patch("/lifecycle/{lc_id}/events/{ev_id}", ha.PatchEvent)
 	r.Patch("/lifecycle/{lc_id}/events", ha.PatchLifecycleEvent)
@@ -160,12 +160,12 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Patch("/generation/{id}", ha.PatchGeneration)
 	r.Delete("/generation/{id}", ha.DeleteGeneration)
 
-	r.Post("/generation/{id}/events", ha.PostGenerationEvent)
+	r.Post("/generation/{g_id}/events", ha.PostGenerationEvent)
 	// keeping the /generation/{g_id} prefix b/c it matches the pattern used
 	// by the front end post/patch pattern; not sure if that's the best idea;
 	// either way the generation part is ignored
 	r.Patch("/generation/{g_id}/events/{ev_id}", ha.PatchEvent)
-	r.Patch("/generation/{id}/events", ha.PatchGenerationEvent)
+	r.Patch("/generation/{g_id}/events", ha.PatchGenerationEvent)
 	r.Delete("/generation/{g_id}/events/{ev_id}", ha.DeleteGenerationEvent)
 
 	r.Post("/generation/{id}/sources/{origin}", ha.PostSource)

@@ -9,6 +9,26 @@ import (
 	"github.com/jsmit257/huautla/types"
 )
 
+func (ha *HuautlaAdaptor) PatchEvent(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	ms := ha.start(ctx, "PatchEvent")
+	defer r.Body.Close()
+
+	var e types.Event
+
+	if _, err := getUUIDByName("ev_id", w, r, ms); err != nil {
+		ms.error(w, fmt.Errorf("%w: event id", err), http.StatusBadRequest, err)
+	} else if body, err := io.ReadAll(r.Body); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
+	} else if err := json.Unmarshal(body, &e); err != nil {
+		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
+	} else if e, err := ha.db.UpdateEvent(r.Context(), e, ms.cid); err != nil {
+		ms.error(w, err, http.StatusInternalServerError, "failed to change event")
+	} else {
+		ms.ok(w, e)
+	}
+}
+
 func (ha *HuautlaAdaptor) PostLifecycleEvent(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	ms := ha.start(ctx, "PostEvent")
@@ -16,7 +36,7 @@ func (ha *HuautlaAdaptor) PostLifecycleEvent(w http.ResponseWriter, r *http.Requ
 
 	var e types.Event
 
-	if id, err := getUUIDByName("id", w, r, ms); err != nil {
+	if id, err := getUUIDByName("lc_id", w, r, ms); err != nil {
 		ms.error(w, fmt.Errorf("%w: event id", err), http.StatusBadRequest, err)
 		// } else if err = bodyHelper(r, e); err != nil {
 		// 	ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
@@ -25,7 +45,6 @@ func (ha *HuautlaAdaptor) PostLifecycleEvent(w http.ResponseWriter, r *http.Requ
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
 	} else if err := json.Unmarshal(body, &e); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
-
 	} else if l, err := ha.db.SelectLifecycle(r.Context(), types.UUID(id), ms.cid); err != nil {
 		ms.error(w, err, http.StatusInternalServerError, "failed to fetch lifecycle")
 	} else if err := ha.db.AddLifecycleEvent(r.Context(), &l, e, ms.cid); err != nil {
@@ -33,28 +52,6 @@ func (ha *HuautlaAdaptor) PostLifecycleEvent(w http.ResponseWriter, r *http.Requ
 	} else {
 		ms.created(w, l)
 	}
-}
-
-func (ha *HuautlaAdaptor) PatchEvent(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	ms := ha.start(ctx, "PatchEvent")
-	defer r.Body.Close()
-
-	ms.error(w, fmt.Errorf("not implemented"), http.StatusNotImplemented, "events really need to be simpler")
-
-	// var e types.Event
-
-	// if _, err := getUUIDByName("ev_id", w, r, ms); err != nil {
-	// 	ms.error(w, fmt.Errorf("%w: event id", err), http.StatusBadRequest, err)
-	// } else if body, err := io.ReadAll(r.Body); err != nil {
-	// 	ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
-	// } else if err := json.Unmarshal(body, &e); err != nil {
-	// 	ms.error(w, err, http.StatusBadRequest, "couldn't unmarshal request body")
-	// } else if _, err := ha.db.UpdateEvent(r.Context(), e, ms.cid); err != nil {
-	// 	ms.error(w, err, http.StatusInternalServerError, "failed to change event")
-	// } else {
-	// 	ms.empty(w)
-	// }
 }
 
 func (ha *HuautlaAdaptor) PatchLifecycleEvent(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +100,7 @@ func (ha *HuautlaAdaptor) PostGenerationEvent(w http.ResponseWriter, r *http.Req
 
 	var e types.Event
 
-	if genID, err := getUUIDByName("id", w, r, ms); err != nil {
+	if genID, err := getUUIDByName("g_id", w, r, ms); err != nil {
 		ms.error(w, fmt.Errorf("%w: generation id", err), http.StatusBadRequest, err)
 	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")
@@ -125,7 +122,7 @@ func (ha *HuautlaAdaptor) PatchGenerationEvent(w http.ResponseWriter, r *http.Re
 
 	var e types.Event
 
-	if genID, err := getUUIDByName("id", w, r, ms); err != nil {
+	if genID, err := getUUIDByName("g_id", w, r, ms); err != nil {
 		ms.error(w, fmt.Errorf("%w: generation id", err), http.StatusBadRequest, err)
 	} else if body, err := io.ReadAll(r.Body); err != nil {
 		ms.error(w, err, http.StatusBadRequest, "couldn't read request body")

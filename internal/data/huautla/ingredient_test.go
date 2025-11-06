@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -147,38 +148,47 @@ func Test_PostIngredient(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
-		Ingredient *types.Ingredient
+		ingredient *types.Ingredient
 		result     types.Ingredient
 		err        error
 		sc         int
 	}{
 		"happy_path": {
-			Ingredient: &types.Ingredient{},
+			ingredient: &types.Ingredient{},
 			result:     types.Ingredient{},
 			sc:         http.StatusCreated,
+		},
+		"read_fails": {
+			ingredient: &types.Ingredient{},
+			sc:         http.StatusBadRequest,
 		},
 		"missing_Ingredient": {
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
-			Ingredient: &types.Ingredient{},
+			ingredient: &types.Ingredient{},
 			err:        fmt.Errorf("db error"),
 			sc:         http.StatusInternalServerError,
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Ingredienter: &IngredienterMock{
-					insertResult: v.result,
-					insertErr:    v.err,
+					insertResult: tc.result,
+					insertErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeIngredient(tc.ingredient)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -189,13 +199,13 @@ func Test_PostIngredient(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader(serializeIngredient(v.Ingredient)))
+				bodyreader)
 
 			ha.PostIngredient(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Ingredient{}, &v.result)
+				checkResult(t, w.Body, &types.Ingredient{}, &tc.result)
 			}
 		})
 	}
@@ -206,13 +216,13 @@ func Test_PatchIngredient(t *testing.T) {
 
 	set := map[string]struct {
 		id         types.UUID
-		Ingredient *types.Ingredient
+		ingredient *types.Ingredient
 		err        error
 		sc         int
 	}{
 		"happy_path": {
 			id:         "1",
-			Ingredient: &types.Ingredient{},
+			ingredient: &types.Ingredient{},
 			sc:         http.StatusNoContent,
 		},
 		"missing_id": {
@@ -222,34 +232,43 @@ func Test_PatchIngredient(t *testing.T) {
 			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
-		"missing_Ingredient": {
+		"read_fails": {
+			id: "1",
+			sc: http.StatusBadRequest,
+		},
+		"missing_ingredient": {
 			id: "1",
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
 			id:         "1",
-			Ingredient: &types.Ingredient{},
+			ingredient: &types.Ingredient{},
 			err:        fmt.Errorf("db error"),
 			sc:         http.StatusInternalServerError,
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Ingredienter: &IngredienterMock{
-					updateErr: v.err,
+					updateErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeIngredient(tc.ingredient)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.id)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -257,11 +276,11 @@ func Test_PatchIngredient(t *testing.T) {
 					rctx),
 				http.MethodDelete,
 				"url",
-				bytes.NewReader(serializeIngredient(v.Ingredient)))
+				bodyreader)
 
 			ha.PatchIngredient(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }

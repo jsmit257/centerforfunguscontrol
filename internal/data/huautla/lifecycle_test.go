@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -52,18 +53,18 @@ func Test_GetLifecycleIndex(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Lifecycler: &lifecyclerMock{
-					selectIndexResult: v.result,
-					selectIndexErr:    v.err,
+					selectIndexResult: tc.result,
+					selectIndexErr:    tc.err,
 				},
 			},
 		}
 
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -76,9 +77,9 @@ func Test_GetLifecycleIndex(t *testing.T) {
 				"url",
 				bytes.NewReader([]byte("")))
 			ha.GetLifecycleIndex(w, r)
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &[]types.Lifecycle{}, &v.result)
+				checkResult(t, w.Body, &[]types.Lifecycle{}, &tc.result)
 			}
 		})
 	}
@@ -188,23 +189,23 @@ func Test_GetLifecycle(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Lifecycler: &lifecyclerMock{
-					selectResult: v.result,
-					selectErr:    v.err,
+					selectResult: tc.result,
+					selectErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -216,9 +217,9 @@ func Test_GetLifecycle(t *testing.T) {
 
 			ha.GetLifecycle(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Lifecycle{}, &v.result)
+				checkResult(t, w.Body, &types.Lifecycle{}, &tc.result)
 			}
 		})
 	}
@@ -228,38 +229,46 @@ func Test_PostLifecycle(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
-		stage  *types.Lifecycle
+		lc     *types.Lifecycle
 		result types.Lifecycle
 		err    error
 		sc     int
 	}{
 		"happy_path": {
-			stage:  &types.Lifecycle{},
+			lc:     &types.Lifecycle{},
 			result: types.Lifecycle{},
 			sc:     http.StatusCreated,
+		},
+		"read_fails": {
+			sc: http.StatusBadRequest,
 		},
 		"missing_stage": {
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
-			stage: &types.Lifecycle{},
-			err:   fmt.Errorf("db error"),
-			sc:    http.StatusInternalServerError,
+			lc:  &types.Lifecycle{},
+			err: fmt.Errorf("db error"),
+			sc:  http.StatusInternalServerError,
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Lifecycler: &lifecyclerMock{
-					insertResult: v.result,
-					insertErr:    v.err,
+					insertResult: tc.result,
+					insertErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeLifecycle(tc.lc)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -270,13 +279,13 @@ func Test_PostLifecycle(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader(serializeLifecycle(v.stage)))
+				bodyreader)
 
 			ha.PostLifecycle(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Lifecycle{}, &v.result)
+				checkResult(t, w.Body, &types.Lifecycle{}, &tc.result)
 			}
 		})
 	}
@@ -286,17 +295,21 @@ func Test_PatchLifecycle(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
-		id    types.UUID
-		stage *types.Lifecycle
-		err   error
-		sc    int
+		id  types.UUID
+		lc  *types.Lifecycle
+		err error
+		sc  int
 	}{
 		"happy_path": {
-			id:    "1",
-			stage: &types.Lifecycle{},
-			sc:    http.StatusOK,
+			id: "1",
+			lc: &types.Lifecycle{},
+			sc: http.StatusOK,
 		},
 		"missing_id": {
+			sc: http.StatusBadRequest,
+		},
+		"read_fails": {
+			id: "1",
 			sc: http.StatusBadRequest,
 		},
 		"missing_stage": {
@@ -304,29 +317,34 @@ func Test_PatchLifecycle(t *testing.T) {
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
-			id:    "1",
-			stage: &types.Lifecycle{},
-			err:   fmt.Errorf("db error"),
-			sc:    http.StatusInternalServerError,
+			id:  "1",
+			lc:  &types.Lifecycle{},
+			err: fmt.Errorf("db error"),
+			sc:  http.StatusInternalServerError,
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Lifecycler: &lifecyclerMock{
-					updateErr: v.err,
+					updateErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeLifecycle(tc.lc)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.id)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -334,11 +352,11 @@ func Test_PatchLifecycle(t *testing.T) {
 					rctx),
 				http.MethodDelete,
 				"url",
-				bytes.NewReader(serializeLifecycle(v.stage)))
+				bodyreader)
 
 			ha.PatchLifecycle(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -369,22 +387,22 @@ func Test_DeleteLifecycle(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Lifecycler: &lifecyclerMock{
-					deleteErr: v.err,
+					deleteErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -396,7 +414,7 @@ func Test_DeleteLifecycle(t *testing.T) {
 
 			ha.DeleteLifecycle(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -434,23 +452,23 @@ func Test_GetLifecycleReport(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Lifecycler: &lifecyclerMock{
-					rpt:    v.result,
-					rptErr: v.err,
+					rpt:    tc.result,
+					rptErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -462,9 +480,9 @@ func Test_GetLifecycleReport(t *testing.T) {
 
 			ha.GetLifecycleReport(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Entity{}, &v.result)
+				checkResult(t, w.Body, &types.Entity{}, &tc.result)
 			}
 		})
 	}

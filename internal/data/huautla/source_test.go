@@ -196,6 +196,7 @@ func Test_PatchSource(t *testing.T) {
 			gid:    "read_fails",
 			origin: "event",
 			sid:    "read_fails",
+			s:      &types.Source{},
 			sc:     http.StatusBadRequest,
 		},
 		"unmarshal_fails": {

@@ -27,11 +27,10 @@ x-maild-host: &maild-host usmail
 x-maild-port: &maild-port 25
 
 services:
-
-  postgres:
+  huautla:
     image: jsmit257/huautla:lkg
     restart: always
-    hostname: huautla
+    hostname: *pghost
     ports:
       - 5433:5432
     environment:
@@ -77,10 +76,10 @@ services:
       US_MYSQL_PASSWORD: *usdb-pass
       US_HTTP_HOST: *ussrv-host
       US_HTTP_PORT: *ussrv-port
-      # US_REDIS_USER: *usredis-user
-      # US_REDIS_PASS: *usredis-pass
       US_REDIS_HOST: *usredis-host
       US_REDIS_PORT: *usredis-port
+      # US_REDIS_USER: *usredis-user
+      # US_REDIS_PASS: *usredis-pass
       US_EMAIL_TEST_SEND: true
       US_SMS_TEST_MODE: true
 
@@ -98,7 +97,7 @@ services:
 
   run-docker:
     depends_on:
-      - postgres
+      - huautla
       - us-srv
     image: jsmit257/cffc:latest
     hostname: *apihost
@@ -108,16 +107,16 @@ services:
     volumes:
       - ./tests/data/album:/album
     environment:
-      HUAUTLA_HOST: *pghost
-      HUAUTLA_PORT: *pgport
-      HUAUTLA_USER: *pguser
-      HUAUTLA_PASSWORD: *pgpass
-      HUAUTLA_SSL: disable
-      HTTP_HOST: *apihost
-      HTTP_PORT: *apiport
-      AUTHN_HOST: *ussrv-host
-      AUTHN_PORT: *ussrv-port
-      AUTHN_PATH: *authn-path
+      CFFC_HUAUTLA_HOST: *pghost
+      CFFC_HUAUTLA_PORT: *pgport
+      CFFC_HUAUTLA_USER: *pguser
+      CFFC_HUAUTLA_PASSWORD: *pgpass
+      CFFC_HUAUTLA_SSL: disable
+      CFFC_HTTP_HOST: *apihost
+      CFFC_HTTP_PORT: *apiport
+      CFFC_AUTHN_HOST: *ussrv-host
+      CFFC_AUTHN_PORT: *ussrv-port
+      CFFC_AUTHN_PATH: *authn-path
 
   cffc-web:
     depends_on:
@@ -133,10 +132,10 @@ services:
       - ./tests/data/:/www/css/images/background/
       - ./tests/data/album:/album
     environment:
-      CFFC_API_HOST: *apihost
-      CFFC_API_PORT: *apiport
-      AUTHN_HOST: *ussrv-host
-      AUTHN_PORT: *ussrv-port
+      CFFC_HTTP_HOST: *apihost
+      CFFC_HTTP_PORT: *apiport
+      US_HTTP_HOST: *ussrv-host
+      US_HTTP_PORT: *ussrv-port
       US_WEB_HOST: *usweb-host
       US_WEB_PORT: *usweb-port
       SSL_HOST: 174.64.12.114

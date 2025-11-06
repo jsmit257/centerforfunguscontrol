@@ -3,8 +3,10 @@ package huautla
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -55,19 +57,20 @@ func Test_GetAllStrains(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Strainer: &strainerMock{
-					selectAllResult: v.result,
-					selectAllErr:    v.err,
+					selectAllResult: tc.result,
+					selectAllErr:    tc.err,
 				},
 			},
 		}
 
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
@@ -77,11 +80,12 @@ func Test_GetAllStrains(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader([]byte("")))
+				nil)
+
 			ha.GetAllStrains(w, r)
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &[]types.Strain{}, &v.result)
+				checkResult(t, w.Body, &[]types.Strain{}, &tc.result)
 			}
 		})
 	}
@@ -115,23 +119,23 @@ func Test_GetStrain(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Strainer: &strainerMock{
-					selectResult: v.result,
-					selectErr:    v.err,
+					selectResult: tc.result,
+					selectErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -139,13 +143,13 @@ func Test_GetStrain(t *testing.T) {
 					rctx),
 				http.MethodGet,
 				"url",
-				bytes.NewReader([]byte("")))
+				nil)
 
 			ha.GetStrain(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Strain{}, &v.result)
+				checkResult(t, w.Body, &types.Strain{}, &tc.result)
 			}
 		})
 	}
@@ -155,38 +159,46 @@ func Test_PostStrain(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
-		stage  *types.Strain
+		strain *types.Strain
 		result types.Strain
 		err    error
 		sc     int
 	}{
 		"happy_path": {
-			stage:  &types.Strain{},
+			strain: &types.Strain{},
 			result: types.Strain{},
 			sc:     http.StatusCreated,
+		},
+		"read_fails": {
+			sc: http.StatusBadRequest,
 		},
 		"missing_stage": {
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
-			stage: &types.Strain{},
-			err:   fmt.Errorf("db error"),
-			sc:    http.StatusInternalServerError,
+			strain: &types.Strain{},
+			err:    fmt.Errorf("db error"),
+			sc:     http.StatusInternalServerError,
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Strainer: &strainerMock{
-					insertResult: v.result,
-					insertErr:    v.err,
+					insertResult: tc.result,
+					insertErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeStrain(tc.strain)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -197,13 +209,13 @@ func Test_PostStrain(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader(serializeStrain(v.stage)))
+				bodyreader)
 
 			ha.PostStrain(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Strain{}, &v.result)
+				checkResult(t, w.Body, &types.Strain{}, &tc.result)
 			}
 		})
 	}
@@ -213,15 +225,15 @@ func Test_PatchStrain(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
-		id    types.UUID
-		stage *types.Strain
-		err   error
-		sc    int
+		id     types.UUID
+		strain *types.Strain
+		err    error
+		sc     int
 	}{
 		"happy_path": {
-			id:    "1",
-			stage: &types.Strain{},
-			sc:    http.StatusNoContent,
+			id:     "1",
+			strain: &types.Strain{},
+			sc:     http.StatusNoContent,
 		},
 		"missing_id": {
 			sc: http.StatusBadRequest,
@@ -230,34 +242,43 @@ func Test_PatchStrain(t *testing.T) {
 			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
+		"read_fails": {
+			id: "1",
+			sc: http.StatusBadRequest,
+		},
 		"missing_stage": {
 			id: "1",
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
-			id:    "1",
-			stage: &types.Strain{},
-			err:   fmt.Errorf("db error"),
-			sc:    http.StatusInternalServerError,
+			id:     "1",
+			strain: &types.Strain{},
+			err:    fmt.Errorf("db error"),
+			sc:     http.StatusInternalServerError,
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Strainer: &strainerMock{
-					updateErr: v.err,
+					updateErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeStrain(tc.strain)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.id)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -265,11 +286,11 @@ func Test_PatchStrain(t *testing.T) {
 					rctx),
 				http.MethodDelete,
 				"url",
-				bytes.NewReader(serializeStrain(v.stage)))
+				bodyreader)
 
 			ha.PatchStrain(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -300,22 +321,22 @@ func Test_DeleteStrain(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Strainer: &strainerMock{
-					deleteErr: v.err,
+					deleteErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -323,11 +344,11 @@ func Test_DeleteStrain(t *testing.T) {
 					rctx),
 				http.MethodDelete,
 				"url",
-				bytes.NewReader([]byte("")))
+				nil)
 
 			ha.DeleteStrain(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -352,6 +373,11 @@ func Test_GetGeneratedStrain(t *testing.T) {
 			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
+		"no_rows": {
+			id:  "1",
+			err: sql.ErrNoRows,
+			sc:  http.StatusNoContent,
+		},
 		"db_error": {
 			id:  "1",
 			err: fmt.Errorf("db error"),
@@ -359,23 +385,24 @@ func Test_GetGeneratedStrain(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Strainer: &strainerMock{
-					str:    v.result,
-					strErr: v.err,
+					str:    tc.result,
+					strErr: tc.err,
 				},
 			},
 		}
 
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -383,11 +410,12 @@ func Test_GetGeneratedStrain(t *testing.T) {
 					rctx),
 				http.MethodGet,
 				"url",
-				bytes.NewReader([]byte{}))
+				nil)
+
 			ha.GetGeneratedStrain(w, r)
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Strain{}, &v.result)
+				checkResult(t, w.Body, &types.Strain{}, &tc.result)
 			}
 		})
 	}

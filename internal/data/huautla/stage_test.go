@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -47,19 +48,20 @@ func Test_GetAllStages(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Stager: &stagerMock{
-					selectAllResult: v.result,
-					selectAllErr:    v.err,
+					selectAllResult: tc.result,
+					selectAllErr:    tc.err,
 				},
 			},
 		}
 
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
@@ -71,9 +73,9 @@ func Test_GetAllStages(t *testing.T) {
 				"url",
 				bytes.NewReader([]byte("")))
 			ha.GetAllStages(w, r)
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &[]types.Stage{}, &v.result)
+				checkResult(t, w.Body, &[]types.Stage{}, &tc.result)
 			}
 		})
 	}
@@ -107,23 +109,23 @@ func Test_GetStage(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Stager: &stagerMock{
-					selectResult: v.result,
-					selectErr:    v.err,
+					selectResult: tc.result,
+					selectErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -135,9 +137,9 @@ func Test_GetStage(t *testing.T) {
 
 			ha.GetStage(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Stage{}, &v.result)
+				checkResult(t, w.Body, &types.Stage{}, &tc.result)
 			}
 		})
 	}
@@ -157,6 +159,9 @@ func Test_PostStage(t *testing.T) {
 			result: types.Stage{},
 			sc:     http.StatusCreated,
 		},
+		"read_fails": {
+			sc: http.StatusBadRequest,
+		},
 		"missing_stage": {
 			sc: http.StatusBadRequest,
 		},
@@ -167,18 +172,23 @@ func Test_PostStage(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Stager: &stagerMock{
-					insertResult: v.result,
-					insertErr:    v.err,
+					insertResult: tc.result,
+					insertErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeStage(tc.stage)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -189,13 +199,13 @@ func Test_PostStage(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader(serializeStage(v.stage)))
+				bodyreader)
 
 			ha.PostStage(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Stage{}, &v.result)
+				checkResult(t, w.Body, &types.Stage{}, &tc.result)
 			}
 		})
 	}
@@ -222,6 +232,10 @@ func Test_PatchStage(t *testing.T) {
 			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
+		"read_fails": {
+			id: "1",
+			sc: http.StatusBadRequest,
+		},
 		"missing_stage": {
 			id: "1",
 			sc: http.StatusBadRequest,
@@ -234,22 +248,27 @@ func Test_PatchStage(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Stager: &stagerMock{
-					updateErr: v.err,
+					updateErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeStage(tc.stage)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.id)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -257,11 +276,11 @@ func Test_PatchStage(t *testing.T) {
 					rctx),
 				http.MethodDelete,
 				"url",
-				bytes.NewReader(serializeStage(v.stage)))
+				bodyreader)
 
 			ha.PatchStage(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }

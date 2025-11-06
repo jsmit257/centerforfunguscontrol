@@ -28,6 +28,88 @@ type eventerMock struct {
 	rmGenerationErr        error
 }
 
+func Test_PatchEvent(t *testing.T) {
+	t.Parallel()
+
+	tcs := map[string]struct {
+		id     types.UUID
+		e      *types.Event
+		result types.Event
+		err    error
+		sc     int
+	}{
+		"happy_path": {
+			id: "happy_path",
+			e:  &types.Event{UUID: "happy_path"},
+			sc: http.StatusOK,
+		},
+		"missing_eventid": {
+			sc: http.StatusBadRequest,
+		},
+		"read_fails": {
+			id: "read_fails",
+			sc: http.StatusBadRequest,
+		},
+		"unmarshal_fails": {
+			id: "unmarshal_fails",
+			e:  &types.Event{UUID: "unmarshal_fails"},
+			sc: http.StatusBadRequest,
+		},
+		"update_fails": {
+			id:  "update_fails",
+			e:   &types.Event{UUID: "update_fails"},
+			err: fmt.Errorf("some error"),
+			sc:  http.StatusInternalServerError,
+		},
+	}
+
+	for name, tc := range tcs {
+		name, tc := name, tc
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			ha := &HuautlaAdaptor{
+				db: &huautlaMock{
+					Observer: &eventerMock{
+						changeResult: tc.result,
+						changeErr:    tc.err,
+					},
+				},
+			}
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"ev_id"}, Values: []string{string(tc.id)}}
+
+			body := serializeEvent(tc.e)
+			if name == "unmarshal_fails" {
+				body = body[1:]
+			}
+
+			bodyreader := io.Reader(bytes.NewReader([]byte(body)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
+
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					metrics.MockServiceContext,
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodPost,
+				"url",
+				bodyreader)
+
+			ha.PatchEvent(w, r)
+
+			require.Equal(t, tc.sc, w.Code)
+
+		})
+	}
+}
+
 func Test_PostLifecycleEvent(t *testing.T) {
 	t.Parallel()
 
@@ -94,7 +176,7 @@ func Test_PostLifecycleEvent(t *testing.T) {
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.l.UUID)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"lc_id"}, Values: []string{string(tc.l.UUID)}}
 
 			body := serializeEvent(tc.e)
 			if name == "unmarshal_fails" {
@@ -312,89 +394,6 @@ func Test_DeleteLifecycleEvent(t *testing.T) {
 	}
 }
 
-func Test_PatchEvent(t *testing.T) {
-	t.Skip()
-	t.Parallel()
-
-	tcs := map[string]struct {
-		id     types.UUID
-		e      *types.Event
-		result types.Event
-		err    error
-		sc     int
-	}{
-		"happy_path": {
-			id: "happy_path",
-			e:  &types.Event{UUID: "happy_path"},
-			sc: http.StatusOK,
-		},
-		"missing_eventid": {
-			sc: http.StatusBadRequest,
-		},
-		"read_fails": {
-			id: "read_fails",
-			sc: http.StatusBadRequest,
-		},
-		"unmarshal_fails": {
-			id: "unmarshal_fails",
-			e:  &types.Event{UUID: "unmarshal_fails"},
-			sc: http.StatusBadRequest,
-		},
-		"update_fails": {
-			id:  "update_fails",
-			e:   &types.Event{UUID: "update_fails"},
-			err: fmt.Errorf("some error"),
-			sc:  http.StatusInternalServerError,
-		},
-	}
-
-	for name, tc := range tcs {
-		name, tc := name, tc
-
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
-			ha := &HuautlaAdaptor{
-				db: &huautlaMock{
-					Observer: &eventerMock{
-						changeResult: tc.result,
-						changeErr:    tc.err,
-					},
-				},
-			}
-
-			w := httptest.NewRecorder()
-			defer w.Result().Body.Close()
-			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"ev_id"}, Values: []string{string(tc.id)}}
-
-			body := serializeEvent(tc.e)
-			if name == "unmarshal_fails" {
-				body = body[1:]
-			}
-
-			bodyreader := io.Reader(bytes.NewReader([]byte(body)))
-			if name == "read_fails" {
-				bodyreader = errReader(name)
-			}
-
-			r, _ := http.NewRequestWithContext(
-				context.WithValue(
-					metrics.MockServiceContext,
-					chi.RouteCtxKey,
-					rctx),
-				http.MethodPost,
-				"url",
-				bodyreader)
-
-			ha.PatchEvent(w, r)
-
-			require.Equal(t, tc.sc, w.Code)
-
-		})
-	}
-}
-
 func Test_PostGenerationEvent(t *testing.T) {
 	t.Parallel()
 
@@ -461,7 +460,7 @@ func Test_PostGenerationEvent(t *testing.T) {
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.g.UUID)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"g_id"}, Values: []string{string(tc.g.UUID)}}
 
 			body := serializeEvent(tc.e)
 			if name == "unmarshal_fails" {
@@ -559,7 +558,7 @@ func Test_PatchGenerationEvent(t *testing.T) {
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.g.UUID)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"g_id"}, Values: []string{string(tc.g.UUID)}}
 
 			body := serializeEvent(tc.e)
 			if name == "unmarshal_fails" {

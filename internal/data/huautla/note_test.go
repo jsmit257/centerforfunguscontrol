@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -54,22 +55,22 @@ func Test_GetNotes(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Noter: &noterMock{
-					getErr: v.getErr,
+					getErr: tc.getErr,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(tc.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -81,7 +82,7 @@ func Test_GetNotes(t *testing.T) {
 
 			ha.GetNotes(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -91,15 +92,15 @@ func Test_PostNote(t *testing.T) {
 
 	set := map[string]struct {
 		id     types.UUID
-		p      *types.Note
+		note   *types.Note
 		getErr error
 		updErr error
 		sc     int
 	}{
 		"happy_path": {
-			id: "happy path",
-			p:  &types.Note{},
-			sc: http.StatusOK,
+			id:   "happy path",
+			note: &types.Note{},
+			sc:   http.StatusOK,
 		},
 		"missing_id": {
 			sc: http.StatusBadRequest,
@@ -113,35 +114,44 @@ func Test_PostNote(t *testing.T) {
 			getErr: fmt.Errorf("some error"),
 			sc:     http.StatusInternalServerError,
 		},
+		"read_fails": {
+			id: "missing body",
+			sc: http.StatusBadRequest,
+		},
 		"missing_body": {
 			id: "missing body",
 			sc: http.StatusBadRequest,
 		},
 		"post_error": {
 			id:     "post error",
-			p:      &types.Note{},
+			note:   &types.Note{},
 			updErr: fmt.Errorf("some error"),
 			sc:     http.StatusInternalServerError,
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Noter: &noterMock{
-					addErr: v.updErr,
-					getErr: v.getErr,
+					addErr: tc.updErr,
+					getErr: tc.getErr,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeNote(tc.note)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(v.id)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(tc.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -149,11 +159,11 @@ func Test_PostNote(t *testing.T) {
 					rctx),
 				http.MethodPost,
 				"url",
-				bytes.NewReader(serializeNote(v.p)))
+				bodyreader)
 
 			ha.PostNote(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -164,7 +174,7 @@ func Test_ChangeNote(t *testing.T) {
 	set := map[string]struct {
 		id     types.UUID
 		noteID types.UUID
-		n      *types.Note
+		note   *types.Note
 		getErr error
 		updErr error
 		sc     int
@@ -172,7 +182,7 @@ func Test_ChangeNote(t *testing.T) {
 		"happy_path": {
 			id:     "happy path",
 			noteID: "happy path",
-			n:      &types.Note{},
+			note:   &types.Note{},
 			sc:     http.StatusOK,
 		},
 		"get_error": {
@@ -180,14 +190,25 @@ func Test_ChangeNote(t *testing.T) {
 			getErr: fmt.Errorf("some error"),
 			sc:     http.StatusInternalServerError,
 		},
+		"noteid_error": {
+			id:     "noteid error",
+			noteID: "%zzz",
+			sc:     http.StatusBadRequest,
+		},
+		"read_fails": {
+			id:     "read fails",
+			noteID: "read fails",
+			sc:     http.StatusBadRequest,
+		},
 		"missing_body": {
-			id: "missing body",
-			sc: http.StatusBadRequest,
+			id:     "missing body",
+			noteID: "missing body",
+			sc:     http.StatusBadRequest,
 		},
 		"patch_error": {
 			id:     "patch_error",
 			noteID: "patch_error",
-			n:      &types.Note{},
+			note:   &types.Note{},
 			updErr: fmt.Errorf("some error"),
 			sc:     http.StatusInternalServerError,
 		},
@@ -206,6 +227,11 @@ func Test_ChangeNote(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
+			bodyreader := io.Reader(bytes.NewReader(serializeNote(tc.note)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
+
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
@@ -223,7 +249,7 @@ func Test_ChangeNote(t *testing.T) {
 					rctx),
 				http.MethodPost,
 				"url",
-				bytes.NewReader(serializeNote(tc.n)))
+				bodyreader)
 
 			ha.PatchNote(w, r)
 

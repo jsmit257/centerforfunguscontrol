@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -51,19 +52,20 @@ func Test_GetAllSubstrates(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Substrater: &substraterMock{
-					selectAllResult: v.result,
-					selectAllErr:    v.err,
+					selectAllResult: tc.result,
+					selectAllErr:    tc.err,
 				},
 			},
 		}
 
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			r, _ := http.NewRequestWithContext(
@@ -73,11 +75,12 @@ func Test_GetAllSubstrates(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader([]byte("")))
+				nil)
+
 			ha.GetAllSubstrates(w, r)
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &[]types.Substrate{}, &v.result)
+				checkResult(t, w.Body, &[]types.Substrate{}, &tc.result)
 			}
 		})
 	}
@@ -111,23 +114,23 @@ func Test_GetSubstrate(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Substrater: &substraterMock{
-					selectResult: v.result,
-					selectErr:    v.err,
+					selectResult: tc.result,
+					selectErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{v.id}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{tc.id}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -135,13 +138,13 @@ func Test_GetSubstrate(t *testing.T) {
 					rctx),
 				http.MethodGet,
 				"url",
-				bytes.NewReader([]byte("")))
+				nil)
 
 			ha.GetSubstrate(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Substrate{}, &v.result)
+				checkResult(t, w.Body, &types.Substrate{}, &tc.result)
 			}
 		})
 	}
@@ -161,6 +164,9 @@ func Test_PostSubstrate(t *testing.T) {
 			result:    types.Substrate{},
 			sc:        http.StatusCreated,
 		},
+		"read_fails": {
+			sc: http.StatusBadRequest,
+		},
 		"missing_stage": {
 			sc: http.StatusBadRequest,
 		},
@@ -171,18 +177,23 @@ func Test_PostSubstrate(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Substrater: &substraterMock{
-					insertResult: v.result,
-					insertErr:    v.err,
+					insertResult: tc.result,
+					insertErr:    tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeSubstrate(tc.substrate)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
@@ -193,13 +204,13 @@ func Test_PostSubstrate(t *testing.T) {
 					chi.NewRouteContext()),
 				http.MethodGet,
 				"url",
-				bytes.NewReader(serializeSubstrate(v.substrate)))
+				bodyreader)
 
 			ha.PostSubstrate(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 			if w.Code == http.StatusOK {
-				checkResult(t, w.Body, &types.Substrate{}, &v.result)
+				checkResult(t, w.Body, &types.Substrate{}, &tc.result)
 			}
 		})
 	}
@@ -209,15 +220,15 @@ func Test_PatchSubstrate(t *testing.T) {
 	t.Parallel()
 
 	set := map[string]struct {
-		id    types.UUID
-		stage *types.Substrate
-		err   error
-		sc    int
+		id        types.UUID
+		substrate *types.Substrate
+		err       error
+		sc        int
 	}{
 		"happy_path": {
-			id:    "1",
-			stage: &types.Substrate{},
-			sc:    http.StatusNoContent,
+			id:        "1",
+			substrate: &types.Substrate{},
+			sc:        http.StatusNoContent,
 		},
 		"missing_id": {
 			sc: http.StatusBadRequest,
@@ -226,34 +237,43 @@ func Test_PatchSubstrate(t *testing.T) {
 			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
+		"read_fails": {
+			id: "1",
+			sc: http.StatusBadRequest,
+		},
 		"missing_stage": {
 			id: "1",
 			sc: http.StatusBadRequest,
 		},
 		"db_error": {
-			id:    "1",
-			stage: &types.Substrate{},
-			err:   fmt.Errorf("db error"),
-			sc:    http.StatusInternalServerError,
+			id:        "1",
+			substrate: &types.Substrate{},
+			err:       fmt.Errorf("db error"),
+			sc:        http.StatusInternalServerError,
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
+	for name, tc := range set {
+		name, tc := name, tc
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Substrater: &substraterMock{
-					updateErr: v.err,
+					updateErr: tc.err,
 				},
 			},
 		}
-		t.Run(k, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			bodyreader := io.Reader(bytes.NewReader(serializeSubstrate(tc.substrate)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
 
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.id)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.id)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -261,11 +281,11 @@ func Test_PatchSubstrate(t *testing.T) {
 					rctx),
 				http.MethodDelete,
 				"url",
-				bytes.NewReader(serializeSubstrate(v.stage)))
+				bodyreader)
 
 			ha.PatchSubstrate(w, r)
 
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }

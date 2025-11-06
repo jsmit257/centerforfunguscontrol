@@ -10,3 +10,7 @@ go.mod.bak
 
 /bin/env
 !/bin/env/template
+
+# this is created by us-web service
+/nginx
+

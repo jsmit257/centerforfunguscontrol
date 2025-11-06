@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -43,43 +44,53 @@ func Test_PostSubstrateIngredient(t *testing.T) {
 			s:  types.Substrate{UUID: "%zzz"},
 			sc: http.StatusBadRequest,
 		},
+		"read_fails": {
+			s:  types.Substrate{UUID: "read fails"},
+			sc: http.StatusBadRequest,
+		},
 		"missing_ingredient": {
-			s:  types.Substrate{UUID: "happy"},
+			s:  types.Substrate{UUID: "missing ingredient"},
 			sc: http.StatusBadRequest,
 		},
 		"substrate_error": {
-			s:            types.Substrate{UUID: "happy"},
+			s:            types.Substrate{UUID: "substrate error"},
 			i:            &types.Ingredient{UUID: "rye", Name: "rye"},
 			substrateErr: fmt.Errorf("some error"),
 			sc:           http.StatusInternalServerError,
 		},
 		"add_error": {
-			s:             types.Substrate{UUID: "happy"},
+			s:             types.Substrate{UUID: "add error"},
 			i:             &types.Ingredient{UUID: "rye", Name: "rye"},
 			ingredientErr: fmt.Errorf("some error"),
 			sc:            http.StatusInternalServerError,
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
-		t.Run(k, func(t *testing.T) {
+	for name, tc := range set {
+		name, tc := name, tc
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			ha := &HuautlaAdaptor{
 				db: &huautlaMock{
 					Substrater: &substraterMock{
-						selectResult: v.s,
-						selectErr:    v.substrateErr,
+						selectResult: tc.s,
+						selectErr:    tc.substrateErr,
 					},
 					SubstrateIngredienter: &ingredienterMock{
-						addErr: v.ingredientErr,
+						addErr: tc.ingredientErr,
 					},
 				},
 			}
+
+			bodyreader := io.Reader(bytes.NewReader(serializeIngredient(tc.i)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
+
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(v.s.UUID)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"id"}, Values: []string{string(tc.s.UUID)}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
 					metrics.MockServiceContext,
@@ -87,10 +98,10 @@ func Test_PostSubstrateIngredient(t *testing.T) {
 					rctx),
 				http.MethodDelete,
 				"url",
-				bytes.NewReader(serializeIngredient(v.i)))
+				bodyreader)
 
 			ha.PostSubstrateIngredient(w, r)
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -133,6 +144,12 @@ func Test_PatchSubstrateIngredient(t *testing.T) {
 			id: "%zzz",
 			sc: http.StatusBadRequest,
 		},
+		"read_fails": {
+			s:  types.Substrate{UUID: "read_fails"},
+			id: "rye",
+			i:  &types.Ingredient{UUID: "millet", Name: "millet"},
+			sc: http.StatusBadRequest,
+		},
 		"failed_substrate": {
 			s:            types.Substrate{UUID: "failed_substrate"},
 			id:           "rye",
@@ -149,30 +166,36 @@ func Test_PatchSubstrateIngredient(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
-		t.Run(k, func(t *testing.T) {
+	for name, tc := range set {
+		name, tc := name, tc
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			ha := &HuautlaAdaptor{
 				db: &huautlaMock{
 					Ingredienter: &IngredienterMock{
-						selectResult: types.Ingredient{UUID: types.UUID(v.id)},
+						selectResult: types.Ingredient{UUID: types.UUID(tc.id)},
 					},
 					Substrater: &substraterMock{
-						selectResult: v.s,
-						selectErr:    v.substrateErr,
+						selectResult: tc.s,
+						selectErr:    tc.substrateErr,
 					},
 					SubstrateIngredienter: &ingredienterMock{
-						changeErr: v.ingredientErr,
+						changeErr: tc.ingredientErr,
 					},
 				},
 			}
+
+			bodyreader := io.Reader(bytes.NewReader(serializeIngredient(tc.i)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
+
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
 			rctx.URLParams = chi.RouteParams{Keys: []string{"su_id", "ig_id"}, Values: []string{
-				string(v.s.UUID),
-				v.id,
+				string(tc.s.UUID),
+				tc.id,
 			}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
@@ -181,10 +204,10 @@ func Test_PatchSubstrateIngredient(t *testing.T) {
 					rctx),
 				http.MethodDelete,
 				"url",
-				bytes.NewReader(serializeIngredient(v.i)))
+				bodyreader)
 
 			ha.PatchSubstrateIngredient(w, r)
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -234,18 +257,18 @@ func Test_DeleteSubstrateIngredient(t *testing.T) {
 		},
 	}
 
-	for k, v := range set {
-		k, v := k, v
-		t.Run(k, func(t *testing.T) {
+	for name, tc := range set {
+		name, tc := name, tc
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			ha := &HuautlaAdaptor{
 				db: &huautlaMock{
 					Substrater: &substraterMock{
-						selectResult: v.s,
-						selectErr:    v.substrateErr,
+						selectResult: tc.s,
+						selectErr:    tc.substrateErr,
 					},
 					SubstrateIngredienter: &ingredienterMock{
-						rmErr: v.ingredientErr,
+						rmErr: tc.ingredientErr,
 					},
 				},
 			}
@@ -253,8 +276,8 @@ func Test_DeleteSubstrateIngredient(t *testing.T) {
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
 			rctx.URLParams = chi.RouteParams{Keys: []string{"su_id", "ig_id"}, Values: []string{
-				string(v.s.UUID),
-				v.id,
+				string(tc.s.UUID),
+				tc.id,
 			}}
 			r, _ := http.NewRequestWithContext(
 				context.WithValue(
@@ -266,7 +289,7 @@ func Test_DeleteSubstrateIngredient(t *testing.T) {
 				bytes.NewReader([]byte("")))
 
 			ha.DeleteSubstrateIngredient(w, r)
-			require.Equal(t, v.sc, w.Code)
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 
