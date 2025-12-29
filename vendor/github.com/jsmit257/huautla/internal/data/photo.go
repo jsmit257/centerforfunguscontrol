@@ -9,6 +9,42 @@ import (
 	"github.com/jsmit257/huautla/types"
 )
 
+func (db *Conn) AllPhotos(ctx context.Context, cid types.CID) ([]types.Photo, error) {
+	var err error
+	deferred, l := initAccessFuncs("GetPhotos", db.logger, nil, cid)
+	defer deferred(&err, l)
+
+	var rows *sql.Rows
+	result := []types.Photo{}
+
+	rows, err = db.query.QueryContext(ctx, psqls["photo"]["all"])
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		p := types.Photo{Owner: &types.PhotoOwner{}}
+
+		if err = rows.Scan(
+			&p.UUID,
+			&p.Filename,
+			&p.MTime,
+			&p.CTime,
+			&p.Owner.ParentType,
+			&p.Owner.OwnerUUID,
+			&p.Owner.ParentUUID,
+			&p.Owner.Label,
+		); err != nil {
+			return result, err
+		}
+
+		result = append(result, p)
+	}
+
+	return result, nil
+}
+
 func (db *Conn) GetPhotos(ctx context.Context, id types.UUID, cid types.CID) ([]types.Photo, error) {
 	var err error
 	deferred, l := initAccessFuncs("GetPhotos", db.logger, id, cid)

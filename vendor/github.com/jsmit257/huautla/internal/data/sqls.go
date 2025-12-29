@@ -70,28 +70,30 @@ var psqls = sqlMap{
        order
           by  e.uuid, n.mtime, p.mtime, pn.mtime`,
 		"select": `
-    select e.uuid,
-           e.temperature,
-           e.humidity,
-           e.mtime,
-           e.ctime,
-           et.uuid as eventtype_uuid,
-           et.name as eventtype_name,
-           et.severity as eventtype_severity,
-           s.uuid as stage_uuid,
-           s.name as stage_name
-      from events e
-      join event_types et
-        on e.eventtype_uuid = et.uuid
-      join stages s
-        on et.stage_uuid = s.uuid
-     where e.uuid = $1`,
+      select e.uuid,
+            e.temperature,
+            e.humidity,
+            e.mtime,
+            e.ctime,
+            et.uuid as eventtype_uuid,
+            et.name as eventtype_name,
+            et.severity as eventtype_severity,
+            s.uuid as stage_uuid,
+            s.name as stage_name
+        from events e
+        join event_types et
+          on e.eventtype_uuid = et.uuid
+        join stages s
+          on et.stage_uuid = s.uuid
+      where e.uuid = $1`,
 		"add": `
       insert
         into  events(uuid, temperature, humidity, mtime, ctime, observable_uuid, eventtype_uuid)
-      select  $1, $2, $3, $4, $5, $6, et.uuid
-        from  event_types et
-      where  et.uuid = $7`,
+      select  $1, $2, $3, $4, $5, o.uuid, et.uuid
+        from  observables o
+             ,event_types et
+       where  o.uuid = $6
+         and  et.uuid = $7`,
 		"change": `
       update  events e
          set  temperature = $1,
@@ -102,6 +104,13 @@ var psqls = sqlMap{
        where  e.uuid = $4
          and  et.uuid = $5`,
 		"remove": `delete from events where uuid = $1`,
+		"observable-mtime": `
+      update  observables o
+         set  mtime = $1
+        from  events ev
+       where  o.uuid = ev.observable_uuid
+         and  o.uuid = $2
+         and  ev.uuid = $3`,
 	},
 
 	"eventtype": {
@@ -531,6 +540,84 @@ var psqls = sqlMap{
 	},
 
 	"photo": {
+		"all": `
+      with strain_sources as (
+        select  g.uuid
+               ,ss_strain.name as label
+          from  generations g
+          join  sources ss1
+            on  g.uuid = ss1.generation_uuid
+          join  strains ss_strain
+            on  ss1.progenitor_uuid = ss_strain.uuid
+      ), gen_strains as (
+        select  s.generation_uuid   as generation_uuid
+               ,min(lc.strain_uuid) as min_strain_id
+               ,max(lc.strain_uuid) as max_strain_id
+          from  sources s
+          join  events e
+            on  s.progenitor_uuid = e.uuid
+          join  lifecycles lc
+            on  e.observable_uuid = lc.uuid
+         group
+            by  s.generation_uuid
+      ), gen_sources as (
+        select  g.generation_uuid                         as uuid
+               ,s1.name || coalesce(' & ' || s2.name, '') as label
+          from  gen_strains g
+          join  strains s1
+            on  g.min_strain_id = s1.uuid
+          left
+          join  strains s2
+            on  g.max_strain_id = s2.uuid
+           and  s2.uuid != g.min_strain_id
+      ), owners as (
+        select  'lifecycle'                   as parent_type
+               ,e.uuid                        as owner_uuid
+               ,lc.uuid                       as parent_uuid
+              ,lc.location || '->' || et.name as label
+          from  lifecycles lc
+          join  events e
+            on  lc.uuid = e.observable_uuid
+          join  event_types et
+            on  e.eventtype_uuid = et.uuid
+         union  all
+        select  'generation'
+                ,e.uuid
+                ,g.uuid
+                ,g.label || '->' || et.name
+          from  strain_sources g
+          join  events e
+            on  g.uuid = e.observable_uuid
+          join  event_types et
+            on  e.eventtype_uuid = et.uuid
+         union  all
+        select  'generation'
+               ,e.uuid
+               ,g.uuid
+               ,g.label || '->' || et.name
+          from  gen_sources g
+          join  events e
+            on  g.uuid = e.observable_uuid
+          join  event_types et
+            on  e.eventtype_uuid = et.uuid
+         union  all
+        select  'strain'
+               ,s.uuid
+               ,null
+               ,s.name
+          from  strains s
+      )
+      select  p.uuid
+             ,p.filename
+             ,p.mtime
+             ,p.ctime
+             ,o.parent_type
+             ,o.owner_uuid
+             ,o.parent_uuid
+             ,o.label
+        from  photos p
+        join  owners o
+          on  p.photoable_uuid = o.owner_uuid`,
 		"get": `
       select  p.uuid,
               p.filename,
@@ -593,6 +680,12 @@ var psqls = sqlMap{
          set  type = $1,
               mtime = current_timestamp
        where  s.uuid = $2`,
+		"change-new": `
+      update  sources s
+         set  type = $1, 
+              progenitor_uuid = $2
+              mtime = current_timestamp
+       where  s.uuid = $3`,
 		"delete": `delete from sources where uuid = $1`,
 		"strain-from-event": `
       select  lc.strain_uuid

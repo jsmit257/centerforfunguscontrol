@@ -28,7 +28,8 @@ func init() {
 	if req, err := http.NewRequest(
 		http.MethodGet,
 		fmt.Sprintf(`http://%s:%d/vendors`, cfg.HTTPHost, cfg.HTTPPort),
-		nil); err != nil {
+		nil,
+	); err != nil {
 		panic(err)
 	} else if req == nil {
 		panic("wtf?")

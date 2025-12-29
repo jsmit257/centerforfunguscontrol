@@ -5,8 +5,8 @@ go 1.23.1
 require (
 	github.com/go-chi/chi/v5 v5.2.0
 	github.com/google/uuid v1.6.0
-	github.com/jsmit257/huautla v0.0.0-20250411031051-4408a74c392b
-	github.com/jsmit257/userservice v0.0.0-20250503171321-10e0985f5f90
+	github.com/jsmit257/huautla v0.0.0-20251229165726-d0531a5ab6d7
+	github.com/jsmit257/userservice v0.0.0-20251229011954-33b52f13a05d
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/sirupsen/logrus v1.9.3

@@ -143,16 +143,27 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Patch("/lifecycle/{id}", ha.PatchLifecycle)
 	r.Delete("/lifecycle/{id}", ha.DeleteLifecycle)
 
-	// don't know if this will ever go live
-	// r.Patch("/events/{ev_id}", ha.PatchEvent)
-	// FIXME: implement this
-	// r.Delete("/events/{ev_id}", ha.DeleteEvent)
+	r.Get("/events/{o_id}", ha.GetObservableEvents)
+	r.Get("/event/{ev_id}", ha.GetEvent)
+	r.Post("/event/{o_id}", ha.PostEvent)
+	// FIXME: one of the following two is wrong; the first makes the most sense
+	// since the url param is never read, the second makes the front end URL
+	// construction simpler and follows the pattern of all the other PATCHs on
+	// this router; if we decide to go with the first versoin, then all of the
+	// patch routes and their corresponding handlers should be updated if needed;
+	// also the front end needs to appending an id on PATCH, so we can't really
+	// remove anything here until cffc-web::rc1 is complete
+	r.Patch("/events/{o_id}", ha.PatchEvent)
+	r.Patch("/event/{o_id}/{ignored}", ha.PatchEvent)
+	r.Delete("/events/{o_id}/{ev_id}", ha.DeleteEvent)
 
+	// DEPRECTED API; will be removed in the future
 	r.Post("/lifecycle/{lc_id}/events", ha.PostLifecycleEvent)
 	// same note as the generations version of patch-events below
 	r.Patch("/lifecycle/{lc_id}/events/{ev_id}", ha.PatchEvent)
 	r.Patch("/lifecycle/{lc_id}/events", ha.PatchLifecycleEvent)
 	r.Delete("/lifecycle/{lc_id}/events/{ev_id}", ha.DeleteLifecycleEvent)
+	// END DEPRECATED API
 
 	r.Get("/generations", ha.GetGenerationIndex)
 	r.Get("/generation/{id}", ha.GetGeneration)
@@ -160,6 +171,7 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Patch("/generation/{id}", ha.PatchGeneration)
 	r.Delete("/generation/{id}", ha.DeleteGeneration)
 
+	// DEPRECTED API; will be removed in the future
 	r.Post("/generation/{g_id}/events", ha.PostGenerationEvent)
 	// keeping the /generation/{g_id} prefix b/c it matches the pattern used
 	// by the front end post/patch pattern; not sure if that's the best idea;
@@ -167,6 +179,7 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Patch("/generation/{g_id}/events/{ev_id}", ha.PatchEvent)
 	r.Patch("/generation/{g_id}/events", ha.PatchGenerationEvent)
 	r.Delete("/generation/{g_id}/events/{ev_id}", ha.DeleteGenerationEvent)
+	// END DEPRECATED API
 
 	r.Post("/generation/{id}/sources/{origin}", ha.PostSource)
 	r.Patch("/generation/{g_id}/sources/{origin}/{s_id}", ha.PatchSource)
@@ -177,6 +190,7 @@ func newHuautla(cfg *config.Config, ha *huautla.HuautlaAdaptor, l *logrus.Entry)
 	r.Patch("/notes/{o_id}/{n_id}", ha.PatchNote)
 	r.Delete("/notes/{o_id}/{id}", ha.DeleteNote)
 
+	r.Get("/photoalbum", ha.GetPhotosIndex)
 	r.Get("/photos/{o_id}", ha.GetPhotos)
 	r.Post("/photos/{o_id}", ha.PostPhoto)
 	r.Patch("/photos/{o_id}/{id}", ha.PatchPhoto)

@@ -47,9 +47,9 @@ func init() {
 }
 
 func Test_HappyLifecycleEvent(t *testing.T) {
-	urlfmt := fmt.Sprintf(`http://%s:%d/lifecycle/%%s/events`, cfg.HTTPHost, cfg.HTTPPort)
+	urlfmt := fmt.Sprintf(`http://%s:%d/event/%%s`, cfg.HTTPHost, cfg.HTTPPort)
 
-	for lc, v := range map[int][]types.Event{
+	for lc, evts := range map[int][]types.Event{
 		0: {
 			{Humidity: 12, Temperature: 77, EventType: eventtypes["Colonization"]["Innoculation"]},
 			{Humidity: 22, Temperature: 76, EventType: eventtypes["Any"]["50% colonization"]},
@@ -68,8 +68,8 @@ func Test_HappyLifecycleEvent(t *testing.T) {
 		},
 	} {
 		url := fmt.Sprintf(urlfmt, lifecycles[lc].UUID)
-		for _, e := range v {
-			b, err := json.Marshal(e)
+		for _, evt := range evts {
+			b, err := json.Marshal(evt)
 			require.Nil(t, err)
 
 			req, err := http.NewRequest(
@@ -86,16 +86,20 @@ func Test_HappyLifecycleEvent(t *testing.T) {
 			b, err = io.ReadAll(res.Body)
 			require.Nil(t, err)
 
-			err = json.Unmarshal(b, &lifecycles[lc])
+			err = json.Unmarshal(b, &evt)
 			require.Nil(t, err)
+
+			lifecycles[lc].Events = append(lifecycles[lc].Events, evt)
 		}
+
+		require.Equal(t, len(evts), len(lifecycles[lc].Events))
 	}
 }
 
 func Test_HappyGenerationEvent(t *testing.T) {
-	urlfmt := fmt.Sprintf(`http://%s:%d/generation/%%s/events`, cfg.HTTPHost, cfg.HTTPPort)
+	urlfmt := fmt.Sprintf(`http://%s:%d/event/%%s`, cfg.HTTPHost, cfg.HTTPPort)
 
-	for g, v := range map[int][]types.Event{
+	for gen, evts := range map[int][]types.Event{
 		0: {
 			{Humidity: 12, Temperature: 77, EventType: eventtypes["Gestation"]["Agar sampling"]},
 			{Humidity: 32, Temperature: 75, EventType: eventtypes["Any"]["50% colonization"]},
@@ -106,10 +110,10 @@ func Test_HappyGenerationEvent(t *testing.T) {
 			{Humidity: 22, Temperature: 76, EventType: eventtypes["Any"]["100% colonization"]},
 		},
 	} {
-		url := fmt.Sprintf(urlfmt, generations[g].UUID)
+		url := fmt.Sprintf(urlfmt, generations[gen].UUID)
 
-		for _, e := range v {
-			b, err := json.Marshal(e)
+		for _, evt := range evts {
+			b, err := json.Marshal(evt)
 			require.Nil(t, err)
 
 			req, err := http.NewRequest(
@@ -126,8 +130,12 @@ func Test_HappyGenerationEvent(t *testing.T) {
 			b, err = io.ReadAll(res.Body)
 			require.Nil(t, err)
 
-			err = json.Unmarshal(b, &generations[g])
+			err = json.Unmarshal(b, &evt)
 			require.Nil(t, err)
+
+			generations[gen].Events = append(generations[gen].Events, evt)
 		}
+
+		require.Equal(t, len(evts), len(generations[gen].Events))
 	}
 }

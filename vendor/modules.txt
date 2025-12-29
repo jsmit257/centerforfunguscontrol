@@ -26,12 +26,12 @@ github.com/google/uuid
 ## explicit; go 1.18
 github.com/jarcoal/httpmock
 github.com/jarcoal/httpmock/internal
-# github.com/jsmit257/huautla v0.0.0-20250411031051-4408a74c392b
+# github.com/jsmit257/huautla v0.0.0-20251229165726-d0531a5ab6d7
 ## explicit; go 1.20
 github.com/jsmit257/huautla
 github.com/jsmit257/huautla/internal/data
 github.com/jsmit257/huautla/types
-# github.com/jsmit257/userservice v0.0.0-20250503171321-10e0985f5f90
+# github.com/jsmit257/userservice v0.0.0-20251229011954-33b52f13a05d
 ## explicit; go 1.20
 github.com/jsmit257/userservice/shared/v1
 # github.com/kelseyhightower/envconfig v1.4.0

@@ -3,6 +3,7 @@ package huautla
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/require"
@@ -19,15 +21,89 @@ import (
 )
 
 type photoerMock struct {
+	getIndexResult,
 	getResult,
 	addResult,
 	changeResult,
 	rmResult []types.Photo
 
+	getIndexErr,
 	getErr,
 	addErr,
 	changeErr,
-	rmErr error
+	ndxErr error
+}
+
+func Test_GetPhotoIndex(t *testing.T) {
+	t.Parallel()
+
+	set := map[string]struct {
+		getIndexResult []types.Photo
+		getIndexErr    error
+		sc             int
+	}{
+		"happy_path": {
+			getIndexResult: []types.Photo{
+				{
+					UUID:     "getPhotoIndex_0",
+					Filename: "getPhotoIndex_file",
+					MTime:    time.Time{},
+					CTime:    time.Time{},
+					Owner: &types.PhotoOwner{
+						ParentType: "generation",
+						OwnerUUID:  "owner_0",
+						ParentUUID: func(uuid types.UUID) *types.UUID { return &uuid }("parent_0"),
+						Label:      "owner_label",
+					},
+				},
+			},
+			sc: http.StatusOK,
+		},
+		"get_error": {
+			getIndexErr: fmt.Errorf("some error"),
+			sc:          http.StatusInternalServerError,
+		},
+	}
+
+	for name, rc := range set {
+		name, rc := name, rc
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					metrics.MockServiceContext,
+					chi.RouteCtxKey,
+					chi.NewRouteContext()),
+				http.MethodPost,
+				"url",
+				nil)
+
+			(&HuautlaAdaptor{
+				db: &huautlaMock{
+					Photoer: &photoerMock{
+						getIndexResult: rc.getIndexResult,
+						getIndexErr:    rc.getIndexErr,
+					},
+				},
+			}).GetPhotosIndex(w, r)
+
+			require.Equal(t, rc.sc, w.Code)
+			if w.Code != http.StatusOK {
+				return
+			}
+
+			body, err := io.ReadAll(w.Body)
+			require.Nil(t, err, "reading response body")
+			result := []types.Photo{}
+			err = json.Unmarshal(body, &result)
+			require.Nil(t, err, "unmarshalling response body: %s", body)
+			require.Equal(t, rc.getIndexResult, result)
+		})
+	}
 }
 
 func photoHelper(d []byte) (io.Reader, string) {
@@ -124,7 +200,7 @@ func Test_GetPhoto(t *testing.T) {
 					rctx),
 				http.MethodGet,
 				"url",
-				bytes.NewReader(nil))
+				nil)
 
 			ha.GetPhotos(w, r)
 
@@ -323,7 +399,7 @@ func Test_DeletePhoto(t *testing.T) {
 		ha := &HuautlaAdaptor{
 			db: &huautlaMock{
 				Photoer: &photoerMock{
-					rmErr:  v.updErr,
+					ndxErr: v.updErr,
 					getErr: v.getErr,
 				},
 			},
@@ -354,6 +430,10 @@ func Test_DeletePhoto(t *testing.T) {
 	}
 }
 
+func (pm *photoerMock) AllPhotos(context.Context, types.CID) ([]types.Photo, error) {
+	return pm.getIndexResult, pm.getIndexErr
+}
+
 func (pm *photoerMock) GetPhotos(context.Context, types.UUID, types.CID) ([]types.Photo, error) {
 	return pm.getResult, pm.getErr
 }
@@ -367,5 +447,5 @@ func (pm *photoerMock) ChangePhoto(context.Context, []types.Photo, types.Photo, 
 }
 
 func (pm *photoerMock) RemovePhoto(context.Context, []types.Photo, types.UUID, types.CID) ([]types.Photo, error) {
-	return pm.rmResult, pm.rmErr
+	return pm.rmResult, pm.ndxErr
 }

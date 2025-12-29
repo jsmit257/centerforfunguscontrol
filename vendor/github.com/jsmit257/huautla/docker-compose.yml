@@ -5,6 +5,10 @@ x-pg-user: &pguser postgres
 x-pg-pass: &pgpass root
 x-pg-ssl: &pgssl disable
 
+# used for persistence testing
+x-pg-persist: &persist persistent
+x-pg-source: &pgarc persistent-source
+
 services:
   postgres:
     image: jsmit257/huautla:latest
@@ -29,3 +33,65 @@ services:
       POSTGRES_SSLMODE: *pgssl
     working_dir: /go/src/github.com/jsmit257/huautla
     command: ./bin/system-test.sh
+
+  #
+  # use the following to test initialization, backup and restore
+  #
+
+  persistent:
+    image: postgres:bookworm
+    restart: always
+    hostname: *persist
+    volumes: [ "./persistent/data:/var/lib/postgresql/data" ]
+    environment: { POSTGRES_PASSWORD: *pgpass }
+
+  persistent-source:
+    image: jsmit257/huautla:latest
+    restart: always
+    hostname: persistent-source
+    environment: { POSTGRES_PASSWORD: *pgpass }
+
+  persistent-initialization:
+    depends_on: [ persistent-source ]
+    image: jsmit257/huautla:latest
+    build: .
+    hostname: persistent-initialization
+    volumes: [ "./persistent/data:/var/lib/postgresql/data" ]
+    environment:
+      HUAUTLA_MIG_SOURCE_HOST: *pgarc
+      HUAUTLA_MIG_SOURCE_POST: *pgport
+      HUAUTLA_MIG_SOURCE_USER: *pguser
+      HUAUTLA_MIG_DEST_HOST: localhost
+      HUAUTLA_MIG_DEST_PORT: *pgport
+      HUAUTLA_MIG_DEST_USER: *pguser
+      POSTGRES_PASSWORD: *pgpass
+    entrypoint: sh -c "chown -Rv postgres:postgres /var/lib/postgresql && /migration-entrypoint.sh"
+
+  persistent-backup:
+    depends_on: [ persistent ]
+    image: jsmit257/huautla:latest
+    build: .
+    hostname: persistent-backup
+    volumes: [ "./persistent/backups:/pgbackup" ]
+    environment:
+      HUAUTLA_BACKUP_SOURCE_HOST: *persist
+      HUAUTLA_BACKUP_SOURCE_POST: *pgport
+      HUAUTLA_BACKUP_SOURCE_USER: *pguser
+      HUAUTLA_BACKUP_SOURCE_PASS: *pgpass
+      HUAUTLA_BACKUP_RESTORE_DIR: /pgbackup
+    entrypoint: /backup-entrypoint.sh
+
+  persistent-restore:
+    depends_on: [ persistent ]
+    image: jsmit257/huautla:latest
+    build: .
+    hostname: persistent-restore
+    volumes: [ "./persistent/backups:/pgbackup" ]
+    environment:
+      HUAUTLA_RESTORE_DEST_HOST: *persist
+      HUAUTLA_RESTORE_DEST_PORT: *pgport
+      HUAUTLA_RESTORE_DEST_USER: *pguser
+      HUAUTLA_RESTORE_DEST_PASS: *pgpass
+      HUAUTLA_BACKUP_RESTORE_DIR: /pgbackup
+      RESTORE_POINT: ${RESTORE_POINT}
+    entrypoint: /restore-entrypoint.sh

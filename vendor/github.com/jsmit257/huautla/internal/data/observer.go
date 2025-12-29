@@ -22,12 +22,26 @@ type (
 	}
 )
 
+func (db *Conn) SelectByObservable(ctx context.Context, oID types.UUID, cid types.CID) ([]types.Event, error) {
+	var err error
+	var result []types.Event
+
+	deferred, l := initAccessFuncs("SelectByObservable", db.logger, oID, cid)
+	defer deferred(&err, l)
+
+	result, err = db.selectEventsList(ctx, psqls["event"]["all-by-observable"], oID, cid)
+
+	return result, err
+}
+
 func (db *Conn) SelectByEventType(ctx context.Context, et types.EventType, cid types.CID) ([]types.Event, error) {
 	var err error
+	var result []types.Event
+
 	deferred, l := initAccessFuncs("SelectByEventType", db.logger, et.UUID, cid)
 	defer deferred(&err, l)
 
-	result, err := db.selectEventsList(ctx, psqls["event"]["all-by-eventtype"], et.UUID, cid)
+	result, err = db.selectEventsList(ctx, psqls["event"]["all-by-eventtype"], et.UUID, cid)
 
 	return result, err
 }
@@ -66,6 +80,137 @@ func (db *Conn) selectEventsList(ctx context.Context, query string, id types.UUI
 	}
 
 	return result, err
+}
+
+func (db *Conn) SelectEvent(ctx context.Context, id types.UUID, cid types.CID) (types.Event, error) {
+	var err error
+	deferred, l := initAccessFuncs("SelectEvent", db.logger, id, cid)
+	defer deferred(&err, l)
+
+	result := types.Event{UUID: id}
+
+	if err = db.
+		QueryRowContext(ctx, psqls["event"]["select"], id).
+		Scan(
+			&result.UUID,
+			&result.Temperature,
+			&result.Humidity,
+			&result.MTime,
+			&result.CTime,
+			&result.EventType.UUID,
+			&result.EventType.Name,
+			&result.EventType.Severity,
+			&result.EventType.Stage.UUID,
+			&result.EventType.Stage.Name,
+		); err != nil {
+		return result, err
+	}
+
+	return result, err
+}
+
+func (db *Conn) InsertEvent(ctx context.Context, oID types.UUID, e types.Event, cid types.CID) (types.Event, error) {
+	var err error
+	var result sql.Result
+
+	deferred, l := initAccessFuncs("InsertEvent", db.logger, oID, cid)
+	defer deferred(&err, l)
+
+	e.UUID = types.UUID(db.generateUUID().String())
+	e.MTime = time.Now().UTC()
+	e.CTime = e.MTime
+
+	if result, err = db.ExecContext(ctx, psqls["event"]["add"],
+		e.UUID,
+		e.Temperature,
+		e.Humidity,
+		e.MTime,
+		e.CTime,
+		oID,
+		e.EventType.UUID,
+	); err != nil {
+		if isPrimaryKeyViolation(err) {
+			return db.InsertEvent(ctx, oID, e, cid)
+		}
+		return e, err
+	} else if rows, err := result.RowsAffected(); err != nil {
+		return e, err
+	} else if rows != 1 { // most likely cause is a bad eventtype.uuid
+		return e, fmt.Errorf("event was not added")
+	}
+
+	err = db.UpdateObservableMtime(ctx, oID, e.UUID, e.MTime, cid)
+
+	return e, err
+}
+
+func (db *Conn) UpdateEvent(ctx context.Context, oID types.UUID, e types.Event, cid types.CID) (types.Event, error) {
+	var err error
+	var result sql.Result
+	var rows int64
+
+	deferred, l := initAccessFuncs("UpdateEvent", db.logger, e.UUID, cid)
+	defer deferred(&err, l)
+
+	e.MTime = time.Now().UTC()
+
+	if err = db.UpdateObservableMtime(ctx, oID, e.UUID, e.MTime, cid); err != nil {
+		return e, err
+	} else if result, err = db.ExecContext(ctx, psqls["event"]["change"],
+		e.Temperature,
+		e.Humidity,
+		e.MTime,
+		e.UUID,
+		e.EventType.UUID,
+	); err != nil {
+		return e, err
+	} else if rows, err = result.RowsAffected(); err != nil {
+		return e, err
+	} else if rows != 1 { // most likely cause is a bad eventtype.uuid
+		return e, fmt.Errorf("event was not changed")
+	}
+
+	return e, err
+}
+
+func (db *Conn) DeleteEvent(ctx context.Context, oID types.UUID, evID types.UUID, cid types.CID) error {
+	var err error
+	var result sql.Result
+	var rows int64
+
+	deferred, l := initAccessFuncs("DeleteEvent", db.logger, evID, cid)
+	defer deferred(&err, l)
+
+	if err = db.UpdateObservableMtime(ctx, oID, evID, time.Now().UTC(), cid); err != nil {
+		return err
+	} else if result, err = db.ExecContext(ctx, psqls["event"]["remove"], evID); err != nil {
+		return err
+	} else if rows, err = result.RowsAffected(); err != nil {
+		return err
+	} else if rows != 1 { // most likely cause is a dependant note and/or photo
+		return fmt.Errorf("event could not be removed")
+	}
+
+	return err
+}
+
+func (db *Conn) UpdateObservableMtime(ctx context.Context, oID types.UUID, evID types.UUID, mtime time.Time, cid types.CID) error {
+	var err error
+	var result sql.Result
+	var rows int64
+
+	deferred, l := initAccessFuncs("UpdateObservableMtime", db.logger, oID, cid)
+	defer deferred(&err, l)
+
+	if result, err = db.ExecContext(ctx, psqls["event"]["observable-mtime"], mtime, oID, evID); err != nil {
+		return err
+	} else if rows, err = result.RowsAffected(); err != nil {
+		return err
+	} else if rows != 1 {
+		return fmt.Errorf("observable was not changed")
+	}
+
+	return nil
 }
 
 func (db *Conn) notesAndPhotos(ctx context.Context, e []types.Event, id types.UUID, cid types.CID) error {
@@ -160,33 +305,8 @@ func (db *Conn) notesAndPhotos(ctx context.Context, e []types.Event, id types.UU
 	return nil
 }
 
-func (db *Conn) SelectEvent(ctx context.Context, id types.UUID, cid types.CID) (types.Event, error) {
-	var err error
-	deferred, l := initAccessFuncs("SelectEvent", db.logger, id, cid)
-	defer deferred(&err, l)
-
-	result := types.Event{UUID: id}
-
-	if err = db.
-		QueryRowContext(ctx, psqls["event"]["select"], id).
-		Scan(
-			&result.UUID,
-			&result.Temperature,
-			&result.Humidity,
-			&result.MTime,
-			&result.CTime,
-			&result.EventType.UUID,
-			&result.EventType.Name,
-			&result.EventType.Severity,
-			&result.EventType.Stage.UUID,
-			&result.EventType.Stage.Name,
-		); err != nil {
-		return result, err
-	}
-
-	return result, err
-}
-
+// DEPREACTED: use InsertEvent instead, but there's some effort decoupling events
+// from their parents throughout all the tiers, so we're leaving them for now
 func (db *Conn) addEvent(ctx context.Context, oID types.UUID, events []types.Event, e *types.Event, cid types.CID) ([]types.Event, error) {
 	var err error
 	var result sql.Result
@@ -221,29 +341,8 @@ func (db *Conn) addEvent(ctx context.Context, oID types.UUID, events []types.Eve
 	return append([]types.Event{*e}, events...), err
 }
 
-func (db *Conn) UpdateEvent(ctx context.Context, e types.Event, cid types.CID) (types.Event, error) {
-	e.MTime = time.Now().UTC()
-
-	if result, err := db.ExecContext(ctx, psqls["event"]["change"],
-		e.Temperature,
-		e.Humidity,
-		e.MTime,
-		e.UUID,
-		e.EventType.UUID,
-	); err != nil {
-		return e, err
-	} else if rows, err := result.RowsAffected(); err != nil {
-		return e, err
-	} else if rows != 1 { // most likely cause is a bad eventtype.uuid
-		return e, fmt.Errorf("event was not changed")
-	}
-
-	return e, nil
-}
-
 // DEPREACTED: use UpdateEvent instead, but there's some effort decoupling events
-//
-//	from their parents throughout all the tiers, so we're leaving them for now
+// from their parents throughout all the tiers, so we're leaving them for now
 func (db *Conn) changeEvent(ctx context.Context, events []types.Event, e *types.Event, cid types.CID) ([]types.Event, error) {
 	var err error
 
@@ -275,6 +374,8 @@ func (db *Conn) changeEvent(ctx context.Context, events []types.Event, e *types.
 	return append(append([]types.Event{*e}, events[:i]...), events[i+1:]...), nil
 }
 
+// DEPREACTED: use DeleteEvent instead, but there's some effort decoupling events
+// from their parents throughout all the tiers, so we're leaving them for now
 func (db *Conn) removeEvent(ctx context.Context, events []types.Event, id types.UUID, _ types.CID) ([]types.Event, error) {
 	if result, err := db.ExecContext(ctx, psqls["event"]["remove"], id); err != nil {
 		return events, err

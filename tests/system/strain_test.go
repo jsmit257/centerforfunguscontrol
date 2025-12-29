@@ -130,6 +130,6 @@ func createNote(t *testing.T, id types.UUID, note string) {
 
 func Test_HappyStrainPhoto(t *testing.T) {
 	for _, s := range strains {
-		createNote(t, createPhoto(t, s.UUID), s.Name)
+		createNote(t, createPhoto(t, s.UUID), fmt.Sprintf("note for strain: %s", s.Name))
 	}
 }

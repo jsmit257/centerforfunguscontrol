@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/fs"
 	"net/http"
 	"net/url"
@@ -63,14 +62,14 @@ func getUUIDByName(name string, _ http.ResponseWriter, r *http.Request, _ *metho
 	return uuid, err
 }
 
-func bodyHelper(r *http.Request, box any) error {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return err
-	}
+// func bodyHelper(r *http.Request, box any) error {
+// 	body, err := io.ReadAll(r.Body)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	return json.Unmarshal(body, &box)
-}
+// 	return json.Unmarshal(body, &box)
+// }
 
 // helper function adds fields `method` and `cid` to all subsequent logs; returns an object
 // that encapsulates various success/error events with appropriate logging/metrics/responses

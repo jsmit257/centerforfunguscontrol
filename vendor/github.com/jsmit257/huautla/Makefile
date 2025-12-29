@@ -50,13 +50,13 @@ docker-down:
 	docker-compose down --remove-orphans
 
 .PHONY: deploy
-deploy: # no hard dependency on `tests/public/etc` for now
+deploy: # no hard dependency on `tests/etc` for now
 	docker-compose build postgres
 	docker tag jsmit257/huautla:latest jsmit257/huautla:lkg
 	git tag -f stable
 
 .PHONY: push
 push: # docker lkg and a stable tag for dependents
-	docker push jsmit257/cffc:lkg
+	docker push jsmit257/huautla:lkg
 	# this should push the current commit; need `git ref ...`
 	git push --force origin stable:stable

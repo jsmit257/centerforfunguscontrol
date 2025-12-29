@@ -38,6 +38,7 @@ tests: public #down unit
 	sudo rm -fv ./tests/data/album/*
 	docker-compose up --build --remove-orphans system-test
 	docker tag jsmit257/cffc:latest jsmit257/cffc:lkg
+	echo "Change password for user 'testuser'"
 
 .PHONY: public
 public: down unit

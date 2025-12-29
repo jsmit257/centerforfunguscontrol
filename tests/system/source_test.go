@@ -18,7 +18,7 @@ var sources []types.Source
 func Test_HappyStrainSource(t *testing.T) {
 	urlfmt := fmt.Sprintf(`http://%s:%d/generation/%%s/sources/strain`, cfg.HTTPHost, cfg.HTTPPort)
 
-	for k, v := range map[int][]types.Source{
+	for gen, srcs := range map[int][]types.Source{
 		3: {
 			{Type: "Clone", Strain: strains[0]},
 		},
@@ -30,10 +30,10 @@ func Test_HappyStrainSource(t *testing.T) {
 			{Type: "Spore", Strain: strains[1]},
 		},
 	} {
-		for _, s := range v {
-			url := fmt.Sprintf(urlfmt, generations[k].UUID)
+		for _, src := range srcs {
+			url := fmt.Sprintf(urlfmt, generations[gen].UUID)
 
-			b, err := json.Marshal(s)
+			b, err := json.Marshal(src)
 			require.Nil(t, err)
 
 			req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
@@ -47,10 +47,10 @@ func Test_HappyStrainSource(t *testing.T) {
 			b, err = io.ReadAll(res.Body)
 			require.Nil(t, err)
 
-			err = json.Unmarshal(b, &s)
+			err = json.Unmarshal(b, &src)
 			require.Nil(t, err)
 
-			sources = append(sources, s)
+			sources = append(sources, src)
 		}
 	}
 }
@@ -60,7 +60,7 @@ func Test_HappyEventSource(t *testing.T) {
 
 	var s types.Source
 
-	for k, v := range map[int][]types.Event{
+	for gen, evts := range map[int][]types.Event{
 		2: {
 			findEvent("Clone", "Generation", lifecycles[2].Events),
 		},
@@ -72,16 +72,16 @@ func Test_HappyEventSource(t *testing.T) {
 			findEvent("Spore print", "Generation", lifecycles[0].Events),
 		},
 	} {
-		for _, e := range v {
-			url := fmt.Sprintf(urlfmt, generations[k].UUID)
+		for _, evt := range evts {
+			url := fmt.Sprintf(urlfmt, generations[gen].UUID)
 
 			b, err := json.Marshal(types.Source{
 				Lifecycle: &types.Lifecycle{
-					Events: []types.Event{e},
+					Events: []types.Event{evt},
 				},
 				Type: func(s string) string {
 					return s[0:5]
-				}(e.EventType.Name),
+				}(evt.EventType.Name),
 			})
 			require.Nil(t, err)
 
@@ -91,7 +91,7 @@ func Test_HappyEventSource(t *testing.T) {
 
 			res, err := http.DefaultClient.Do(req)
 			require.Nil(t, err)
-			require.Equal(t, http.StatusCreated, res.StatusCode, "%d, %s", k, b)
+			require.Equal(t, http.StatusCreated, res.StatusCode, "%d, %s", gen, b)
 
 			b, err = io.ReadAll(res.Body)
 			require.Nil(t, err)

@@ -82,12 +82,16 @@ type (
 	}
 
 	Observer interface {
+		SelectByObservable(context.Context, UUID, CID) ([]Event, error)
 		SelectByEventType(context.Context, EventType, CID) ([]Event, error)
 		SelectEvent(context.Context, UUID, CID) (Event, error)
-		UpdateEvent(context.Context, Event, CID) (Event, error)
+		InsertEvent(context.Context, UUID, Event, CID) (Event, error)
+		UpdateEvent(context.Context, UUID, Event, CID) (Event, error)
+		DeleteEvent(context.Context, UUID, UUID, CID) error
 	}
 
 	Photoer interface {
+		AllPhotos(ctx context.Context, cid CID) ([]Photo, error)
 		GetPhotos(ctx context.Context, id UUID, cid CID) ([]Photo, error)
 		AddPhoto(ctx context.Context, id UUID, photos []Photo, p Photo, cid CID) ([]Photo, error)
 		ChangePhoto(ctx context.Context, photos []Photo, p Photo, cid CID) ([]Photo, error)

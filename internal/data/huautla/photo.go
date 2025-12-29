@@ -104,8 +104,19 @@ func (ha *HuautlaAdaptor) writePhoto(r *http.Request) (string, error) {
 	return name, ha.filer(ha.photoloc+name, data, 0644)
 }
 
+func (ha *HuautlaAdaptor) GetPhotosIndex(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	ms := ha.start(ctx, "GetPhotosIndex")
+
+	if photos, err := ha.db.AllPhotos(r.Context(), ms.cid); err != nil {
+		ms.error(w, err, http.StatusInternalServerError, "failed to fetch all photos")
+	} else {
+		ms.ok(w, photos)
+	}
+}
+
 func (ha *HuautlaAdaptor) GetPhotos(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+	// defer r.Body.Close()
 
 	ctx := r.Context()
 	ms := ha.start(ctx, "GetPhotos")

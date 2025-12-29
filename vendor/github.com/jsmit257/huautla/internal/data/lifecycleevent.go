@@ -1,3 +1,4 @@
+// DEPRECATED: use generic select/insert/update/delete from observable.go instead
 package data
 
 import (

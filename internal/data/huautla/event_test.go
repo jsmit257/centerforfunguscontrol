@@ -22,41 +22,174 @@ type eventerMock struct {
 	changeErr    error
 	rmErr        error
 
-	addGenerationErr       error
-	changeGenerationResult types.Event
-	changeGenerationErr    error
-	rmGenerationErr        error
+	getAllResult []types.Event
+	getResult,
+	postResult,
+	patchResult types.Event
+
+	getAllErr,
+	getErr,
+	postErr,
+	patchErr,
+	deleteErr error
 }
 
-func Test_PatchEvent(t *testing.T) {
+func Test_GetObservableEvent(t *testing.T) {
 	t.Parallel()
 
 	tcs := map[string]struct {
-		id     types.UUID
+		oid    types.UUID
+		result []types.Event
+		err    error
+		sc     int
+	}{
+		"happy_path": {
+			oid:    "happy_path",
+			result: []types.Event{},
+			sc:     http.StatusOK,
+		},
+		"missing_owner_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urlencode_err": {
+			oid: "%zzz",
+			sc:  http.StatusBadRequest,
+		},
+		"get_fails": {
+			oid: "get_fails",
+			sc:  http.StatusInternalServerError,
+			err: fmt.Errorf("some error"),
+		},
+	}
+
+	for name, tc := range tcs {
+		name, tc := name, tc
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(tc.oid)}}
+
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					metrics.MockServiceContext,
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodPost,
+				"url",
+				nil)
+
+			(&HuautlaAdaptor{
+				db: &huautlaMock{
+					Observer: &eventerMock{
+						getAllResult: tc.result,
+						getAllErr:    tc.err,
+					},
+				},
+			}).GetObservableEvents(w, r)
+
+			require.Equal(t, tc.sc, w.Code)
+		})
+	}
+}
+
+func Test_GetEvent(t *testing.T) {
+	t.Parallel()
+
+	tcs := map[string]struct {
+		oid    types.UUID
+		result types.Event
+		err    error
+		sc     int
+	}{
+		"happy_path": {
+			oid: "happy_path",
+			sc:  http.StatusOK,
+		},
+		"missing_owner_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urlencode_err": {
+			oid: "%zzz",
+			sc:  http.StatusBadRequest,
+		},
+		"get_fails": {
+			oid: "get_fails",
+			sc:  http.StatusInternalServerError,
+			err: fmt.Errorf("some error"),
+		},
+	}
+
+	for name, tc := range tcs {
+		name, tc := name, tc
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"ev_id"}, Values: []string{string(tc.oid)}}
+
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					metrics.MockServiceContext,
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodPost,
+				"url",
+				nil)
+
+			(&HuautlaAdaptor{
+				db: &huautlaMock{
+					Observer: &eventerMock{
+						getResult: tc.result,
+						getErr:    tc.err,
+					},
+				},
+			}).GetEvent(w, r)
+
+			require.Equal(t, tc.sc, w.Code)
+		})
+	}
+}
+
+func Test_PostEvent(t *testing.T) {
+	t.Parallel()
+
+	tcs := map[string]struct {
+		oid    types.UUID
 		e      *types.Event
 		result types.Event
 		err    error
 		sc     int
 	}{
 		"happy_path": {
-			id: "happy_path",
-			e:  &types.Event{UUID: "happy_path"},
-			sc: http.StatusOK,
+			oid: "happy_path",
+			e:   &types.Event{UUID: "happy_path"},
+			sc:  http.StatusCreated,
 		},
-		"missing_eventid": {
+		"missing_owner_id": {
 			sc: http.StatusBadRequest,
+		},
+		"urlencode_err": {
+			oid: "%zzz",
+			sc:  http.StatusBadRequest,
 		},
 		"read_fails": {
-			id: "read_fails",
-			sc: http.StatusBadRequest,
+			oid: "read_fails",
+			sc:  http.StatusBadRequest,
 		},
 		"unmarshal_fails": {
-			id: "unmarshal_fails",
-			e:  &types.Event{UUID: "unmarshal_fails"},
-			sc: http.StatusBadRequest,
+			oid: "unmarshal_fails",
+			e:   &types.Event{UUID: "unmarshal_fails"},
+			sc:  http.StatusBadRequest,
 		},
 		"update_fails": {
-			id:  "update_fails",
+			oid: "update_fails",
 			e:   &types.Event{UUID: "update_fails"},
 			err: fmt.Errorf("some error"),
 			sc:  http.StatusInternalServerError,
@@ -69,19 +202,10 @@ func Test_PatchEvent(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			ha := &HuautlaAdaptor{
-				db: &huautlaMock{
-					Observer: &eventerMock{
-						changeResult: tc.result,
-						changeErr:    tc.err,
-					},
-				},
-			}
-
 			w := httptest.NewRecorder()
 			defer w.Result().Body.Close()
 			rctx := chi.NewRouteContext()
-			rctx.URLParams = chi.RouteParams{Keys: []string{"ev_id"}, Values: []string{string(tc.id)}}
+			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(tc.oid)}}
 
 			body := serializeEvent(tc.e)
 			if name == "unmarshal_fails" {
@@ -102,10 +226,170 @@ func Test_PatchEvent(t *testing.T) {
 				"url",
 				bodyreader)
 
-			ha.PatchEvent(w, r)
+			(&HuautlaAdaptor{
+				db: &huautlaMock{
+					Observer: &eventerMock{
+						postResult: tc.result,
+						postErr:    tc.err,
+					},
+				},
+			}).PostEvent(w, r)
 
 			require.Equal(t, tc.sc, w.Code)
+		})
+	}
+}
 
+func Test_PatchEvent(t *testing.T) {
+	t.Parallel()
+
+	tcs := map[string]struct {
+		oid    types.UUID
+		e      *types.Event
+		result types.Event
+		err    error
+		sc     int
+	}{
+		"happy_path": {
+			oid: "happy_path",
+			e:   &types.Event{UUID: "happy_path"},
+			sc:  http.StatusOK,
+		},
+		"missing_owner_id": {
+			sc: http.StatusBadRequest,
+		},
+		"urlencode_err": {
+			oid: "%zzz",
+			sc:  http.StatusBadRequest,
+		},
+		"read_fails": {
+			oid: "read_fails",
+			sc:  http.StatusBadRequest,
+		},
+		"unmarshal_fails": {
+			oid: "unmarshal_fails",
+			e:   &types.Event{UUID: "unmarshal_fails"},
+			sc:  http.StatusBadRequest,
+		},
+		"update_fails": {
+			oid: "update_fails",
+			e:   &types.Event{UUID: "update_fails"},
+			err: fmt.Errorf("some error"),
+			sc:  http.StatusInternalServerError,
+		},
+	}
+
+	for name, tc := range tcs {
+		name, tc := name, tc
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id"}, Values: []string{string(tc.oid)}}
+
+			body := serializeEvent(tc.e)
+			if name == "unmarshal_fails" {
+				body = body[1:]
+			}
+
+			bodyreader := io.Reader(bytes.NewReader([]byte(body)))
+			if name == "read_fails" {
+				bodyreader = errReader(name)
+			}
+
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					metrics.MockServiceContext,
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodPost,
+				"url",
+				bodyreader)
+
+			(&HuautlaAdaptor{
+				db: &huautlaMock{
+					Observer: &eventerMock{
+						patchResult: tc.result,
+						patchErr:    tc.err,
+					},
+				},
+			}).PatchEvent(w, r)
+
+			require.Equal(t, tc.sc, w.Code)
+		})
+	}
+}
+
+func Test_DeleteEvent(t *testing.T) {
+	t.Parallel()
+
+	tcs := map[string]struct {
+		oid  types.UUID
+		evid types.UUID
+		err  error
+		sc   int
+	}{
+		"happy_path": {
+			oid:  "happy_path",
+			evid: "happy_path",
+			sc:   http.StatusNoContent,
+		},
+		"missing_owner_id": {
+			sc: http.StatusBadRequest,
+		},
+		"missing_event_id": {
+			oid: "missing_event_id",
+			sc:  http.StatusBadRequest,
+		},
+		"urlencode_observable_err": {
+			oid: "%zzz",
+			sc:  http.StatusBadRequest,
+		},
+		"urlencode_event_err": {
+			oid:  "urlencode_event_err",
+			evid: "%zzz",
+			sc:   http.StatusBadRequest,
+		},
+		"update_fails": {
+			oid:  "update_fails",
+			evid: "update_fails",
+			err:  fmt.Errorf("some error"),
+			sc:   http.StatusInternalServerError,
+		},
+	}
+
+	for name, tc := range tcs {
+		name, tc := name, tc
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			w := httptest.NewRecorder()
+			defer w.Result().Body.Close()
+			rctx := chi.NewRouteContext()
+			rctx.URLParams = chi.RouteParams{Keys: []string{"o_id", "ev_id"}, Values: []string{string(tc.oid), string(tc.evid)}}
+
+			r, _ := http.NewRequestWithContext(
+				context.WithValue(
+					metrics.MockServiceContext,
+					chi.RouteCtxKey,
+					rctx),
+				http.MethodPost,
+				"url",
+				nil)
+
+			(&HuautlaAdaptor{
+				db: &huautlaMock{
+					Observer: &eventerMock{
+						deleteErr: tc.err,
+					},
+				},
+			}).DeleteEvent(w, r)
+
+			require.Equal(t, tc.sc, w.Code)
 		})
 	}
 }
@@ -451,7 +735,7 @@ func Test_PostGenerationEvent(t *testing.T) {
 					sel:    tc.g,
 					selErr: tc.genErr,
 				},
-				GenerationEventer: &eventerMock{addGenerationErr: tc.evtErr},
+				GenerationEventer: &eventerMock{addErr: tc.evtErr},
 			},
 		}
 		t.Run(name, func(t *testing.T) {
@@ -549,7 +833,7 @@ func Test_PatchGenerationEvent(t *testing.T) {
 					sel:    tc.g,
 					selErr: tc.genErr,
 				},
-				GenerationEventer: &eventerMock{changeGenerationErr: tc.evtErr},
+				GenerationEventer: &eventerMock{changeErr: tc.evtErr},
 			},
 		}
 		t.Run(name, func(t *testing.T) {
@@ -635,7 +919,7 @@ func Test_DeleteGenerationEvent(t *testing.T) {
 					sel:    v.g,
 					selErr: v.genErr,
 				},
-				GenerationEventer: &eventerMock{rmGenerationErr: v.evErr},
+				GenerationEventer: &eventerMock{rmErr: v.evErr},
 			},
 		}
 		t.Run(k, func(t *testing.T) {
@@ -689,21 +973,31 @@ func (em *eventerMock) GetGenerationEvents(context.Context, *types.Generation, t
 	return nil
 }
 func (em *eventerMock) AddGenerationEvent(context.Context, *types.Generation, types.Event, types.CID) error {
-	return em.addGenerationErr
+	return em.addErr
 }
 func (em *eventerMock) ChangeGenerationEvent(context.Context, *types.Generation, types.Event, types.CID) (types.Event, error) {
-	return em.changeGenerationResult, em.changeGenerationErr
+	return em.changeResult, em.changeErr
 }
 func (em *eventerMock) RemoveGenerationEvent(context.Context, *types.Generation, types.UUID, types.CID) error {
-	return em.rmGenerationErr
+	return em.rmErr
 }
 
 func (em *eventerMock) SelectByEventType(context.Context, types.EventType, types.CID) ([]types.Event, error) {
 	return nil, nil
 }
-func (em *eventerMock) SelectEvent(context.Context, types.UUID, types.CID) (types.Event, error) {
-	return types.Event{}, nil
+
+func (em *eventerMock) SelectByObservable(context.Context, types.UUID, types.CID) ([]types.Event, error) {
+	return em.getAllResult, em.getAllErr
 }
-func (em *eventerMock) UpdateEvent(context.Context, types.Event, types.CID) (types.Event, error) {
-	return em.changeResult, em.changeErr
+func (em *eventerMock) SelectEvent(context.Context, types.UUID, types.CID) (types.Event, error) {
+	return em.getResult, em.getErr
+}
+func (em *eventerMock) InsertEvent(context.Context, types.UUID, types.Event, types.CID) (types.Event, error) {
+	return em.postResult, em.postErr
+}
+func (em *eventerMock) UpdateEvent(context.Context, types.UUID, types.Event, types.CID) (types.Event, error) {
+	return em.patchResult, em.patchErr
+}
+func (em *eventerMock) DeleteEvent(context.Context, types.UUID, types.UUID, types.CID) error {
+	return em.deleteErr
 }

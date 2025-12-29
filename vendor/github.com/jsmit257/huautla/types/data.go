@@ -9,6 +9,8 @@ type (
 
 	CID string
 
+	ParentType string
+
 	SubstrateType string
 
 	Entity map[string]any
@@ -90,10 +92,18 @@ type (
 
 	Photo struct {
 		UUID     `json:"id"`
-		Filename string    `json:"image"`
-		Notes    []Note    `json:"notes,omitempty"`
-		MTime    time.Time `json:"mtime,omitempty"`
-		CTime    time.Time `json:"ctime"`
+		Filename string      `json:"image"`
+		Notes    []Note      `json:"notes,omitempty"`
+		MTime    time.Time   `json:"mtime,omitempty"`
+		CTime    time.Time   `json:"ctime"`
+		Owner    *PhotoOwner `json:"owner,omitempty"`
+	}
+
+	PhotoOwner struct {
+		ParentType ParentType `json:"parent_type"`
+		OwnerUUID  UUID       `json:"owner_id"`
+		ParentUUID *UUID      `json:"parent_id,omitempty"`
+		Label      string     `json:"label"`
 	}
 
 	Source struct {
